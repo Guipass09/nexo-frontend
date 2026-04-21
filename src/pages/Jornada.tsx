@@ -20,6 +20,7 @@ const statusMap = {
   warn: { color: "bg-warning text-warning-foreground border-warning", ring: "ring-warning/20" },
   pending: { color: "bg-muted text-muted-foreground border-border", ring: "ring-border" },
   error: { color: "bg-destructive text-destructive-foreground border-destructive", ring: "ring-destructive/20" },
+  wait: { color: "bg-muted text-muted-foreground border-border", ring: "ring-border" },
 };
 
 export default function Jornada() {
