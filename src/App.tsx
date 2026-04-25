@@ -22,6 +22,8 @@ import Perfil from "./pages/Perfil";
 import Auditoria from "./pages/Auditoria";
 import Usuarios from "./pages/Usuarios";
 import NotFound from "./pages/NotFound.tsx";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
+import TermosUso from "./pages/TermosUso";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PermissionGate from "./components/auth/PermissionGate";
 
@@ -44,6 +46,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+          <Route path="/termos" element={<TermosUso />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<PermissionGate permission="dashboard"><Dashboard /></PermissionGate>} />

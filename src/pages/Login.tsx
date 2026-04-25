@@ -132,7 +132,15 @@ export default function Login() {
             </Button>
 
             <p className="text-center text-xs text-muted-foreground">
-              Ao continuar, você concorda com os <a className="text-foreground hover:underline">Termos</a> e <a className="text-foreground hover:underline">Política de privacidade</a>.
+              Ao continuar, você concorda com os{" "}
+              <Link to="/termos" className="text-foreground hover:underline">
+                Termos
+              </Link>{" "}
+              e{" "}
+              <Link to="/politica-de-privacidade" className="text-foreground hover:underline">
+                Politica de privacidade
+              </Link>
+              .
             </p>
 
             <p className="text-center text-sm text-muted-foreground">
