@@ -23,6 +23,7 @@ import { listAuditEventTypes, listAuditEvents, listOperators, type AuditFilters 
 import {
   createConversationRealtimeStream,
   createConversationsRealtimeStream,
+  isRealtimeSupported,
   type RealtimeStatus,
 } from "@/services/conversation-realtime";
 import { getDashboardOverview } from "@/services/dashboard";
@@ -606,12 +607,13 @@ export function useConversationsRealtime(filters: ConversationFilters = {}) {
   const queryClient = useQueryClient();
   const streamRef = useRef<ReturnType<typeof createConversationsRealtimeStream> | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>("idle");
+  const enabled = isRealtimeSupported();
 
   useEffect(() => {
     streamRef.current?.close();
     streamRef.current = null;
 
-    if (!isDocumentVisible()) {
+    if (!enabled || !isDocumentVisible()) {
       setStatus("idle");
       return;
     }
@@ -627,9 +629,10 @@ export function useConversationsRealtime(filters: ConversationFilters = {}) {
       streamRef.current?.close();
       streamRef.current = null;
     };
-  }, [filters, queryClient]);
+  }, [enabled, filters, queryClient]);
 
   return {
+    enabled,
     status,
     isConnected: status === "connected",
   };
@@ -707,12 +710,13 @@ export function useConversationRealtime(conversationId: string | null) {
   const queryClient = useQueryClient();
   const streamRef = useRef<ReturnType<typeof createConversationRealtimeStream> | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>("idle");
+  const enabled = isRealtimeSupported();
 
   useEffect(() => {
     streamRef.current?.close();
     streamRef.current = null;
 
-    if (!conversationId || !isDocumentVisible()) {
+    if (!enabled || !conversationId || !isDocumentVisible()) {
       setStatus("idle");
       return;
     }
@@ -747,9 +751,10 @@ export function useConversationRealtime(conversationId: string | null) {
       streamRef.current?.close();
       streamRef.current = null;
     };
-  }, [conversationId, queryClient]);
+  }, [conversationId, enabled, queryClient]);
 
   return {
+    enabled,
     status,
     isConnected: status === "connected",
   };

@@ -65,6 +65,24 @@ interface SseEvent {
 
 const RETRY_DELAY_MS = 600;
 
+function resolveApiBaseUrl() {
+  return import.meta.env.VITE_API_BASE_URL ?? "/api";
+}
+
+function isNgrokUrl(url: string) {
+  try {
+    const target = new URL(url, window.location.origin);
+
+    return target.hostname.endsWith(".ngrok-free.dev") || target.hostname.endsWith(".ngrok.app");
+  } catch {
+    return false;
+  }
+}
+
+export function isRealtimeSupported() {
+  return !isNgrokUrl(resolveApiBaseUrl());
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -162,7 +180,7 @@ export function createConversationRealtimeStream(options: CreateConversationReal
 
         const cursor = options.getCursor?.() ?? {};
         const response = await fetch(
-          buildApiUrl(`/conversations/${options.conversationId}/stream`, import.meta.env.VITE_API_BASE_URL ?? "/api", {
+          buildApiUrl(`/conversations/${options.conversationId}/stream`, resolveApiBaseUrl(), {
             ...(cursor.updatedAt ? { cursor_updated_at: cursor.updatedAt } : {}),
             ...(cursor.messageId ? { cursor_message_id: cursor.messageId } : {}),
           }),
@@ -290,7 +308,7 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
         setStatus("connecting");
 
         const response = await fetch(
-          buildApiUrl("/conversations/stream", import.meta.env.VITE_API_BASE_URL ?? "/api", {
+          buildApiUrl("/conversations/stream", resolveApiBaseUrl(), {
             ...(cursorUpdatedAt ? { cursor_updated_at: cursorUpdatedAt } : {}),
             ...(cursorConversationId ? { cursor_conversation_id: cursorConversationId } : {}),
           }),

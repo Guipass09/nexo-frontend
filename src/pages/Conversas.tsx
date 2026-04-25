@@ -1007,13 +1007,13 @@ export default function Conversas() {
       {/* List */}
       <Card className="flex flex-col overflow-hidden border-border/60 bg-card/95 shadow-sm">
         <div className="p-4 border-b border-border/70 space-y-3 bg-gradient-to-b from-card to-secondary/20">
-          {hasDataError ? (
+          {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               Oscilacao de conexao detectada. Mantendo os dados carregados e tentando reconectar.
             </div>
           ) : null}
           <div className="flex items-center justify-between gap-2">
-            <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} />
+            {listRealtime.enabled ? <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} /> : <span />}
             <Button variant="outline" size="sm" className="gap-1.5" onClick={openCreateConversation}>
               <Plus className="h-3.5 w-3.5" /> Nova conversa
             </Button>
@@ -1133,7 +1133,7 @@ export default function Conversas() {
                       {requiresTemplate ? "Template necessario" : `Janela 24h ativa${serviceWindow.hoursRemaining ? ` · ${serviceWindow.hoursRemaining}h` : ""}`}
                     </span>
                   ) : null}
-                  <RealtimeBadge label="Conversa ao vivo" status={realtime.status} idleLabel="Sem conversa" />
+                  {realtime.enabled ? <RealtimeBadge label="Conversa ao vivo" status={realtime.status} idleLabel="Sem conversa" /> : null}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex min-w-0 items-center gap-1">
