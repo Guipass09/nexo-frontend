@@ -101,7 +101,7 @@ export default function ProtectedRoute() {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
-  if (token && authQuery.isPending) {
+  if (token && authQuery.isPending && !authQuery.data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <Card className="flex items-center gap-3 border-border/60 px-5 py-4 text-sm text-muted-foreground">
@@ -112,7 +112,7 @@ export default function ProtectedRoute() {
     );
   }
 
-  if (token && authQuery.isError) {
+  if (token && authQuery.isError && !authQuery.data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <Card className="max-w-md border-border/60 p-6">
