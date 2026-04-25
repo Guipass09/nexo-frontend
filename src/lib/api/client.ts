@@ -86,6 +86,16 @@ function maskToken(token: string | null) {
   return `${token.slice(0, 6)}...${token.slice(-4)}`;
 }
 
+function shouldSkipNgrokBrowserWarning(url: string) {
+  try {
+    const target = new URL(url);
+
+    return target.hostname.endsWith(".ngrok-free.dev") || target.hostname.endsWith(".ngrok.app");
+  } catch {
+    return false;
+  }
+}
+
 export class ApiClient {
   constructor(private readonly config: ApiClientConfig = {}) {}
 
@@ -95,6 +105,7 @@ export class ApiClient {
     const token = getAuthToken();
     const url = buildUrl(path, this.config.baseURL, query);
     const method = requestInit.method ?? "GET";
+    const skipNgrokBrowserWarning = shouldSkipNgrokBrowserWarning(url);
 
     console.debug("[api] request", {
       method,
@@ -109,6 +120,7 @@ export class ApiClient {
       headers: {
         Accept: "application/json",
         ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+        ...(skipNgrokBrowserWarning ? { "ngrok-skip-browser-warning": "true" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...this.config.headers,
         ...headers,
