@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -252,14 +252,14 @@ function shouldAutoScrollToBottom(element: HTMLDivElement) {
   return distanceFromBottom <= 120;
 }
 
-function scrollConversationToBottom(element: HTMLDivElement | null) {
+function scrollConversationToBottom(element: HTMLDivElement | null, behavior: ScrollBehavior = "auto") {
   if (!element) {
     return;
   }
 
   element.scrollTo({
     top: element.scrollHeight,
-    behavior: "smooth",
+    behavior,
   });
 }
 
@@ -513,6 +513,7 @@ export default function Conversas() {
   const lastSyncedMessageRef = useRef<string | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
+  const selectedConversationChangeRef = useRef(false);
   const lastSeenConversationKeyRef = useRef<string | null>(null);
   const lastRenderedMessageKeyRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
@@ -534,6 +535,7 @@ export default function Conversas() {
     }
 
     if (!selectedId || !conversations.some((conversation) => conversation.id === selectedId)) {
+      selectedConversationChangeRef.current = true;
       setSelectedId(conversations[0].id);
     }
   }, [conversations, selectedId]);
@@ -591,7 +593,7 @@ export default function Conversas() {
     });
   }, [latestRenderableMessage, queryClient, selectedId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
 
     if (!viewport) {
@@ -604,7 +606,7 @@ export default function Conversas() {
       lastSeenConversationKeyRef.current = selectedId;
       lastRenderedMessageKeyRef.current = null;
       shouldStickToBottomRef.current = true;
-      scrollConversationToBottom(viewport);
+      scrollConversationToBottom(viewport, "auto");
       return;
     }
 
@@ -612,7 +614,7 @@ export default function Conversas() {
       .reverse()
       .find((message) => message.type !== "event");
     const latestMessageKey = latestRenderableMessage
-      ? `${latestRenderableMessage.id}:${latestRenderableMessage.deliveryStatus ?? ""}:${latestRenderableMessage.deliveryError ?? ""}`
+      ? latestRenderableMessage.id
       : null;
     const messageChanged = latestMessageKey !== lastRenderedMessageKeyRef.current;
 
@@ -622,8 +624,14 @@ export default function Conversas() {
       return;
     }
 
+    if (selectedConversationChangeRef.current) {
+      selectedConversationChangeRef.current = false;
+      scrollConversationToBottom(viewport, "auto");
+      return;
+    }
+
     if (latestRenderableMessage.from !== "client" || shouldStickToBottomRef.current) {
-      scrollConversationToBottom(viewport);
+      scrollConversationToBottom(viewport, "auto");
     }
   }, [conversationMessages, selectedId]);
 
@@ -1071,7 +1079,15 @@ export default function Conversas() {
               return (
             <button
               key={c.id}
-              onClick={() => setSelectedId(c.id)}
+              onClick={() => {
+                if (c.id === selectedId) {
+                  return;
+                }
+
+                selectedConversationChangeRef.current = true;
+                shouldStickToBottomRef.current = true;
+                setSelectedId(c.id);
+              }}
               className={cn(
                 "group w-full text-left px-4 py-3 border-b border-border/50 hover:bg-card transition-smooth flex items-start gap-3",
                 selected?.id === c.id && "bg-card shadow-[inset_3px_0_0_hsl(var(--primary))]"
