@@ -74,6 +74,7 @@ import {
   type SequencePayload,
 } from "@/services/sequences";
 import { createUser, deleteUser, listUsers, updateUser, type UserPayload } from "@/services/users";
+import { ApiError } from "@/lib/api/client";
 import type { Conversation, ConversationMessage, MediaAssetType } from "@/types/domain";
 
 const CONVERSATIONS_POLL_INTERVAL_MS = 5_000;
@@ -81,6 +82,18 @@ const ACTIVE_CONVERSATION_POLL_INTERVAL_MS = 1_500;
 const ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS = 2_000;
 const OPTIMISTIC_MATCH_WINDOW_MS = 120_000;
 const deletedConversationIds = new Set<string>();
+
+function shouldRetryTransientError(failureCount: number, error: unknown) {
+  if (failureCount >= 2) {
+    return false;
+  }
+
+  if (!(error instanceof ApiError)) {
+    return true;
+  }
+
+  return error.status >= 500 || error.status === 429;
+}
 
 function formatLocalMessageTime(timestamp: string) {
   const date = new Date(timestamp);
@@ -581,7 +594,7 @@ export function useConversations(filters: ConversationFilters = {}, options?: { 
 
       return conversations.filter((conversation) => !deletedConversationIds.has(conversation.id));
     },
-    retry: false,
+    retry: shouldRetryTransientError,
     staleTime: 3_000,
     refetchInterval: () => resolvePollingInterval(!options?.realtimeConnected, CONVERSATIONS_POLL_INTERVAL_MS),
     refetchIntervalInBackground: false,
@@ -665,7 +678,7 @@ export function useConversationById(id: string | null, options?: { realtimeConne
     queryKey: queryKeys.conversation(id ?? "preview"),
     queryFn: () => getConversationById(id ?? ""),
     enabled: Boolean(id),
-    retry: false,
+    retry: shouldRetryTransientError,
     refetchInterval: () => resolvePollingInterval(
       Boolean(id),
       options?.realtimeConnected ? 10_000 : ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS,
@@ -680,7 +693,7 @@ export function useConversationMessages(id: string | null, options?: { realtimeC
     queryKey: queryKeys.conversationMessages(id ?? "preview"),
     queryFn: () => listConversationMessages(id ?? ""),
     enabled: Boolean(id),
-    retry: false,
+    retry: shouldRetryTransientError,
     refetchInterval: () => resolvePollingInterval(
       Boolean(id),
       options?.realtimeConnected ? 8_000 : ACTIVE_CONVERSATION_POLL_INTERVAL_MS,

@@ -992,8 +992,9 @@ export default function Conversas() {
   const hasDataError = conversationsQuery.isError;
   const dataError = conversationsQuery.error;
   const activeConversationError = selectedQuery.error ?? conversationMessagesQuery.error;
+  const hasConversationData = conversations.length > 0;
 
-  if (hasDataError) {
+  if (hasDataError && !hasConversationData) {
     return (
       <Card className="p-4 border-destructive/40 text-sm text-destructive">
         Erro ao carregar dados de conversas: {getApiErrorMessage(dataError)}
@@ -1006,6 +1007,11 @@ export default function Conversas() {
       {/* List */}
       <Card className="flex flex-col overflow-hidden border-border/60 bg-card/95 shadow-sm">
         <div className="p-4 border-b border-border/70 space-y-3 bg-gradient-to-b from-card to-secondary/20">
+          {hasDataError ? (
+            <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              Oscilacao de conexao detectada. Mantendo os dados carregados e tentando reconectar.
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-2">
             <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={openCreateConversation}>
