@@ -1,62 +1,191 @@
+import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { audioSequences } from "@/data/mocks";
-import { Plus, Play, Upload, Mic, MoreVertical, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useMediaAssets, useUploadMediaAsset } from "@/hooks/use-app-data";
+import { toast } from "@/hooks/use-toast";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
+import { CheckCircle2, Clock, Library, Mic, Plus, Upload } from "lucide-react";
+
+const AUDIO_ACCEPT = "audio/aac,audio/mp4,audio/mpeg,audio/ogg,audio/opus,audio/webm,audio/wav";
+const MAX_AUDIO_BYTES = 16 * 1024 * 1024;
 
 export default function Audios() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [search, setSearch] = useState("");
+  const { data: audioAssets = [], isLoading, isError, error } = useMediaAssets("audio");
+  const uploadAudioMutation = useUploadMediaAsset();
+
+  const filteredAudios = audioAssets.filter((asset) => {
+    const haystack = [
+      asset.originalName,
+      asset.metaMediaId,
+      asset.publicUrl,
+      asset.mimeType,
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return haystack.includes(search.trim().toLowerCase());
+  });
+
+  const handleUploadAudio = (file: File | undefined) => {
+    if (!file || uploadAudioMutation.isPending) {
+      return;
+    }
+
+    if (file.size > MAX_AUDIO_BYTES) {
+      toast({
+        title: "Audio muito grande",
+        description: "Envie um arquivo de ate 16 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    uploadAudioMutation.mutate(
+      { type: "audio", file },
+      {
+        onSuccess: (response) => {
+          const uploadStatus = response.upload?.status;
+
+          toast({
+            title: uploadStatus === "uploaded" ? "Audio salvo e enviado para Meta" : "Audio salvo",
+            description: uploadStatus === "uploaded"
+              ? "Ele ja esta disponivel para usar no chat e nos fluxos."
+              : response.upload?.error ?? "O arquivo ficou disponivel no painel.",
+          });
+
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+        onError: (uploadError) => {
+          toast({
+            title: "Falha ao enviar audio",
+            description: getApiErrorMessage(uploadError, "Nao foi possivel salvar este audio."),
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-        <div className="flex gap-2">
-          {["Todos", "Apresentação", "Vendas", "Social proof", "Conversão", "Relacionamento"].map((c, i) => (
-            <button key={c} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-smooth ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
-              {c}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Audios</h1>
+          <p className="text-sm text-muted-foreground">
+            Biblioteca real de audios para enviar no chat e encaixar nos fluxos.
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5"><Upload className="h-4 w-4" /> Upload</Button>
-          <Button className="gradient-primary text-primary-foreground gap-1.5"><Plus className="h-4 w-4" /> Nova sequência</Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar audio..."
+            className="w-full sm:w-72 bg-secondary/40"
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={AUDIO_ACCEPT}
+            className="hidden"
+            onChange={(event) => handleUploadAudio(event.target.files?.[0])}
+          />
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadAudioMutation.isPending}
+          >
+            <Upload className="h-4 w-4" />
+            {uploadAudioMutation.isPending ? "Enviando..." : "Upload"}
+          </Button>
         </div>
       </div>
 
       <Card className="p-5 md:p-6 border-border/60">
-        <h3 className="font-semibold mb-1">Sequência: Pitch comercial completo</h3>
-        <p className="text-xs text-muted-foreground mb-6">5 áudios em ordem de envio</p>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold mb-1">Biblioteca de audios</h3>
+            <p className="text-xs text-muted-foreground">
+              Selecione estes audios em Fluxos usando Enviar midia, tipo Audio, origem Biblioteca.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-3 py-1 text-xs text-muted-foreground">
+            <Library className="h-3.5 w-3.5" />
+            {audioAssets.length} {audioAssets.length === 1 ? "audio" : "audios"}
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {audioSequences.map((a) => (
-            <Card key={a.id} className="p-4 border-border/60 hover:shadow-md transition-smooth group">
-              <div className="flex items-start gap-3">
-                <button className="h-12 w-12 rounded-full gradient-primary flex items-center justify-center shadow-md group-hover:shadow-glow transition-smooth shrink-0">
-                  <Play className="h-5 w-5 text-primary-foreground ml-0.5" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className="font-medium text-sm truncate">{a.name}</h4>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1 -mr-1 shrink-0"><MoreVertical className="h-3.5 w-3.5" /></Button>
+        {isError ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {getApiErrorMessage(error, "Nao foi possivel carregar os audios.")}
+          </div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
+            Carregando audios...
+          </div>
+        ) : filteredAudios.length === 0 ? (
+          <button
+            className="flex min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-secondary/20 p-6 text-center text-muted-foreground transition-smooth hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Plus className="h-7 w-7" />
+            <span className="text-sm font-medium">
+              {search ? "Nenhum audio encontrado" : "Adicionar primeiro audio"}
+            </span>
+            <span className="max-w-sm text-xs">
+              Use arquivos MP3, OGG, OPUS, M4A, WAV ou WEBM. Depois eles aparecem no chat e no builder de fluxo.
+            </span>
+          </button>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {filteredAudios.map((audio) => (
+              <Card key={audio.id} className="p-4 border-border/60 transition-smooth hover:shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Mic className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mb-2">
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{a.duration}</span>
-                    <span>·</span>
-                    <span>Etapa {a.order}</span>
-                  </div>
-                  <div className="h-1 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full w-0 gradient-primary rounded-full" />
-                  </div>
-                  <div className="mt-2 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                    <Mic className="h-2.5 w-2.5" /> {a.category}
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div className="min-w-0">
+                      <h4 className="truncate text-sm font-medium">
+                        {audio.originalName ?? `Audio #${audio.id}`}
+                      </h4>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {audio.sizeLabel || audio.mimeType || "Audio"}
+                        </span>
+                        {audio.metaMediaId ? (
+                          <span className="flex items-center gap-1 text-success">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Meta ID
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    {audio.publicUrl ? (
+                      <audio src={audio.publicUrl} controls preload="metadata" className="h-9 w-full" />
+                    ) : (
+                      <div className={cn(
+                        "rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-muted-foreground",
+                      )}>
+                        Este audio tem Meta ID, mas nao possui arquivo local para ouvir no painel.
+                      </div>
+                    )}
+                    <div className="rounded-md bg-secondary/45 px-2 py-1 text-[11px] text-muted-foreground">
+                      Use no fluxo como Asset #{audio.id}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-
-          <button className="border-2 border-dashed border-border rounded-xl p-4 hover:border-primary/40 hover:bg-primary/5 transition-smooth flex flex-col items-center justify-center gap-2 min-h-[120px] text-muted-foreground hover:text-primary">
-            <Plus className="h-6 w-6" />
-            <span className="text-sm font-medium">Adicionar áudio</span>
-          </button>
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

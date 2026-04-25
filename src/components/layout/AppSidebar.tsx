@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, MessageSquare, Workflow, ListOrdered, Mic, FileText,
-  Users, BarChart3, Settings, UserCircle, Map,
+  Users, BarChart3, Settings, UserCircle, Map, ShieldCheck, Images,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -8,37 +8,50 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/nexo/Logo";
+import { getStoredAuthUser, hasPermission, type UserPermissionKey } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Conversas", url: "/conversas", icon: MessageSquare, badge: "12" },
-  { title: "Jornada da mensagem", url: "/jornada", icon: Map },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+  { title: "Conversas", url: "/conversas", icon: MessageSquare, badge: "12", permission: "conversations" },
+  { title: "Jornada da mensagem", url: "/jornada", icon: Map, permission: "journey" },
 ];
 
 const automationItems = [
-  { title: "Fluxos", url: "/fluxos", icon: Workflow },
-  { title: "Sequências", url: "/sequencias", icon: ListOrdered },
-  { title: "Áudios", url: "/audios", icon: Mic },
-  { title: "Templates", url: "/templates", icon: FileText },
+  { title: "Fluxos", url: "/fluxos", icon: Workflow, permission: "flows" },
+  { title: "Sequências", url: "/sequencias", icon: ListOrdered, permission: "sequences" },
+  { title: "Áudios", url: "/audios", icon: Mic, permission: "audios" },
+  { title: "Templates", url: "/templates", icon: FileText, permission: "templates" },
 ];
 
 const dataItems = [
-  { title: "Contatos", url: "/contatos", icon: Users },
-  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  { title: "Contatos", url: "/contatos", icon: Users, permission: "contacts" },
+  { title: "Mídia", url: "/midias", icon: Images, permission: "media" },
+  { title: "Relatórios", url: "/relatorios", icon: BarChart3, permission: "reports" },
 ];
 
 const settingsItems = [
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, permission: "settings" },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
+];
+
+const adminItems = [
+  { title: "Usuarios", url: "/usuarios", icon: Users, permission: "users" },
+  { title: "Auditoria", url: "/auditoria", icon: ShieldCheck, permission: "audit" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const user = getStoredAuthUser();
+  const isAdmin = user?.role === "admin";
 
-  const renderItem = (item: typeof mainItems[number]) => {
+  const renderItem = (item: typeof mainItems[number] & { permission?: UserPermissionKey }) => {
+    if (item.permission && !hasPermission(user, item.permission)) {
+      return null;
+    }
+
     const isActive = location.pathname === item.url;
     return (
       <SidebarMenuItem key={item.title}>
@@ -98,6 +111,15 @@ export function AppSidebar() {
             <SidebarMenu>{settingsItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3 mt-2">Administração</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>{adminItems.map(renderItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border">

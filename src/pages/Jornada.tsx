@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
-import { journeyEvents } from "@/data/mocks";
+import { useConversationById, useJourneyEvents } from "@/hooks/use-app-data";
+import { useSearchParams } from "react-router-dom";
 import {
   MessageSquare, Brain, Workflow, Send, Clock, AlertTriangle, CheckCircle2, ArrowDown,
 } from "lucide-react";
@@ -24,6 +24,11 @@ const statusMap = {
 };
 
 export default function Jornada() {
+  const [searchParams] = useSearchParams();
+  const conversationId = searchParams.get("conversationId") ?? "1";
+  const { data: conversation } = useConversationById(conversationId);
+  const { data: journeyEvents = [] } = useJourneyEvents(conversationId);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <Card className="p-5 border-border/60 bg-gradient-to-r from-card to-primary/5">
@@ -34,15 +39,14 @@ export default function Jornada() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                <h2 className="text-lg font-semibold">Mariana Costa</h2>
-                <StatusBadge status="ativo" withDot />
+                <h2 className="text-lg font-semibold">{conversation?.name ?? "Conversa selecionada"}</h2>
+                <StatusBadge status={conversation?.status ?? "ativo"} withDot />
               </div>
-              <p className="text-sm text-muted-foreground">Fluxo: Captação Premium · Etapa 2 de 5 · Iniciado às 14:10</p>
+              <p className="text-sm text-muted-foreground">
+                {conversation?.flow ? `Fluxo: ${conversation.flow}` : "Jornada operacional da conversa"}
+                {conversation?.phone ? ` · ${conversation.phone}` : ""}
+              </p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Exportar</Button>
-            <Button size="sm" className="gradient-primary text-primary-foreground">Intervir</Button>
           </div>
         </div>
       </Card>
@@ -94,10 +98,10 @@ export default function Jornada() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total de eventos", value: "10", icon: CheckCircle2 },
-          { label: "Mensagens trocadas", value: "7", icon: MessageSquare },
-          { label: "Tempo decorrido", value: "22 min", icon: Clock },
-          { label: "Etapa atual", value: "2/5", icon: Workflow },
+          { label: "Total de eventos", value: journeyEvents.length, icon: CheckCircle2 },
+          { label: "Eventos de mensagem", value: journeyEvents.filter((event) => event.type === "message" || event.type === "send").length, icon: MessageSquare },
+          { label: "Pendências", value: journeyEvents.filter((event) => event.status === "pending" || event.status === "wait").length, icon: Clock },
+          { label: "Alertas", value: journeyEvents.filter((event) => event.status === "warn" || event.status === "error").length, icon: Workflow },
         ].map((s) => (
           <Card key={s.label} className="p-4 border-border/60">
             <s.icon className="h-4 w-4 text-primary mb-2" />

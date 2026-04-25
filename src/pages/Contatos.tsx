@@ -1,14 +1,95 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
-import { contacts } from "@/data/mocks";
+import { useContacts, useCreateContact } from "@/hooks/use-app-data";
 import { Plus, Search, Filter, Phone, Download, MoreVertical } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { toast } from "@/hooks/use-toast";
+
+type ContactDraft = {
+  name: string;
+  phone: string;
+  origin: string;
+  status: string;
+  tags: string;
+  flow: string;
+  responsible: string;
+};
+
+const emptyContactDraft: ContactDraft = {
+  name: "",
+  phone: "",
+  origin: "Manual",
+  status: "ativo",
+  tags: "",
+  flow: "",
+  responsible: "",
+};
 
 export default function Contatos() {
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactDraft, setContactDraft] = useState<ContactDraft>(emptyContactDraft);
+  const { data: contacts = [], error, isError } = useContacts();
+  const createContactMutation = useCreateContact();
+
+  const openCreateContact = () => {
+    setContactDraft(emptyContactDraft);
+    setContactDialogOpen(true);
+  };
+
+  const saveContact = () => {
+    if (!contactDraft.name.trim() || !contactDraft.phone.trim()) {
+      toast({
+        title: "Campos obrigatorios",
+        description: "Informe nome e telefone do contato.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createContactMutation.mutate({
+      name: contactDraft.name.trim(),
+      phone: contactDraft.phone.trim(),
+      origin: contactDraft.origin.trim() || "Manual",
+      status: contactDraft.status.trim() || "ativo",
+      tags: contactDraft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+      flow: contactDraft.flow.trim(),
+      responsible: contactDraft.responsible.trim(),
+    }, {
+      onSuccess: () => {
+        toast({ title: "Contato criado", description: "O contato foi salvo no backend." });
+        setContactDialogOpen(false);
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha ao criar contato",
+          description: getApiErrorMessage(mutationError, "Verifique se POST /api/contacts existe no backend."),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
+      {isError && (
+        <Card className="p-4 border-destructive/40 text-sm text-destructive">
+          Erro ao carregar /contacts: {getApiErrorMessage(error)}
+        </Card>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -17,11 +98,29 @@ export default function Contatos() {
         <div className="flex gap-2">
           <Button variant="outline" className="gap-1.5"><Filter className="h-4 w-4" /> Filtros</Button>
           <Button variant="outline" className="gap-1.5"><Download className="h-4 w-4" /> Exportar</Button>
-          <Button className="gradient-primary text-primary-foreground gap-1.5"><Plus className="h-4 w-4" /> Novo contato</Button>
+          <Button className="gradient-primary text-primary-foreground gap-1.5" onClick={openCreateContact}>
+            <Plus className="h-4 w-4" /> Novo contato
+          </Button>
         </div>
       </div>
 
       <Card className="border-border/60 overflow-hidden">
+        {contacts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+            <div className="rounded-full bg-primary/10 p-3">
+              <Phone className="h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Nenhum contato ainda</h3>
+              <p className="text-sm text-muted-foreground">
+                Conecte seu WhatsApp para receber contatos automaticamente ou cadastre o primeiro manualmente.
+              </p>
+            </div>
+            <Button className="gradient-primary text-primary-foreground gap-1.5" onClick={openCreateContact}>
+              <Plus className="h-4 w-4" /> Novo contato
+            </Button>
+          </div>
+        ) : (
         <div className="overflow-x-auto scrollbar-thin">
           <table className="w-full text-sm">
             <thead>
@@ -68,14 +167,70 @@ export default function Contatos() {
             </tbody>
           </table>
         </div>
+        )}
         <div className="px-4 py-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <span>Mostrando 1-8 de 1.247 contatos</span>
+          <span>
+            {contacts.length === 0
+              ? "Nenhum contato cadastrado neste workspace."
+              : `Mostrando 1-${contacts.length} de ${contacts.length} contatos`}
+          </span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" className="h-7">Anterior</Button>
             <Button variant="outline" size="sm" className="h-7">Próximo</Button>
           </div>
         </div>
       </Card>
+
+      <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo contato</DialogTitle>
+            <DialogDescription>O cadastro sera enviado para o backend Laravel quando o endpoint estiver disponivel.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="contact-name">Nome</Label>
+                <Input id="contact-name" value={contactDraft.name} onChange={(event) => setContactDraft((draft) => ({ ...draft, name: event.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-phone">Telefone</Label>
+                <Input id="contact-phone" value={contactDraft.phone} onChange={(event) => setContactDraft((draft) => ({ ...draft, phone: event.target.value }))} placeholder="5511999999999" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="contact-origin">Origem</Label>
+                <Input id="contact-origin" value={contactDraft.origin} onChange={(event) => setContactDraft((draft) => ({ ...draft, origin: event.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-status">Status</Label>
+                <Input id="contact-status" value={contactDraft.status} onChange={(event) => setContactDraft((draft) => ({ ...draft, status: event.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contact-tags">Tags</Label>
+              <Input id="contact-tags" value={contactDraft.tags} onChange={(event) => setContactDraft((draft) => ({ ...draft, tags: event.target.value }))} placeholder="lead, premium" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="contact-flow">Fluxo</Label>
+                <Input id="contact-flow" value={contactDraft.flow} onChange={(event) => setContactDraft((draft) => ({ ...draft, flow: event.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-responsible">Responsavel</Label>
+                <Input id="contact-responsible" value={contactDraft.responsible} onChange={(event) => setContactDraft((draft) => ({ ...draft, responsible: event.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)} disabled={createContactMutation.isPending}>Cancelar</Button>
+            <Button onClick={saveContact} disabled={createContactMutation.isPending}>
+              {createContactMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

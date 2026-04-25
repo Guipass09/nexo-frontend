@@ -1,16 +1,30 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/nexo/KpiCard";
-import { messagesChart, reportData } from "@/data/mocks";
+import { useReports } from "@/hooks/use-app-data";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  LineChart, Line,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line,
 } from "recharts";
-import { Send, Mic, MessageSquare, CheckCircle2, UserCog, Calendar, Download } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 export default function Relatorios() {
+  const { data, error, isError } = useReports();
+  const reports = data ?? {
+    hourly: [],
+    topFlows: [],
+    messagesChart: [],
+    kpis: [],
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
+      {isError && (
+        <Card className="p-4 border-destructive/40 text-sm text-destructive">
+          Erro ao carregar /reports: {getApiErrorMessage(error)}
+        </Card>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div className="flex gap-1.5 bg-secondary/40 p-1 rounded-lg w-fit">
           {["Hoje", "7 dias", "30 dias", "Mês"].map((p, i) => (
@@ -26,11 +40,7 @@ export default function Relatorios() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <KpiCard label="Mensagens enviadas" value="34.5k" delta="+18%" icon={Send} tone="primary" />
-        <KpiCard label="Áudios enviados" value="2.847" delta="+12%" icon={Mic} tone="warning" />
-        <KpiCard label="Conversas abertas" value="1.284" delta="+9%" icon={MessageSquare} tone="info" />
-        <KpiCard label="Taxa de conclusão" value="78%" delta="+3.2%" icon={CheckCircle2} tone="success" />
-        <KpiCard label="Transf. humano" value="14%" delta="-2.1%" icon={UserCog} tone="accent" />
+        {reports.kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -39,7 +49,7 @@ export default function Relatorios() {
           <p className="text-xs text-muted-foreground mb-4">Mensagens vs áudios</p>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={messagesChart}>
+              <BarChart data={reports.messagesChart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -56,7 +66,7 @@ export default function Relatorios() {
           <p className="text-xs text-muted-foreground mb-4">Distribuição por horário</p>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={reportData.hourly}>
+              <LineChart data={reports.hourly}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -71,8 +81,8 @@ export default function Relatorios() {
       <Card className="p-5 border-border/60">
         <h3 className="font-semibold mb-4">Fluxos mais utilizados</h3>
         <div className="space-y-3">
-          {reportData.topFlows.map((f, i) => {
-            const max = reportData.topFlows[0].uses;
+          {reports.topFlows.map((f, i) => {
+            const max = reports.topFlows[0]?.uses ?? 1;
             const pct = (f.uses / max) * 100;
             return (
               <div key={f.name} className="flex items-center gap-3">

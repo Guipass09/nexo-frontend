@@ -1,18 +1,44 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bot, Mail, Lock, ArrowRight, Sparkles, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { queryClient } from "@/App";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { consumeAuthNotice, setAuthSession } from "@/lib/auth";
+import { login } from "@/services/auth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(() => consumeAuthNotice());
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    setTimeout(() => navigate("/dashboard"), 600);
+
+    try {
+      const response = await login(email, password);
+      console.debug("[auth] login succeeded", {
+        email,
+        hasToken: Boolean(response.data.token),
+        expiresAt: response.data.expiresAt,
+        role: response.data.user.role,
+      });
+      queryClient.clear();
+      setAuthSession(response.data.token, response.data.user, response.data.expiresAt);
+      navigate((location.state as { from?: string } | null)?.from ?? "/dashboard");
+    } catch (error) {
+      console.error("[auth] login failed", error);
+      setError(getApiErrorMessage(error, "Nao foi possivel entrar com essas credenciais."));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,7 +109,7 @@ export default function Login() {
               <Label htmlFor="email">E-mail corporativo</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="voce@nexo.com.br" defaultValue="admin@nexo.com.br" className="pl-10 h-11" />
+                <Input id="email" type="email" placeholder="voce@nexo.com.br" value={email} onChange={(event) => setEmail(event.target.value)} className="pl-10 h-11" />
               </div>
             </div>
 
@@ -94,9 +120,11 @@ export default function Login() {
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" defaultValue="demo1234" className="pl-10 h-11" />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} className="pl-10 h-11" />
               </div>
             </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary text-primary-foreground font-medium shadow-md hover:shadow-glow transition-smooth gap-2">
               {loading ? "Entrando..." : "Entrar no painel"}
@@ -105,6 +133,13 @@ export default function Login() {
 
             <p className="text-center text-xs text-muted-foreground">
               Ao continuar, você concorda com os <a className="text-foreground hover:underline">Termos</a> e <a className="text-foreground hover:underline">Política de privacidade</a>.
+            </p>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Ainda nao tem conta?{" "}
+              <Link to="/cadastro" className="font-medium text-foreground transition-colors hover:text-primary">
+                Criar acesso
+              </Link>
             </p>
           </form>
         </div>

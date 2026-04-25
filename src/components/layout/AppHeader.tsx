@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useLocation } from "react-router-dom";
+import { getStoredAuthUser } from "@/lib/auth";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Visão geral do robô de atendimento" },
@@ -15,6 +16,7 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   "/templates": { title: "Central de templates", subtitle: "Modelos prontos para uso" },
   "/contatos": { title: "Contatos", subtitle: "Base de clientes e leads" },
   "/relatorios": { title: "Relatórios", subtitle: "Métricas e insights do atendimento" },
+  "/auditoria": { title: "Auditoria operacional", subtitle: "Rastreamento das ações manuais do painel" },
   "/configuracoes": { title: "Configurações", subtitle: "Ajustes gerais do sistema" },
   "/perfil": { title: "Meu perfil", subtitle: "Suas preferências e dados" },
 };
@@ -22,6 +24,14 @@ const titles: Record<string, { title: string; subtitle: string }> = {
 export function AppHeader() {
   const location = useLocation();
   const meta = titles[location.pathname] || { title: "Nexo", subtitle: "" };
+  const user = getStoredAuthUser();
+  const initials = user?.name
+    ?.split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "NX";
+  const roleLabel = user?.role === "admin" ? "Admin" : "Usuario";
 
   return (
     <header className="sticky top-0 z-30 glass border-b border-border h-16 flex items-center gap-3 px-4 md:px-6">
@@ -46,8 +56,12 @@ export function AppHeader() {
           <Sparkles className="h-3.5 w-3.5" />
           Nexo IA
         </Button>
+        <div className="hidden lg:flex flex-col items-end leading-tight mr-1">
+          <span className="text-sm font-medium">{user?.name ?? "Conta Nexo"}</span>
+          <span className="text-[11px] text-muted-foreground">{roleLabel}</span>
+        </div>
         <Avatar className="h-9 w-9 ring-2 ring-border cursor-pointer">
-          <AvatarFallback className="gradient-primary text-primary-foreground text-xs font-semibold">AD</AvatarFallback>
+          <AvatarFallback className="gradient-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
         </Avatar>
       </div>
     </header>
