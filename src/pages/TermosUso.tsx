@@ -29,6 +29,9 @@ export default function TermosUso() {
               Estes termos regulam o acesso e o uso do Nexo Manager, incluindo recursos de integracao com
               WhatsApp Business e ferramentas de atendimento.
             </p>
+            <p className="text-sm text-muted-foreground">
+              O Nexo Manager e um produto operado por Sementes da Fala.
+            </p>
             <p className="text-xs text-muted-foreground">Vigencia: {effectiveDate}</p>
           </div>
 
@@ -36,8 +39,8 @@ export default function TermosUso() {
             <section className="space-y-2">
               <h2 className="text-lg font-semibold">1. Objeto</h2>
               <p>
-                O Nexo Manager disponibiliza recursos para conectar contas do WhatsApp Business, operar
-                mensagens, gerenciar templates, fluxos e rotinas de atendimento.
+                O Nexo Manager, operado por Sementes da Fala, disponibiliza recursos para conectar contas
+                do WhatsApp Business, operar mensagens, gerenciar templates, fluxos e rotinas de atendimento.
               </p>
             </section>
 

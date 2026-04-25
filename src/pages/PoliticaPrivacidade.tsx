@@ -29,6 +29,9 @@ export default function PoliticaPrivacidade() {
               Esta politica descreve como o Nexo Manager coleta, usa, armazena e protege dados pessoais
               relacionados ao uso da plataforma e da integracao com o WhatsApp Business.
             </p>
+            <p className="text-sm text-muted-foreground">
+              O Nexo Manager e um produto operado por Sementes da Fala.
+            </p>
             <p className="text-xs text-muted-foreground">Vigencia: {effectiveDate}</p>
           </div>
 
@@ -36,8 +39,9 @@ export default function PoliticaPrivacidade() {
             <section className="space-y-2">
               <h2 className="text-lg font-semibold">1. Quem somos</h2>
               <p>
-                O Nexo Manager e uma plataforma web usada para conectar contas do WhatsApp Business,
-                gerenciar mensagens, templates, fluxos e configuracoes operacionais de atendimento.
+                O Nexo Manager e uma plataforma web operada por Sementes da Fala, usada para conectar
+                contas do WhatsApp Business, gerenciar mensagens, templates, fluxos e configuracoes
+                operacionais de atendimento.
               </p>
             </section>
 
