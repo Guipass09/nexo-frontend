@@ -324,54 +324,10 @@ export function FlowInspector({
                     }))}
                   />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-min-confidence">Confianca minima</Label>
-                    <Input
-                      id="ai-min-confidence"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step="0.01"
-                      value={typeof block.config.ai_min_confidence === "number" ? String(block.config.ai_min_confidence) : "0.72"}
-                      onChange={(event) => patchConfig((currentConfig) => ({
-                        ...currentConfig,
-                        ai_min_confidence: event.target.value ? Number(event.target.value) : 0.72,
-                      }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-best-effort-confidence">Melhor esforco minimo</Label>
-                    <Input
-                      id="ai-best-effort-confidence"
-                      type="number"
-                      min={0}
-                      max={1}
-                      step="0.01"
-                      value={typeof block.config.ai_best_effort_min_confidence === "number" ? String(block.config.ai_best_effort_min_confidence) : "0.42"}
-                      onChange={(event) => patchConfig((currentConfig) => ({
-                        ...currentConfig,
-                        ai_best_effort_min_confidence: event.target.value ? Number(event.target.value) : 0.42,
-                      }))}
-                    />
-                  </div>
+                <div className="rounded-md border border-dashed border-info/30 bg-info/5 px-3 py-3 text-sm text-muted-foreground">
+                  A IA analisa automaticamente o contexto do fluxo inteiro, o bloco atual e o historico recente da conversa para decidir e responder melhor. Nao e mais necessario configurar niveis de confianca aqui.
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-best-effort-enabled">Permitir melhor direcao</Label>
-                    <select
-                      id="ai-best-effort-enabled"
-                      className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      value={block.config.ai_best_effort_enabled ? "true" : "false"}
-                      onChange={(event) => patchConfig((currentConfig) => ({
-                        ...currentConfig,
-                        ai_best_effort_enabled: event.target.value === "true",
-                      }))}
-                    >
-                      <option value="true">Sim</option>
-                      <option value="false">Nao</option>
-                    </select>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="ai-handoff-uncertain">Transferir para humano se incerto</Label>
                     <select

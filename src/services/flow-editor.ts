@@ -275,7 +275,7 @@ function patchConditionConfig(
   baseConfig: Record<string, unknown>,
   draft: ConditionKeywordDraft,
 ) {
-  const nextConfig = { ...baseConfig };
+  const nextConfig = sanitizeAiDecisionConfig({ ...baseConfig });
 
   delete nextConfig.keyword;
   delete nextConfig.next_position;
@@ -289,6 +289,16 @@ function patchConditionConfig(
     ...nextConfig,
     ...buildConditionKeywordConfig(draft),
   };
+}
+
+function sanitizeAiDecisionConfig(config: Record<string, unknown>) {
+  const nextConfig = { ...config };
+
+  delete nextConfig.ai_min_confidence;
+  delete nextConfig.ai_best_effort_enabled;
+  delete nextConfig.ai_best_effort_min_confidence;
+
+  return nextConfig;
 }
 
 function parseManualLayout(config: Record<string, unknown>): FlowBuilderManualLayout {
@@ -657,9 +667,6 @@ export function createEmptyFlowBuilderBlock(
     ai_decision: {
       objective: "",
       guidance: "",
-      ai_min_confidence: 0.72,
-      ai_best_effort_enabled: true,
-      ai_best_effort_min_confidence: 0.42,
       handoff_on_uncertain: false,
     },
     handoff_human: { reason: "customer_requested_human" },
@@ -698,7 +705,9 @@ export function createFlowBuilderBlocks(blocks: FlowBlock[]): FlowBuilderBlockDr
       title: block.label,
       description: block.description,
       position: block.order ?? (index + 1) * 10,
-      config: parseObject(block.metadata ?? {}),
+      config: block.type === "ai_decision"
+        ? sanitizeAiDecisionConfig(parseObject(block.metadata ?? {}))
+        : parseObject(block.metadata ?? {}),
     }))
     .sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
 }
@@ -844,7 +853,9 @@ export function blockDraftToPayload(block: FlowBuilderBlockDraft): FlowBlockPayl
     label: block.title.trim() || flowTypeLabel(block.type),
     description: block.description.trim(),
     position: block.position,
-    config: parseObject(block.config),
+    config: block.type === "ai_decision"
+      ? sanitizeAiDecisionConfig(parseObject(block.config))
+      : parseObject(block.config),
   };
 }
 
