@@ -29,6 +29,7 @@ export type FlowBuilderFlowDraft = {
   status: FlowStatus;
   triggerMode: FlowTriggerMode;
   triggerValue: string;
+  aiCompanyPrompt: string;
   created: string;
 };
 
@@ -649,6 +650,7 @@ export function createEmptyFlowBuilderDraft(): FlowBuilderFlowDraft {
     status: "rascunho",
     triggerMode: "contains",
     triggerValue: "",
+    aiCompanyPrompt: "",
     created: "",
   };
 }
@@ -692,6 +694,7 @@ export function createFlowBuilderDraft(flow: Flow): FlowBuilderFlowDraft {
     status: flow.status,
     triggerMode: triggerDraft.mode,
     triggerValue: triggerDraft.value,
+    aiCompanyPrompt: typeof flow.aiCompanyPrompt === "string" ? flow.aiCompanyPrompt : "",
     created: flow.created,
   };
 }
@@ -843,6 +846,7 @@ export function buildFlowPayloadFromDraft(
       mode: flowDraft.triggerMode,
       value: flowDraft.triggerValue,
     }),
+    ai_company_prompt: flowDraft.aiCompanyPrompt.trim(),
     blocks: normalizedBlocks.map((block) => blockDraftToPayload(block)),
   };
 }

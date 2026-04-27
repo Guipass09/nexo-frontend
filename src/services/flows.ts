@@ -6,6 +6,7 @@ export type FlowPayload = {
   name: string;
   status: Flow["status"];
   trigger?: string;
+  ai_company_prompt?: string;
   blocks?: FlowBlockPayload[];
 };
 

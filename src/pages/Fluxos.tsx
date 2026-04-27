@@ -837,6 +837,20 @@ export default function Fluxos() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="flow-ai-company-prompt">Contexto geral da empresa para a IA</Label>
+              <textarea
+                id="flow-ai-company-prompt"
+                className="min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Descreva a empresa, servicos, publico, diferenciais, faixa de preco, como abordar clientes, quais respostas evitar, como direcionar para proposta, demo, agendamento ou atendimento humano. Esse contexto sera usado por todos os blocos de Decisao IA deste fluxo."
+                value={flowDraft.aiCompanyPrompt}
+                onChange={(event) => updateFlowDraft({ aiCompanyPrompt: event.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Esse prompt geral alimenta toda Decisao IA do fluxo. Quanto mais contexto real da empresa voce colocar aqui, melhor a IA consegue responder perguntas e conduzir a conversa no WhatsApp.
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 xl:w-[340px]">

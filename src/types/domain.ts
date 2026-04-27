@@ -142,6 +142,7 @@ export interface Flow {
   name: string;
   status: FlowStatus;
   trigger: string;
+  aiCompanyPrompt?: string;
   steps: number;
   created: string;
 }
