@@ -39,6 +39,7 @@ import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, Mess
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { toast } from "@/hooks/use-toast";
 import type { ConversationMessage, MediaAssetType } from "@/types/domain";
 import type { RealtimeStatus } from "@/services/conversation-realtime";
@@ -275,7 +276,7 @@ function renderMessageBody(
   isClient: boolean,
   onOpenMedia?: (message: ConversationMessage) => void,
 ) {
-  const mediaUrl = message.mediaAsset?.publicUrl ?? null;
+  const mediaUrl = resolveMediaUrl(message.mediaAsset?.publicUrl);
   const mediaName = message.mediaAsset?.originalName ?? message.text;
 
   if (message.type === "image") {
@@ -990,10 +991,13 @@ export default function Conversas() {
   const { data: templateMediaAssets = [] } = useMediaAssets(selectedTemplateMediaHeader?.type ?? null, { enabled: Boolean(selectedTemplateMediaHeader) });
   const selectedMediaAsset = mediaAssets.find((asset) => asset.id === mediaDraft.assetId);
   const selectedTemplateMediaAsset = templateMediaAssets.find((asset) => asset.id === templateMedia.assetId);
+  const selectedTemplateMediaAssetUrl = resolveMediaUrl(selectedTemplateMediaAsset?.publicUrl);
   const hasDataError = conversationsQuery.isError;
   const dataError = conversationsQuery.error;
   const activeConversationError = selectedQuery.error ?? conversationMessagesQuery.error;
   const hasConversationData = conversations.length > 0;
+  const selectedMediaAssetUrl = resolveMediaUrl(selectedMediaAsset?.publicUrl);
+  const previewMessageMediaUrl = resolveMediaUrl(previewMessage?.mediaAsset?.publicUrl);
 
   if (hasDataError && !hasConversationData) {
     return (
@@ -1364,8 +1368,8 @@ export default function Conversas() {
                     />
                     {uploadMediaMutation.isPending ? <span>Subindo para Meta...</span> : null}
                     {selectedTemplateMediaAsset ? <span>Selecionado: {selectedTemplateMediaAsset.originalName ?? selectedTemplateMediaAsset.metaMediaId}</span> : null}
-                    {selectedTemplateMediaAsset?.type === "image" && selectedTemplateMediaAsset.publicUrl ? (
-                      <img src={selectedTemplateMediaAsset.publicUrl} alt="Preview" className="h-8 w-8 rounded object-cover border border-border" />
+                    {selectedTemplateMediaAsset?.type === "image" && selectedTemplateMediaAssetUrl ? (
+                      <img src={selectedTemplateMediaAssetUrl} alt="Preview" className="h-8 w-8 rounded object-cover border border-border" />
                     ) : null}
                   </div>
                 </div>
@@ -1448,15 +1452,15 @@ export default function Conversas() {
                 />
                 {uploadMediaMutation.isPending ? <span>Subindo para Meta...</span> : null}
                 {selectedMediaAsset ? <span>Selecionado: {selectedMediaAsset.originalName ?? selectedMediaAsset.metaMediaId}</span> : null}
-                {selectedMediaAsset?.type === "image" && selectedMediaAsset.publicUrl ? (
-                  <img src={selectedMediaAsset.publicUrl} alt="Preview" className="h-8 w-8 rounded object-cover border border-border" />
+                {selectedMediaAsset?.type === "image" && selectedMediaAssetUrl ? (
+                  <img src={selectedMediaAssetUrl} alt="Preview" className="h-8 w-8 rounded object-cover border border-border" />
                 ) : null}
                 {mediaDraft.source === "url" && mediaDraft.type === "image" && mediaDraft.url ? (
                   <img src={mediaDraft.url} alt="Preview" className="h-8 w-8 rounded object-cover border border-border" />
                 ) : null}
                 {mediaDraft.source === "url" && mediaDraft.type === "video" && mediaDraft.url ? <span>Preview de video por URL informado</span> : null}
                 {mediaDraft.source === "url" && mediaDraft.type === "audio" && mediaDraft.url ? <audio src={mediaDraft.url} controls preload="metadata" className="h-8 max-w-[240px]" /> : null}
-                {selectedMediaAsset?.type === "audio" && selectedMediaAsset.publicUrl ? <audio src={selectedMediaAsset.publicUrl} controls preload="metadata" className="h-8 max-w-[240px]" /> : null}
+                {selectedMediaAsset?.type === "audio" && selectedMediaAssetUrl ? <audio src={selectedMediaAssetUrl} controls preload="metadata" className="h-8 max-w-[240px]" /> : null}
                 {mediaDraft.type === "document" && (mediaDraft.filename || selectedMediaAsset?.originalName) ? <span>Documento: {mediaDraft.filename || selectedMediaAsset?.originalName}</span> : null}
               </div>
               {mediaError ? <p className="text-xs text-destructive">{mediaError}</p> : null}
@@ -1675,16 +1679,16 @@ export default function Conversas() {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[78vh] bg-black p-3">
-            {previewMessage?.type === "image" && previewMessage.mediaAsset?.publicUrl ? (
+            {previewMessage?.type === "image" && previewMessageMediaUrl ? (
               <img
-                src={previewMessage.mediaAsset.publicUrl}
+                src={previewMessageMediaUrl}
                 alt={previewMessage.mediaAsset.originalName ?? "Imagem recebida"}
                 className="mx-auto max-h-[72vh] max-w-full rounded object-contain"
               />
             ) : null}
-            {previewMessage?.type === "video" && previewMessage.mediaAsset?.publicUrl ? (
+            {previewMessage?.type === "video" && previewMessageMediaUrl ? (
               <video
-                src={previewMessage.mediaAsset.publicUrl}
+                src={previewMessageMediaUrl}
                 className="mx-auto max-h-[72vh] max-w-full rounded"
                 controls
                 autoPlay
@@ -1692,10 +1696,10 @@ export default function Conversas() {
               />
             ) : null}
           </div>
-          {previewMessage?.mediaAsset?.publicUrl ? (
+          {previewMessageMediaUrl ? (
             <DialogFooter className="border-t border-border px-4 py-3">
               <a
-                href={previewMessage.mediaAsset.publicUrl}
+                href={previewMessageMediaUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -1704,7 +1708,7 @@ export default function Conversas() {
                 Abrir em nova aba
               </a>
               <a
-                href={previewMessage.mediaAsset.publicUrl}
+                href={previewMessageMediaUrl}
                 download={previewMessage.mediaAsset.originalName ?? true}
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
