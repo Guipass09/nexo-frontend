@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Bot, Building2, Lock, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { ArrowRight, Building2, Lock, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { queryClient } from "@/App";
 import { setAuthSession } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { register } from "@/services/auth";
+import { BrandMark } from "@/components/nexo/BrandMark";
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -55,9 +56,7 @@ export default function Cadastro() {
       <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
         <div className="hidden lg:flex flex-col justify-between overflow-hidden border-r border-border/60 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.16),transparent_30%),radial-gradient(circle_at_bottom_right,hsl(var(--accent)/0.14),transparent_28%),linear-gradient(180deg,hsl(var(--secondary)/0.35),hsl(var(--background)))] p-12">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-primary shadow-glow">
-              <Bot className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
-            </div>
+            <BrandMark className="h-11 w-11" letterClassName="text-lg" />
             <div>
               <div className="text-xl font-bold tracking-tight">Nexo</div>
               <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Trial orientado a resultado</div>
@@ -109,9 +108,7 @@ export default function Cadastro() {
         <div className="flex items-center justify-center p-6 md:p-12">
           <div className="w-full max-w-md space-y-8">
             <div className="lg:hidden flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">
-                <Bot className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
-              </div>
+              <BrandMark className="h-10 w-10" />
               <span className="text-xl font-bold tracking-tight">Nexo</span>
             </div>
 

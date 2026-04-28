@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# Nexo Frontend
 
 TODO: Document your project here
