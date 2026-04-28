@@ -39,6 +39,7 @@ import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, Mess
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
+import { getBrowserSafeMediaUrl } from "@/lib/browser-media";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { toast } from "@/hooks/use-toast";
 import type { ConversationMessage, MediaAssetType } from "@/types/domain";
@@ -271,85 +272,177 @@ function isMediaPlaceholder(text: string | undefined, type: ConversationMessage[
   return normalized === `[${type}]` || normalized === "";
 }
 
+function useConversationMediaUrl(rawUrl?: string | null) {
+  const resolvedUrl = useMemo(() => resolveMediaUrl(rawUrl), [rawUrl]);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(resolvedUrl);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!resolvedUrl) {
+      setMediaUrl(null);
+      return undefined;
+    }
+
+    setMediaUrl(null);
+
+    void getBrowserSafeMediaUrl(resolvedUrl)
+      .then((nextUrl) => {
+        if (!cancelled) {
+          setMediaUrl(nextUrl);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMediaUrl(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedUrl]);
+
+  return mediaUrl;
+}
+
+function ConversationImageContent({
+  message,
+  isClient,
+  onOpenMedia,
+}: {
+  message: ConversationMessage;
+  isClient: boolean;
+  onOpenMedia?: (message: ConversationMessage) => void;
+}) {
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const mediaName = message.mediaAsset?.originalName ?? message.text;
+
+  return (
+    <div className="space-y-2" translate="no">
+      {mediaUrl ? (
+        <button
+          type="button"
+          className="group block overflow-hidden rounded-xl border border-white/15 bg-black/5 text-left ring-1 ring-black/5"
+          onClick={() => onOpenMedia?.({ ...message, mediaAsset: message.mediaAsset ? { ...message.mediaAsset, publicUrl: mediaUrl } : message.mediaAsset })}
+          title="Abrir imagem"
+        >
+          <img
+            src={mediaUrl}
+            alt={mediaName || "Imagem recebida"}
+            className="max-h-72 w-full max-w-[320px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
+            <ImageIcon className="h-3.5 w-3.5" />
+            Abrir imagem
+          </span>
+        </button>
+      ) : (
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+          <ImageIcon className="h-4 w-4" />
+          Imagem recebida, mas o arquivo ainda nao esta disponivel.
+        </div>
+      )}
+      {!isMediaPlaceholder(message.rawText ?? message.text, "image") ? (
+        <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
+          {message.rawText ?? message.text}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
+function ConversationVideoContent({
+  message,
+  isClient,
+  onOpenMedia,
+}: {
+  message: ConversationMessage;
+  isClient: boolean;
+  onOpenMedia?: (message: ConversationMessage) => void;
+}) {
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+
+  return (
+    <div className="space-y-2" translate="no">
+      {mediaUrl ? (
+        <button
+          type="button"
+          className="group block overflow-hidden rounded-xl border border-white/15 bg-black text-left ring-1 ring-black/5"
+          onClick={() => onOpenMedia?.({ ...message, mediaAsset: message.mediaAsset ? { ...message.mediaAsset, publicUrl: mediaUrl } : message.mediaAsset })}
+          title="Abrir video"
+        >
+          <video
+            src={mediaUrl}
+            className="max-h-72 w-full max-w-[340px] object-cover"
+            preload="metadata"
+            muted
+            playsInline
+          />
+          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
+            <Film className="h-3.5 w-3.5" />
+            Abrir video
+          </span>
+        </button>
+      ) : (
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+          <Film className="h-4 w-4" />
+          Video recebido, mas o arquivo ainda nao esta disponivel.
+        </div>
+      )}
+      {!isMediaPlaceholder(message.rawText ?? message.text, "video") ? (
+        <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
+          {message.rawText ?? message.text}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
+function ConversationAudioContent({
+  message,
+  isClient,
+}: {
+  message: ConversationMessage;
+  isClient: boolean;
+}) {
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+
+  return (
+    <div className="space-y-2 min-w-[220px]" translate="no">
+      <div className={cn("rounded-xl border p-2", isClient ? "border-white/20 bg-white/10" : "border-border bg-secondary/50")}>
+        {mediaUrl ? (
+          <audio src={mediaUrl} controls preload="metadata" className="h-9 w-full max-w-[320px]" />
+        ) : (
+          <div className="flex items-center gap-2 text-xs opacity-80">
+            <div className={cn("h-8 px-2 rounded-full flex items-center justify-center text-[10px] font-medium", isClient ? "bg-primary-foreground/20" : "bg-primary/10 text-primary")}>
+              Audio
+            </div>
+            <span>Audio recebido, mas o arquivo ainda nao esta disponivel.</span>
+          </div>
+        )}
+      </div>
+      {!isMediaPlaceholder(message.rawText ?? message.text, "audio") ? (
+        <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
+          {message.rawText ?? message.text}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
 function renderMessageBody(
   message: ConversationMessage,
   isClient: boolean,
   onOpenMedia?: (message: ConversationMessage) => void,
 ) {
-  const mediaUrl = resolveMediaUrl(message.mediaAsset?.publicUrl);
-  const mediaName = message.mediaAsset?.originalName ?? message.text;
-
   if (message.type === "image") {
-    return (
-      <div className="space-y-2" translate="no">
-        {mediaUrl ? (
-          <button
-            type="button"
-            className="group block overflow-hidden rounded-xl border border-white/15 bg-black/5 text-left ring-1 ring-black/5"
-            onClick={() => onOpenMedia?.(message)}
-            title="Abrir imagem"
-          >
-            <img
-              src={mediaUrl}
-              alt={mediaName || "Imagem recebida"}
-              className="max-h-72 w-full max-w-[320px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-              loading="lazy"
-            />
-            <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
-              <ImageIcon className="h-3.5 w-3.5" />
-              Abrir imagem
-            </span>
-          </button>
-        ) : (
-          <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
-            <ImageIcon className="h-4 w-4" />
-            Imagem recebida, mas o arquivo ainda nao esta disponivel.
-          </div>
-        )}
-        {!isMediaPlaceholder(message.rawText ?? message.text, "image") ? (
-          <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
-            {message.rawText ?? message.text}
-          </pre>
-        ) : null}
-      </div>
-    );
+    return <ConversationImageContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} />;
   }
 
   if (message.type === "video") {
-    return (
-      <div className="space-y-2" translate="no">
-        {mediaUrl ? (
-          <button
-            type="button"
-            className="group block overflow-hidden rounded-xl border border-white/15 bg-black text-left ring-1 ring-black/5"
-            onClick={() => onOpenMedia?.(message)}
-            title="Abrir video"
-          >
-            <video
-              src={mediaUrl}
-              className="max-h-72 w-full max-w-[340px] object-cover"
-              preload="metadata"
-              muted
-              playsInline
-            />
-            <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
-              <Film className="h-3.5 w-3.5" />
-              Abrir video
-            </span>
-          </button>
-        ) : (
-          <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
-            <Film className="h-4 w-4" />
-            Video recebido, mas o arquivo ainda nao esta disponivel.
-          </div>
-        )}
-        {!isMediaPlaceholder(message.rawText ?? message.text, "video") ? (
-          <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
-            {message.rawText ?? message.text}
-          </pre>
-        ) : null}
-      </div>
-    );
+    return <ConversationVideoContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} />;
   }
 
   if (message.type === "document") {
@@ -382,27 +475,7 @@ function renderMessageBody(
   }
 
   if (message.type === "audio") {
-    return (
-      <div className="space-y-2 min-w-[220px]" translate="no">
-        <div className={cn("rounded-xl border p-2", isClient ? "border-white/20 bg-white/10" : "border-border bg-secondary/50")}>
-          {mediaUrl ? (
-            <audio src={mediaUrl} controls preload="metadata" className="h-9 w-full max-w-[320px]" />
-          ) : (
-            <div className="flex items-center gap-2 text-xs opacity-80">
-              <div className={cn("h-8 px-2 rounded-full flex items-center justify-center text-[10px] font-medium", isClient ? "bg-primary-foreground/20" : "bg-primary/10 text-primary")}>
-                Audio
-              </div>
-              <span>Audio recebido, mas o arquivo ainda nao esta disponivel.</span>
-            </div>
-          )}
-        </div>
-        {!isMediaPlaceholder(message.rawText ?? message.text, "audio") ? (
-          <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
-            {message.rawText ?? message.text}
-          </pre>
-        ) : null}
-      </div>
-    );
+    return <ConversationAudioContent message={message} isClient={isClient} />;
   }
 
   const label = messageTypeLabel(message.type);
@@ -991,13 +1064,13 @@ export default function Conversas() {
   const { data: templateMediaAssets = [] } = useMediaAssets(selectedTemplateMediaHeader?.type ?? null, { enabled: Boolean(selectedTemplateMediaHeader) });
   const selectedMediaAsset = mediaAssets.find((asset) => asset.id === mediaDraft.assetId);
   const selectedTemplateMediaAsset = templateMediaAssets.find((asset) => asset.id === templateMedia.assetId);
-  const selectedTemplateMediaAssetUrl = resolveMediaUrl(selectedTemplateMediaAsset?.publicUrl);
+  const selectedTemplateMediaAssetUrl = useConversationMediaUrl(selectedTemplateMediaAsset?.publicUrl);
   const hasDataError = conversationsQuery.isError;
   const dataError = conversationsQuery.error;
   const activeConversationError = selectedQuery.error ?? conversationMessagesQuery.error;
   const hasConversationData = conversations.length > 0;
-  const selectedMediaAssetUrl = resolveMediaUrl(selectedMediaAsset?.publicUrl);
-  const previewMessageMediaUrl = resolveMediaUrl(previewMessage?.mediaAsset?.publicUrl);
+  const selectedMediaAssetUrl = useConversationMediaUrl(selectedMediaAsset?.publicUrl);
+  const previewMessageMediaUrl = useConversationMediaUrl(previewMessage?.mediaAsset?.publicUrl);
 
   if (hasDataError && !hasConversationData) {
     return (
