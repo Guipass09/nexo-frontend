@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
 import {
   syncConversationListFromMessage,
+  syncConversationSummaryCaches,
   queryKeys,
   useContacts,
   useConversationById,
@@ -482,7 +483,10 @@ export default function Conversas() {
   const realtime = useConversationRealtime(selectedId);
   const selectedQuery = useConversationById(selectedId, { realtimeConnected: realtime.isConnected });
   const conversationMessagesQuery = useConversationMessages(selectedId, { realtimeConnected: realtime.isConnected });
-  const conversationMessages = conversationMessagesQuery.data ?? [];
+  const conversationMessages = useMemo(
+    () => conversationMessagesQuery.data ?? [],
+    [conversationMessagesQuery.data],
+  );
   const latestRenderableMessage = useMemo(
     () => [...conversationMessages].reverse().find((message) => message.type !== "event") ?? null,
     [conversationMessages],
@@ -549,23 +553,12 @@ export default function Conversas() {
   }, [markAsReadMutation, selected, selectedId]);
 
   useEffect(() => {
-    if (!selectedId || !selectedQuery.data) {
+    if (!selectedQuery.data) {
       return;
     }
 
-    const listItem = sidebarConversations.find((conversation) => conversation.id === selectedId);
-
-    if (
-      listItem
-      && (
-        listItem.lastMessage !== selectedQuery.data.lastMessage
-        || listItem.time !== selectedQuery.data.time
-        || listItem.deliveryStatus !== selectedQuery.data.deliveryStatus
-      )
-    ) {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
-    }
-  }, [queryClient, selectedId, selectedQuery.data, sidebarConversations]);
+    syncConversationSummaryCaches(queryClient, selectedQuery.data, conversationFilters);
+  }, [conversationFilters, queryClient, selectedQuery.data]);
 
   useEffect(() => {
     if (!selectedId || conversationMessages.length === 0) {
@@ -591,7 +584,7 @@ export default function Conversas() {
       prioritize: true,
       unread: 0,
     });
-  }, [latestRenderableMessage, queryClient, selectedId]);
+  }, [conversationMessages.length, latestRenderableMessage, queryClient, selectedId]);
 
   useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;

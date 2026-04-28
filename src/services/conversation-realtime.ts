@@ -80,7 +80,18 @@ function isNgrokUrl(url: string) {
 }
 
 export function isRealtimeSupported() {
-  return !isNgrokUrl(resolveApiBaseUrl());
+  return typeof window !== "undefined"
+    && typeof window.fetch === "function"
+    && typeof ReadableStream !== "undefined"
+    && typeof TextDecoder !== "undefined";
+}
+
+function buildRealtimeHeaders(token: string, url: string): HeadersInit {
+  return {
+    Accept: "text/event-stream",
+    Authorization: `Bearer ${token}`,
+    ...(isNgrokUrl(url) ? { "ngrok-skip-browser-warning": "true" } : {}),
+  };
 }
 
 function sleep(ms: number) {
@@ -179,17 +190,15 @@ export function createConversationRealtimeStream(options: CreateConversationReal
         setStatus("connecting");
 
         const cursor = options.getCursor?.() ?? {};
+        const url = buildApiUrl(`/conversations/${options.conversationId}/stream`, resolveApiBaseUrl(), {
+          ...(cursor.updatedAt ? { cursor_updated_at: cursor.updatedAt } : {}),
+          ...(cursor.messageId ? { cursor_message_id: cursor.messageId } : {}),
+        });
         const response = await fetch(
-          buildApiUrl(`/conversations/${options.conversationId}/stream`, resolveApiBaseUrl(), {
-            ...(cursor.updatedAt ? { cursor_updated_at: cursor.updatedAt } : {}),
-            ...(cursor.messageId ? { cursor_message_id: cursor.messageId } : {}),
-          }),
+          url,
           {
             method: "GET",
-            headers: {
-              Accept: "text/event-stream",
-              Authorization: `Bearer ${token}`,
-            },
+            headers: buildRealtimeHeaders(token, url),
             signal: abortController.signal,
           },
         );
@@ -307,17 +316,15 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
       try {
         setStatus("connecting");
 
+        const url = buildApiUrl("/conversations/stream", resolveApiBaseUrl(), {
+          ...(cursorUpdatedAt ? { cursor_updated_at: cursorUpdatedAt } : {}),
+          ...(cursorConversationId ? { cursor_conversation_id: cursorConversationId } : {}),
+        });
         const response = await fetch(
-          buildApiUrl("/conversations/stream", resolveApiBaseUrl(), {
-            ...(cursorUpdatedAt ? { cursor_updated_at: cursorUpdatedAt } : {}),
-            ...(cursorConversationId ? { cursor_conversation_id: cursorConversationId } : {}),
-          }),
+          url,
           {
             method: "GET",
-            headers: {
-              Accept: "text/event-stream",
-              Authorization: `Bearer ${token}`,
-            },
+            headers: buildRealtimeHeaders(token, url),
             signal: abortController.signal,
           },
         );

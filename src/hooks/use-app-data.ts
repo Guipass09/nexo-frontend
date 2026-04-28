@@ -78,9 +78,9 @@ import { createUser, deleteUser, listUsers, updateUser, type UserPayload } from 
 import { ApiError } from "@/lib/api/client";
 import type { Conversation, ConversationMessage, MediaAssetType } from "@/types/domain";
 
-const CONVERSATIONS_POLL_INTERVAL_MS = 5_000;
-const ACTIVE_CONVERSATION_POLL_INTERVAL_MS = 1_500;
-const ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS = 2_000;
+const CONVERSATIONS_POLL_INTERVAL_MS = 8_000;
+const ACTIVE_CONVERSATION_POLL_INTERVAL_MS = 2_500;
+const ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS = 5_000;
 const OPTIMISTIC_MATCH_WINDOW_MS = 120_000;
 const deletedConversationIds = new Set<string>();
 
@@ -214,6 +214,28 @@ function isDocumentVisible() {
 
 function resolvePollingInterval(enabled: boolean, intervalMs: number) {
   return enabled && isDocumentVisible() ? intervalMs : false;
+}
+
+function useDocumentVisibility() {
+  const [visible, setVisible] = useState(() => isDocumentVisible());
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handleVisibilityChange = () => {
+      setVisible(isDocumentVisible());
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  return visible;
 }
 
 function buildOptimisticConversationMessage(conversationId: string, text: string): ConversationMessage {
@@ -421,7 +443,7 @@ function removeConversationFromListCaches(queryClient: QueryClient, conversation
   );
 }
 
-function syncConversationSummaryCaches(
+export function syncConversationSummaryCaches(
   queryClient: QueryClient,
   summary: Conversation,
   filters: ConversationFilters,
@@ -599,7 +621,7 @@ export function useConversations(filters: ConversationFilters = {}, options?: { 
     staleTime: 3_000,
     refetchInterval: () => resolvePollingInterval(!options?.realtimeConnected, CONVERSATIONS_POLL_INTERVAL_MS),
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -608,12 +630,13 @@ export function useConversationsRealtime(filters: ConversationFilters = {}) {
   const streamRef = useRef<ReturnType<typeof createConversationsRealtimeStream> | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>("idle");
   const enabled = isRealtimeSupported();
+  const isVisible = useDocumentVisibility();
 
   useEffect(() => {
     streamRef.current?.close();
     streamRef.current = null;
 
-    if (!enabled || !isDocumentVisible()) {
+    if (!enabled || !isVisible) {
       setStatus("idle");
       return;
     }
@@ -629,7 +652,7 @@ export function useConversationsRealtime(filters: ConversationFilters = {}) {
       streamRef.current?.close();
       streamRef.current = null;
     };
-  }, [enabled, filters, queryClient]);
+  }, [enabled, filters, isVisible, queryClient]);
 
   return {
     enabled,
@@ -687,7 +710,7 @@ export function useConversationById(id: string | null, options?: { realtimeConne
       options?.realtimeConnected ? 10_000 : ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS,
     ),
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -711,12 +734,13 @@ export function useConversationRealtime(conversationId: string | null) {
   const streamRef = useRef<ReturnType<typeof createConversationRealtimeStream> | null>(null);
   const [status, setStatus] = useState<RealtimeStatus>("idle");
   const enabled = isRealtimeSupported();
+  const isVisible = useDocumentVisibility();
 
   useEffect(() => {
     streamRef.current?.close();
     streamRef.current = null;
 
-    if (!enabled || !conversationId || !isDocumentVisible()) {
+    if (!enabled || !conversationId || !isVisible) {
       setStatus("idle");
       return;
     }
@@ -751,7 +775,7 @@ export function useConversationRealtime(conversationId: string | null) {
       streamRef.current?.close();
       streamRef.current = null;
     };
-  }, [conversationId, enabled, queryClient]);
+  }, [conversationId, enabled, isVisible, queryClient]);
 
   return {
     enabled,
