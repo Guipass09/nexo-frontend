@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowDown,
   AlertTriangle,
@@ -1238,8 +1239,8 @@ export default function Fluxos() {
         </DialogContent>
       </Dialog>
 
-      {isCanvasFullscreen ? (
-        <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col bg-background">
+      {isCanvasFullscreen ? createPortal(
+        <div className="fixed inset-0 z-[120] flex h-screen w-screen flex-col bg-background">
           <div className="flex min-h-0 h-full flex-col bg-background">
             <div className="shrink-0 border-b border-border/70 px-6 py-4 pr-16 text-left">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1338,7 +1339,8 @@ export default function Fluxos() {
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
 
       <AlertDialog open={pendingDestination !== null} onOpenChange={(open) => !open && setPendingDestination(null)}>
