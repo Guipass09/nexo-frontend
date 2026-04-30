@@ -298,6 +298,28 @@ export default function Fluxos() {
   }, [isCanvasFullscreen]);
 
   useEffect(() => {
+    if (!isCanvasFullscreen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsCanvasFullscreen(false);
+      }
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isCanvasFullscreen]);
+
+  useEffect(() => {
     if (isCreatingNewFlow || hasUnsavedChanges || !activeFlow || !flowBlocksQuery.data) {
       return;
     }
@@ -1216,16 +1238,16 @@ export default function Fluxos() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isCanvasFullscreen} onOpenChange={setIsCanvasFullscreen}>
-        <DialogContent className="inset-0 grid h-screen w-screen max-h-none max-w-none translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-none border-0 p-0 sm:rounded-none">
+      {isCanvasFullscreen ? (
+        <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col bg-background">
           <div className="flex min-h-0 h-full flex-col bg-background">
-            <DialogHeader className="shrink-0 border-b border-border/70 px-6 py-4 pr-16 text-left">
+            <div className="shrink-0 border-b border-border/70 px-6 py-4 pr-16 text-left">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <DialogTitle>Canvas do fluxo</DialogTitle>
-                  <DialogDescription>
+                  <h2 className="text-lg font-semibold leading-none tracking-tight">Canvas do fluxo</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Navegue o fluxograma inteiro sem cortes e continue editando com as mesmas integrações do backend.
-                  </DialogDescription>
+                  </p>
                   <p className="mt-2 text-xs text-muted-foreground">
                     Arraste o fundo para navegar livremente ou use os atalhos abaixo para pular entre as extremidades.
                   </p>
@@ -1286,7 +1308,7 @@ export default function Fluxos() {
                   ))}
                 </div>
               </div>
-            </DialogHeader>
+            </div>
 
             <div className="relative min-h-0 flex-1 overflow-hidden bg-muted/10 p-4 sm:p-5">
               <div className="absolute left-4 top-4 z-20 max-w-[min(760px,calc(100%-2rem))] overflow-x-auto rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur sm:left-5 sm:top-5 sm:max-w-[min(760px,calc(100%-2.5rem))]">
@@ -1316,8 +1338,8 @@ export default function Fluxos() {
               />
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      ) : null}
 
       <AlertDialog open={pendingDestination !== null} onOpenChange={(open) => !open && setPendingDestination(null)}>
         <AlertDialogContent>
