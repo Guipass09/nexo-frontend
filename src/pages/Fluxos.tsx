@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
   Copy,
   Expand,
+  Focus,
   LoaderCircle,
   Minimize2,
   Pause,
@@ -40,7 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
-import { FlowCanvas } from "@/components/flows/FlowCanvas";
+import { FlowCanvas, type FlowCanvasHandle } from "@/components/flows/FlowCanvas";
 import { FlowInspector } from "@/components/flows/FlowInspector";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -217,6 +220,7 @@ export default function Fluxos() {
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [useCurrentFlowAsAiBase, setUseCurrentFlowAsAiBase] = useState(true);
+  const fullscreenCanvasRef = useRef<FlowCanvasHandle | null>(null);
 
   const flowsQuery = useFlows();
   const flows = useMemo(() => flowsQuery.data ?? [], [flowsQuery.data]);
@@ -278,6 +282,18 @@ export default function Fluxos() {
       setSelectedBlockId(orderedDraftBlocks[0]?.clientId ?? null);
     }
   }, [orderedDraftBlocks, selectedBlockId]);
+
+  useEffect(() => {
+    if (!isCanvasFullscreen) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      fullscreenCanvasRef.current?.centerHorizontally();
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isCanvasFullscreen]);
 
   useEffect(() => {
     if (isCreatingNewFlow || hasUnsavedChanges || !activeFlow || !flowBlocksQuery.data) {
@@ -1214,6 +1230,30 @@ export default function Fluxos() {
                     variant="outline"
                     size="sm"
                     className="gap-2"
+                    onClick={() => fullscreenCanvasRef.current?.scrollToLeft()}
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Ver esquerda
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fullscreenCanvasRef.current?.centerHorizontally()}
+                  >
+                    <Focus className="h-4 w-4" /> Centralizar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fullscreenCanvasRef.current?.scrollToRight()}
+                  >
+                    Ver direita <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
                     onClick={() => setIsCanvasFullscreen(false)}
                   >
                     <Minimize2 className="h-4 w-4" /> Sair da tela cheia
@@ -1241,6 +1281,7 @@ export default function Fluxos() {
               </div>
 
               <FlowCanvas
+                ref={fullscreenCanvasRef}
                 className="h-full min-h-0 min-w-0 pt-20"
                 blocks={orderedDraftBlocks}
                 selectedBlockId={selectedBlockId}

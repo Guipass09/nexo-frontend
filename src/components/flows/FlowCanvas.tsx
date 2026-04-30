@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -317,6 +325,13 @@ export interface FlowCanvasProps {
   }) => void;
 }
 
+export type FlowCanvasHandle = {
+  scrollToLeft: () => void;
+  scrollToRight: () => void;
+  centerHorizontally: () => void;
+  scrollBy: (deltaX: number, deltaY?: number) => void;
+};
+
 type DragState = {
   blockId: string;
   pointerId: number;
@@ -365,7 +380,7 @@ function snapDragPosition(
   return { lane, depth };
 }
 
-export function FlowCanvas({
+export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function FlowCanvas({
   blocks,
   selectedBlockId,
   className,
@@ -376,7 +391,7 @@ export function FlowCanvas({
   onMoveBlockDown,
   onAddAfter,
   onRepositionBlock,
-}: FlowCanvasProps) {
+}, ref) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const chart = buildFlowBuilderChart(blocks);
   const blockMap = new Map(blocks.map((block) => [block.clientId, block]));
@@ -385,6 +400,46 @@ export function FlowCanvas({
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [panState, setPanState] = useState<PanState | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    scrollToLeft() {
+      scrollRef.current?.scrollTo({
+        left: 0,
+        behavior: "smooth",
+      });
+    },
+    scrollToRight() {
+      const element = scrollRef.current;
+
+      if (!element) {
+        return;
+      }
+
+      element.scrollTo({
+        left: Math.max(0, element.scrollWidth - element.clientWidth),
+        behavior: "smooth",
+      });
+    },
+    centerHorizontally() {
+      const element = scrollRef.current;
+
+      if (!element) {
+        return;
+      }
+
+      element.scrollTo({
+        left: Math.max(0, (element.scrollWidth - element.clientWidth) / 2),
+        behavior: "smooth",
+      });
+    },
+    scrollBy(deltaX, deltaY = 0) {
+      scrollRef.current?.scrollBy({
+        left: deltaX,
+        top: deltaY,
+        behavior: "smooth",
+      });
+    },
+  }), []);
 
   useEffect(() => {
     if (!dragState) {
@@ -643,4 +698,4 @@ export function FlowCanvas({
       </div>
     </div>
   );
-}
+});
