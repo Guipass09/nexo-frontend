@@ -1267,8 +1267,8 @@ export default function Fluxos() {
               </div>
             </DialogHeader>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden p-6">
-              <div className="absolute left-6 top-6 z-20 max-w-[min(920px,calc(100%-3rem))] rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur">
+            <div className="relative min-h-0 flex-1 overflow-hidden p-4 sm:p-5">
+              <div className="absolute left-4 top-4 z-20 max-w-[min(760px,calc(100%-2rem))] overflow-x-auto rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur sm:left-5 sm:top-5 sm:max-w-[min(760px,calc(100%-2.5rem))]">
                 <div className="mb-2 flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-md">
                     Inserir bloco

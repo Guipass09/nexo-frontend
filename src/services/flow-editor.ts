@@ -1066,12 +1066,12 @@ function collectOutgoingLinks(
 export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuilderChart {
   const normalizedBlocks = normalizeFlowBuilderBlocks(blocks);
   const sortedBlocks = [...normalizedBlocks].sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
-  const nodeWidth = 272;
-  const nodeHeight = 152;
-  const laneGap = 144;
-  const rowGap = 72;
-  const paddingX = 80;
-  const paddingY = 40;
+  const nodeWidth = 248;
+  const nodeHeight = 148;
+  const laneGap = 96;
+  const rowGap = 64;
+  const paddingX = 48;
+  const paddingY = 32;
 
   if (sortedBlocks.length === 0) {
     return {

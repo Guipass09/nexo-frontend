@@ -44,8 +44,8 @@ import {
   type FlowBuilderNode,
 } from "@/services/flow-editor";
 
-const CARD_WIDTH = 272;
-const CARD_HEIGHT = 152;
+const CARD_WIDTH = 248;
+const CARD_HEIGHT = 148;
 
 const iconByType: Record<string, LucideIcon> = {
   virtual_start: PlayCircle,
