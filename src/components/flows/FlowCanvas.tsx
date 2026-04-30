@@ -46,6 +46,8 @@ import {
 
 const CARD_WIDTH = 248;
 const CARD_HEIGHT = 148;
+const CANVAS_BLEED_X = 180;
+const CANVAS_BLEED_Y = 140;
 
 const iconByType: Record<string, LucideIcon> = {
   virtual_start: PlayCircle,
@@ -326,9 +328,12 @@ export interface FlowCanvasProps {
 }
 
 export type FlowCanvasHandle = {
+  focusStart: () => void;
+  scrollToTop: () => void;
   scrollToLeft: () => void;
   scrollToRight: () => void;
   centerHorizontally: () => void;
+  scrollToBottom: () => void;
   scrollBy: (deltaX: number, deltaY?: number) => void;
 };
 
@@ -402,6 +407,47 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function
   const [panState, setPanState] = useState<PanState | null>(null);
 
   useImperativeHandle(ref, () => ({
+    focusStart() {
+      const element = scrollRef.current;
+
+      if (!element) {
+        return;
+      }
+
+      const firstNode = chart.nodes
+        .filter((node) => !node.isVirtual)
+        .sort((left, right) => {
+          const leftDepth = left.depth ?? 0;
+          const rightDepth = right.depth ?? 0;
+
+          if (leftDepth !== rightDepth) {
+            return leftDepth - rightDepth;
+          }
+
+          if (left.position !== right.position) {
+            return left.position - right.position;
+          }
+
+          return left.x - right.x;
+        })[0];
+
+      if (!firstNode) {
+        element.scrollTo({ left: 0, top: 0, behavior: "smooth" });
+        return;
+      }
+
+      element.scrollTo({
+        left: Math.max(0, firstNode.x + CANVAS_BLEED_X - 64),
+        top: Math.max(0, firstNode.y + CANVAS_BLEED_Y - 48),
+        behavior: "smooth",
+      });
+    },
+    scrollToTop() {
+      scrollRef.current?.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    },
     scrollToLeft() {
       scrollRef.current?.scrollTo({
         left: 0,
@@ -432,6 +478,18 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function
         behavior: "smooth",
       });
     },
+    scrollToBottom() {
+      const element = scrollRef.current;
+
+      if (!element) {
+        return;
+      }
+
+      element.scrollTo({
+        top: Math.max(0, element.scrollHeight - element.clientHeight),
+        behavior: "smooth",
+      });
+    },
     scrollBy(deltaX, deltaY = 0) {
       scrollRef.current?.scrollBy({
         left: deltaX,
@@ -439,7 +497,7 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function
         behavior: "smooth",
       });
     },
-  }), []);
+  }), [chart.nodes]);
 
   useEffect(() => {
     if (!dragState) {
@@ -621,80 +679,90 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function
       <div
         className="relative"
         style={{
-          width: chart.width,
-          height: chart.height,
+          width: chart.width + CANVAS_BLEED_X * 2,
+          height: chart.height + CANVAS_BLEED_Y * 2,
           minWidth: "100%",
         }}
       >
-        <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-          {chart.edges.map((edge) => {
-            const source = nodeMap.get(edge.fromId);
-            const target = nodeMap.get(edge.toId);
+        <div
+          className="absolute"
+          style={{
+            left: CANVAS_BLEED_X,
+            top: CANVAS_BLEED_Y,
+            width: chart.width,
+            height: chart.height,
+          }}
+        >
+          <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+            {chart.edges.map((edge) => {
+              const source = nodeMap.get(edge.fromId);
+              const target = nodeMap.get(edge.toId);
 
-            if (!source || !target) {
-              return null;
-            }
+              if (!source || !target) {
+                return null;
+              }
 
-            const start = anchorPoint(source, edge.sourceAnchor ?? "bottom");
-            const end = anchorPoint(target, edge.targetAnchor ?? "top");
-            const startX = start.x;
-            const startY = start.y;
-            const endX = end.x;
-            const endY = end.y;
-            const startControl = controlPoint(start, edge.sourceAnchor ?? "bottom", Math.max(72, Math.abs(end.x - start.x) * 0.2));
-            const endControl = controlPoint(end, edge.targetAnchor ?? "top", Math.max(72, Math.abs(end.x - start.x) * 0.2));
-            const labelX = (startX + endX) / 2;
-            const labelY = startY + (endY - startY) / 2;
+              const start = anchorPoint(source, edge.sourceAnchor ?? "bottom");
+              const end = anchorPoint(target, edge.targetAnchor ?? "top");
+              const startX = start.x;
+              const startY = start.y;
+              const endX = end.x;
+              const endY = end.y;
+              const startControl = controlPoint(start, edge.sourceAnchor ?? "bottom", Math.max(72, Math.abs(end.x - start.x) * 0.2));
+              const endControl = controlPoint(end, edge.targetAnchor ?? "top", Math.max(72, Math.abs(end.x - start.x) * 0.2));
+              const labelX = (startX + endX) / 2;
+              const labelY = startY + (endY - startY) / 2;
 
-            return (
-              <g key={edge.id}>
-                <path
-                  d={`M ${startX} ${startY} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${endX} ${endY}`}
-                  fill="none"
-                  stroke={strokeColor(edge.tone)}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeDasharray={edge.kind === "fallback" ? "6 6" : undefined}
-                  opacity={0.9}
-                />
-                <circle cx={endX} cy={endY} r="4" fill={strokeColor(edge.tone)} />
-                {edge.label ? (
-                  <foreignObject x={labelX - 58} y={labelY - 13} width={116} height={28}>
-                    <div className="flex h-full items-center justify-center">
-                      <span className={cn("rounded-full border px-2 py-1 text-[11px] font-medium shadow-sm", edgeBadgeClass(edge.kind))}>
-                        {edge.label}
-                      </span>
-                    </div>
-                  </foreignObject>
-                ) : null}
-              </g>
-            );
-          })}
-        </svg>
+              return (
+                <g key={edge.id}>
+                  <path
+                    d={`M ${startX} ${startY} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${endX} ${endY}`}
+                    fill="none"
+                    stroke={strokeColor(edge.tone)}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeDasharray={edge.kind === "fallback" ? "6 6" : undefined}
+                    opacity={0.9}
+                  />
+                  <circle cx={endX} cy={endY} r="4" fill={strokeColor(edge.tone)} />
+                  {edge.label ? (
+                    <foreignObject x={labelX - 58} y={labelY - 13} width={116} height={28}>
+                      <div className="flex h-full items-center justify-center">
+                        <span className={cn("rounded-full border px-2 py-1 text-[11px] font-medium shadow-sm", edgeBadgeClass(edge.kind))}>
+                          {edge.label}
+                        </span>
+                      </div>
+                    </foreignObject>
+                  ) : null}
+                </g>
+              );
+            })}
+          </svg>
 
-        {nodes.map((node, index) => (
-          <NodeCard
-            key={node.id}
-            node={dragState?.blockId === node.clientId
-              ? {
-                  ...node,
-                  x: dragState.previewX,
-                  y: dragState.previewY,
-                }
-              : node}
-            block={node.clientId ? blockMap.get(node.clientId) : undefined}
-            isSelected={selectedBlockId === node.clientId}
-            index={node.clientId ? (blockOrderMap.get(node.clientId) ?? index) : index}
-            isLast={node.clientId ? (blockOrderMap.get(node.clientId) ?? index) === blocks.length - 1 : index === nodes.length - 1}
-            onSelect={onSelectBlock}
-            onDuplicate={onDuplicateBlock}
-            onDelete={onDeleteBlock}
-            onMoveUp={onMoveBlockUp}
-            onMoveDown={onMoveBlockDown}
-            onAddAfter={onAddAfter}
-            onPointerDown={handleNodePointerDown}
-          />
-        ))}
+          {nodes.map((node, index) => (
+            <NodeCard
+              key={node.id}
+              node={dragState?.blockId === node.clientId
+                ? {
+                    ...node,
+                    x: dragState.previewX,
+                    y: dragState.previewY,
+                  }
+                : node}
+              block={node.clientId ? blockMap.get(node.clientId) : undefined}
+              isSelected={selectedBlockId === node.clientId}
+              index={node.clientId ? (blockOrderMap.get(node.clientId) ?? index) : index}
+              isLast={node.clientId ? (blockOrderMap.get(node.clientId) ?? index) === blocks.length - 1 : index === nodes.length - 1}
+              onSelect={onSelectBlock}
+              onDuplicate={onDuplicateBlock}
+              onDelete={onDeleteBlock}
+              onMoveUp={onMoveBlockUp}
+              onMoveDown={onMoveBlockDown}
+              onAddAfter={onAddAfter}
+              onPointerDown={handleNodePointerDown}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

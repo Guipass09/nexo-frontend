@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowDown,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Copy,
   Expand,
   Focus,
+  Home,
   LoaderCircle,
   Minimize2,
   Pause,
@@ -289,7 +291,7 @@ export default function Fluxos() {
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      fullscreenCanvasRef.current?.centerHorizontally();
+      fullscreenCanvasRef.current?.focusStart();
     });
 
     return () => window.cancelAnimationFrame(frameId);
@@ -1215,7 +1217,7 @@ export default function Fluxos() {
       </Dialog>
 
       <Dialog open={isCanvasFullscreen} onOpenChange={setIsCanvasFullscreen}>
-        <DialogContent className="grid h-[100vh] max-h-[100vh] w-[100vw] max-w-none grid-rows-[auto_minmax(0,1fr)] translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-none border-0 p-0 sm:rounded-none">
+        <DialogContent className="inset-0 grid h-screen w-screen max-h-none max-w-none translate-x-0 translate-y-0 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-none border-0 p-0 sm:rounded-none">
           <div className="flex min-h-0 h-full flex-col bg-background">
             <DialogHeader className="shrink-0 border-b border-border/70 px-6 py-4 pr-16 text-left">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1224,8 +1226,19 @@ export default function Fluxos() {
                   <DialogDescription>
                     Navegue o fluxograma inteiro sem cortes e continue editando com as mesmas integrações do backend.
                   </DialogDescription>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Arraste o fundo para navegar livremente ou use os atalhos abaixo para pular entre as extremidades.
+                  </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fullscreenCanvasRef.current?.focusStart()}
+                  >
+                    <Home className="h-4 w-4" /> Inicio
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -1254,6 +1267,14 @@ export default function Fluxos() {
                     variant="outline"
                     size="sm"
                     className="gap-2"
+                    onClick={() => fullscreenCanvasRef.current?.scrollToBottom()}
+                  >
+                    Ver base <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
                     onClick={() => setIsCanvasFullscreen(false)}
                   >
                     <Minimize2 className="h-4 w-4" /> Sair da tela cheia
@@ -1267,7 +1288,7 @@ export default function Fluxos() {
               </div>
             </DialogHeader>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden p-4 sm:p-5">
+            <div className="relative min-h-0 flex-1 overflow-hidden bg-muted/10 p-4 sm:p-5">
               <div className="absolute left-4 top-4 z-20 max-w-[min(760px,calc(100%-2rem))] overflow-x-auto rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur sm:left-5 sm:top-5 sm:max-w-[min(760px,calc(100%-2.5rem))]">
                 <div className="mb-2 flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-md">
@@ -1282,7 +1303,7 @@ export default function Fluxos() {
 
               <FlowCanvas
                 ref={fullscreenCanvasRef}
-                className="h-full min-h-0 min-w-0 pt-20"
+                className="h-full min-h-0 min-w-0 pt-24"
                 blocks={orderedDraftBlocks}
                 selectedBlockId={selectedBlockId}
                 onSelectBlock={setSelectedBlockId}
