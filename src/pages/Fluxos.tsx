@@ -688,7 +688,7 @@ export default function Fluxos() {
 
     toast({
       title: "Fluxo montado pela IA",
-      description: generated.notes[0] ?? "Revise o canvas, ajuste se quiser e salve quando estiver pronto.",
+      description: generated.notes[0] ?? "A IA so montou o fluxo no canvas. Revise e clique em Salvar apenas quando quiser persistir.",
     });
   }
 
@@ -1146,7 +1146,7 @@ export default function Fluxos() {
           <DialogHeader>
             <DialogTitle>Criar fluxo com IA</DialogTitle>
             <DialogDescription>
-              Descreva o que a automacao deve fazer. Voce pode gerar do zero ou complementar o fluxo atual com mais contexto.
+              Descreva o que a automacao deve fazer. A IA vai montar o fluxo no canvas e o salvamento continua manual.
             </DialogDescription>
           </DialogHeader>
 
@@ -1154,7 +1154,7 @@ export default function Fluxos() {
             <div className="rounded-lg border border-info/20 bg-info/5 p-4">
               <p className="text-sm font-medium">A IA gera no formato real do builder</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Ela pode montar mensagens, esperas, condicoes com ate 8 respostas, decisoes IA, handoff humano, midias e finais.
+                Ela pode montar mensagens, esperas, condicoes com ate 8 respostas, decisoes IA, handoff humano, midias e finais. Nada e salvo automaticamente.
               </p>
             </div>
 
@@ -1180,7 +1180,7 @@ export default function Fluxos() {
               <div>
                 <p className="text-sm font-medium">Usar fluxo atual como base</p>
                 <p className="text-xs text-muted-foreground">
-                  Marcado: a IA tenta preservar o que ja existe e complementar. Desmarcado: a IA monta um novo rascunho.
+                  Marcado: a IA tenta preservar o que ja existe e complementar no canvas. Desmarcado: a IA monta um novo rascunho no canvas.
                 </p>
               </div>
             </label>
@@ -1192,7 +1192,7 @@ export default function Fluxos() {
             </Button>
             <Button onClick={generateFlowWithAi} disabled={isGeneratingFlowWithAi}>
               {isGeneratingFlowWithAi ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {useCurrentFlowAsAiBase ? "Complementar com IA" : "Gerar novo fluxo"}
+              {useCurrentFlowAsAiBase ? "Montar no canvas com IA" : "Gerar novo fluxo no canvas"}
             </Button>
           </DialogFooter>
         </DialogContent>
