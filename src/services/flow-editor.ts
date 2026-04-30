@@ -95,6 +95,7 @@ type FlowBuilderLink = {
   targetId: string;
   relationship: "sequential" | "decision" | "fallback" | "branch";
   branchIndex?: number;
+  branchGroupSize?: number;
 };
 
 export type BlockTypeMeta = {
@@ -506,12 +507,35 @@ function resolveKnownNextPosition(value: unknown) {
   return undefined;
 }
 
-function preferredDecisionPlacement(branchIndex: number) {
-  const rowOffsets = [-1, 1, -2, 2];
+function buildCenteredBranchOffsets(totalBranches: number) {
+  if (totalBranches <= 1) {
+    return [0];
+  }
+
+  if (totalBranches === 2) {
+    return [-1, 1];
+  }
+
+  const offsets: number[] = [];
+  const half = Math.floor(totalBranches / 2);
+  const hasCenter = totalBranches % 2 === 1;
+
+  for (let value = -half; value <= half; value += 1) {
+    if (!hasCenter && value === 0) {
+      continue;
+    }
+    offsets.push(value);
+  }
+
+  return offsets;
+}
+
+function preferredDecisionPlacement(branchIndex: number, branchGroupSize: number) {
+  const offsets = buildCenteredBranchOffsets(branchGroupSize);
 
   return {
-    laneOffset: rowOffsets[branchIndex % rowOffsets.length] ?? 0,
-    depthOffset: Math.floor(branchIndex / rowOffsets.length),
+    laneOffset: offsets[branchIndex] ?? offsets[offsets.length - 1] ?? 0,
+    depthOffset: 0,
   };
 }
 
@@ -936,6 +960,7 @@ function collectOutgoingLinks(
       targetId,
       relationship: "branch",
       branchIndex,
+      branchGroupSize: siblingChildren.length,
     }));
   }
 
@@ -965,10 +990,10 @@ function collectOutgoingLinks(
   }
 
   if (isDecisionBlockType(block.type)) {
-    const links: FlowBuilderLink[] = [];
     const branches = Array.isArray(config.branches)
       ? config.branches.filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
       : [];
+    const decisionLinks: FlowBuilderLink[] = [];
 
     branches.forEach((branch, branchIndex) => {
       const targetId = idByPosition.get(Number(branch.next_position));
@@ -976,7 +1001,7 @@ function collectOutgoingLinks(
         return;
       }
 
-      links.push({
+      decisionLinks.push({
         targetId,
         relationship: "decision",
         branchIndex,
@@ -986,13 +1011,18 @@ function collectOutgoingLinks(
     if (typeof config.keyword === "string" && config.keyword.trim()) {
       const targetId = idByPosition.get(Number(config.next_position));
       if (targetId) {
-        links.push({
+        decisionLinks.push({
           targetId,
           relationship: "decision",
-          branchIndex: 0,
+          branchIndex: decisionLinks.length,
         });
       }
     }
+
+    const links = decisionLinks.map((link) => ({
+      ...link,
+      branchGroupSize: decisionLinks.length,
+    }));
 
     [
       config.default_next_position,
@@ -1155,7 +1185,7 @@ export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuil
 
     (outgoingLinksById.get(block.clientId) ?? []).forEach((link) => {
       const branchPlacement = link.relationship === "decision" || link.relationship === "branch"
-        ? preferredDecisionPlacement(link.branchIndex ?? 0)
+        ? preferredDecisionPlacement(link.branchIndex ?? 0, link.branchGroupSize ?? 1)
         : { laneOffset: 0, depthOffset: 0 };
       const suggestedLane = link.relationship === "decision" || link.relationship === "branch"
         ? lane + branchPlacement.laneOffset

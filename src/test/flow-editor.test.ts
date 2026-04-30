@@ -397,6 +397,8 @@ describe("flow editor helpers", () => {
     const nextMainNode = chart.nodes.find((node) => node.clientId === nextMainStep.clientId);
 
     expect(responseNodes.every((node) => typeof node?.depth === "number")).toBe(true);
+    expect(new Set(responseNodes.map((node) => node?.depth)).size).toBe(1);
+    expect(new Set(responseNodes.map((node) => node?.lane)).size).toBe(4);
     expect(nextMainNode?.lane).toBe(0);
     expect(nextMainNode?.depth).toBeGreaterThan(Math.max(...responseNodes.map((node) => node?.depth ?? 0)));
   });
