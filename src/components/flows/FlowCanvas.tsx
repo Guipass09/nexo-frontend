@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -213,6 +213,7 @@ function NodeCard({
       onPointerDown={(event) => onPointerDown(event, node, block)}
       onClick={() => block && onSelect(block.clientId)}
       disabled={!block}
+      data-flow-node-card="true"
       className={cn(
         "absolute overflow-hidden rounded-lg border bg-card text-left shadow-sm transition-smooth touch-none",
         isSelected && "ring-2 ring-primary/60 shadow-elegant",
@@ -328,6 +329,14 @@ type DragState = {
   moved: boolean;
 };
 
+type PanState = {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startScrollLeft: number;
+  startScrollTop: number;
+};
+
 function findSwapTarget(
   nodes: FlowBuilderNode[],
   dragBlockId: string,
@@ -375,6 +384,7 @@ export function FlowCanvas({
   const nodes = chart.nodes;
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [panState, setPanState] = useState<PanState | null>(null);
 
   useEffect(() => {
     if (!dragState) {
@@ -435,10 +445,44 @@ export function FlowCanvas({
     };
   }, [chart, dragState, nodes, onRepositionBlock]);
 
+  useEffect(() => {
+    if (!panState) {
+      return;
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      const scrollContainer = scrollRef.current;
+
+      if (!scrollContainer) {
+        return;
+      }
+
+      const deltaX = event.clientX - panState.startClientX;
+      const deltaY = event.clientY - panState.startClientY;
+
+      scrollContainer.scrollLeft = panState.startScrollLeft - deltaX;
+      scrollContainer.scrollTop = panState.startScrollTop - deltaY;
+    }
+
+    function handlePointerUp() {
+      setPanState(null);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp, { once: true });
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [panState]);
+
   function handleNodePointerDown(event: ReactPointerEvent<HTMLButtonElement>, node: FlowBuilderNode, block?: FlowBuilderBlockDraft) {
     if (!block || !scrollRef.current) {
       return;
     }
+
+    event.stopPropagation();
 
     const rect = scrollRef.current.getBoundingClientRect();
     const contentX = event.clientX - rect.left + scrollRef.current.scrollLeft;
@@ -455,6 +499,39 @@ export function FlowCanvas({
       previewY: node.y,
       moved: false,
     });
+  }
+
+  function handleCanvasPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    const scrollContainer = scrollRef.current;
+
+    if (!scrollContainer) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (target instanceof HTMLElement && target.closest("[data-flow-node-card='true']")) {
+      return;
+    }
+
+    setPanState({
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startScrollLeft: scrollContainer.scrollLeft,
+      startScrollTop: scrollContainer.scrollTop,
+    });
+  }
+
+  function handleCanvasWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    const scrollContainer = scrollRef.current;
+
+    if (!scrollContainer || !event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+    scrollContainer.scrollLeft += event.deltaY + event.deltaX;
   }
 
   if (blocks.length === 0) {
@@ -478,8 +555,11 @@ export function FlowCanvas({
   return (
     <div
       ref={scrollRef}
+      onPointerDown={handleCanvasPointerDown}
+      onWheel={handleCanvasWheel}
       className={cn(
         "overflow-x-auto overflow-y-auto overscroll-contain rounded-lg border border-border/70 bg-[linear-gradient(180deg,hsl(var(--card)),hsl(var(--secondary)/0.35))] scrollbar-thin",
+        panState ? "cursor-grabbing" : "cursor-grab",
         className,
       )}
     >
