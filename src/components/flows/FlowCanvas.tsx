@@ -201,8 +201,11 @@ function NodeCard({
   const meta = flowBuilderBlockTypeMeta[node.type];
   const Icon = iconByType[node.type] ?? Workflow;
   const branches = block && (node.type === "condition_keyword" || node.type === "ai_decision")
-    ? getConditionBranchOptions(block).branches.slice(0, 3)
+    ? getConditionBranchOptions(block).branches.slice(0, 4)
     : [];
+  const totalBranches = block && (node.type === "condition_keyword" || node.type === "ai_decision")
+    ? getConditionBranchOptions(block).branches.length
+    : 0;
 
   return (
     <button
@@ -280,6 +283,11 @@ function NodeCard({
                   {branch.label}
                 </span>
               ))}
+              {totalBranches > branches.length ? (
+                <span className="inline-flex min-h-8 items-center justify-center rounded-md border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground">
+                  +{totalBranches - branches.length} caminhos
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>

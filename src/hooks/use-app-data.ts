@@ -47,11 +47,13 @@ import {
   createFlowBlock,
   deleteFlow,
   deleteFlowBlock,
+  generateFlowDraft,
   listFlowBlocks,
   listFlows,
   updateFlow,
   updateFlowBlock,
   type FlowBlockPayload,
+  type GenerateFlowDraftPayload,
   type FlowPayload,
 } from "@/services/flows";
 import { listReports } from "@/services/reports";
@@ -969,6 +971,12 @@ export function useCreateFlow() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.flows });
     },
+  });
+}
+
+export function useGenerateFlowDraft() {
+  return useMutation({
+    mutationFn: (payload: GenerateFlowDraftPayload) => generateFlowDraft(payload),
   });
 }
 

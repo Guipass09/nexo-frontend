@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  MAX_CONDITION_BRANCHES,
   buildFlowBuilderChart,
   buildFlowPayloadFromDraft,
   buildConditionKeywordConfig,
+  createFlowBuilderBlocksFromPayloadBlocks,
   createEmptyFlowBuilderBlock,
   formatFlowTrigger,
   normalizeFlowBuilderBlocks,
@@ -78,6 +80,52 @@ describe("flow editor helpers", () => {
         },
       ],
     });
+  });
+
+  it("caps generated condition branches at eight", () => {
+    const branches = Array.from({ length: 10 }, (_, index) => ({
+      id: String(index + 1),
+      name: `ramo ${index + 1}`,
+      keywords: `opcao ${index + 1}`,
+      nextPosition: String((index + 2) * 10),
+    }));
+
+    const config = buildConditionKeywordConfig({
+      simpleKeyword: "",
+      simpleNextPosition: "",
+      defaultNextPosition: "140",
+      fallbackNextPosition: "",
+      branches,
+    });
+
+    expect(Array.isArray(config.branches) ? config.branches : []).toHaveLength(MAX_CONDITION_BRANCHES);
+  });
+
+  it("creates builder blocks from generated payload blocks", () => {
+    const blocks = createFlowBuilderBlocksFromPayloadBlocks([
+      {
+        type: "start",
+        label: "Inicio",
+        description: "Entrada",
+        position: 10,
+        config: {},
+      },
+      {
+        type: "condition_keyword",
+        label: "Condicao",
+        description: "Decide caminho",
+        position: 20,
+        config: {
+          branches: [
+            { name: "Sim", keywords: ["sim"], next_position: 30 },
+          ],
+        },
+      },
+    ]);
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[1].type).toBe("condition_keyword");
+    expect(parseConditionKeywordDraft(blocks[1].config).branches[0]?.name).toBe("Sim");
   });
 
   it("remaps branch targets when block order changes before save", () => {

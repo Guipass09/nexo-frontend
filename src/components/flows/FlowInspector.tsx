@@ -27,6 +27,7 @@ import {
   flowBuilderBlockTypeMeta,
   flowBuilderBlockTypeOptions,
   getConditionBranchDisplayName,
+  MAX_CONDITION_BRANCHES,
   parseConditionKeywordDraft,
   parseMetadataJson,
   replaceConditionKeywordConfig,
@@ -77,25 +78,6 @@ function parseKeywordInput(value: string) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function ensureBinaryBranches(draft: ConditionKeywordDraft) {
-  const nextBranches = [...draft.branches];
-
-  while (nextBranches.length < 2) {
-    const branchIndex = nextBranches.length;
-    nextBranches.push({
-      id: createBranchId(),
-      name: branchIndex === 0 ? "Sim" : "Nao",
-      keywords: "",
-      nextPosition: "",
-    });
-  }
-
-  return nextBranches.slice(0, 2).map((branch, index) => ({
-    ...branch,
-    name: branch.name || getConditionBranchDisplayName(undefined, index),
-  }));
 }
 
 function ConnectionSelect({
@@ -353,11 +335,14 @@ export function FlowInspector({
                   <p className="text-sm font-medium">{block.type === "ai_decision" ? "Caminhos da decisao autonoma" : "Caminhos da decisao"}</p>
                   <p className="text-xs text-muted-foreground">
                     {block.type === "ai_decision"
-                      ? "Descreva os caminhos que a IA pode escolher. Ela decide pelo sentido da resposta, nao apenas por palavra exata."
-                      : "Para perguntas binarias, use dois ramos. O primeiro abre para a esquerda e o segundo para a direita no fluxograma."}
+                      ? "Descreva ate 8 caminhos que a IA pode escolher. Ela decide pelo sentido da resposta, nao apenas por palavra exata."
+                      : "Voce pode montar ate 8 respostas possiveis. Os dois primeiros ramos abrem lateralmente e os demais seguem como caminhos extras."}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="rounded-md">
+                    {conditionDraft.branches.length}/{MAX_CONDITION_BRANCHES} ramos
+                  </Badge>
                   <Button
                     type="button"
                     variant="outline"
@@ -370,12 +355,15 @@ export function FlowInspector({
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={conditionDraft.branches.length >= MAX_CONDITION_BRANCHES}
                     onClick={() => updateConditionDraft((currentDraft) => ({
                       ...currentDraft,
-                      branches: [
-                        ...currentDraft.branches,
-                        { id: createBranchId(), name: "", keywords: "", nextPosition: "" },
-                      ],
+                      branches: currentDraft.branches.length >= MAX_CONDITION_BRANCHES
+                        ? currentDraft.branches
+                        : [
+                            ...currentDraft.branches,
+                            { id: createBranchId(), name: "", keywords: "", nextPosition: "" },
+                          ],
                     }))}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Novo ramo
@@ -388,7 +376,7 @@ export function FlowInspector({
                     Nenhum ramo configurado ainda.
                   </div>
                 ) : null}
-                <div className={cn("grid gap-3", conditionDraft.branches.length >= 2 && "xl:grid-cols-2")}>
+                <div className={cn("grid gap-3", conditionDraft.branches.length >= 2 && "xl:grid-cols-2", conditionDraft.branches.length >= 5 && "2xl:grid-cols-3")}>
                 {conditionDraft.branches.map((branch, index) => (
                   <div
                     key={branch.id}
@@ -461,6 +449,9 @@ export function FlowInspector({
                 ))}
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Use palavras curtas, sinonimos e respostas reais do cliente. Isso ajuda bastante a IA a interpretar e gerar condicoes mais autonomas.
+              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">

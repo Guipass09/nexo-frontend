@@ -18,6 +18,26 @@ export type FlowBlockPayload = {
   config?: Record<string, unknown>;
 };
 
+export type GenerateFlowDraftPayload = {
+  prompt: string;
+  company_context?: string;
+  existing_flow?: {
+    name?: string;
+    trigger?: string;
+    ai_company_prompt?: string;
+    blocks?: FlowBlockPayload[];
+  };
+};
+
+export type GeneratedFlowDraft = {
+  name: string;
+  status: Flow["status"];
+  trigger: string;
+  aiCompanyPrompt: string;
+  notes: string[];
+  blocks: FlowBlockPayload[];
+};
+
 export async function listFlows() {
   const response = normalizeCollectionResponse<Flow>(await apiClient.get<unknown>("/flows"));
   return response.data;
@@ -31,6 +51,26 @@ export async function listFlowBlocks(flowId: string) {
 export async function createFlow(payload: FlowPayload) {
   const response = normalizeResourceResponse<Flow>(await apiClient.post<unknown>("/flows", payload));
   return response.data;
+}
+
+export async function generateFlowDraft(payload: GenerateFlowDraftPayload) {
+  const response = normalizeResourceResponse<{
+    name: string;
+    status: Flow["status"];
+    trigger: string;
+    ai_company_prompt?: string;
+    notes?: string[];
+    blocks?: FlowBlockPayload[];
+  }>(await apiClient.post<unknown>("/flows/generate", payload));
+
+  return {
+    name: response.data.name,
+    status: response.data.status,
+    trigger: response.data.trigger,
+    aiCompanyPrompt: response.data.ai_company_prompt ?? "",
+    notes: Array.isArray(response.data.notes) ? response.data.notes : [],
+    blocks: Array.isArray(response.data.blocks) ? response.data.blocks : [],
+  } satisfies GeneratedFlowDraft;
 }
 
 export async function updateFlow(flowId: string, payload: Partial<FlowPayload>) {

@@ -111,6 +111,8 @@ export type FlowBuilderManualLayout = {
   branchSide?: "left" | "right";
 };
 
+export const MAX_CONDITION_BRANCHES = 8;
+
 const defaultTriggerDraft: FlowTriggerDraft = {
   mode: "contains",
   value: "",
@@ -579,6 +581,7 @@ export function parseConditionKeywordDraft(metadata: string | Record<string, unk
     fallbackNextPosition: stringifyPosition(config.fallback_next_position),
     branches: branches
       .filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+      .slice(0, MAX_CONDITION_BRANCHES)
       .map((branch, index) => ({
         id: typeof branch.id === "string" && branch.id.trim() ? branch.id : createBranchId(index),
         name: typeof branch.name === "string" ? branch.name : "",
@@ -590,6 +593,7 @@ export function parseConditionKeywordDraft(metadata: string | Record<string, unk
 
 export function buildConditionKeywordConfig(draft: ConditionKeywordDraft) {
   const branches = draft.branches
+    .slice(0, MAX_CONDITION_BRANCHES)
     .map((branch) => {
       const keywords = branch.keywords
         .split(",")
@@ -711,6 +715,21 @@ export function createFlowBuilderBlocks(blocks: FlowBlock[]): FlowBuilderBlockDr
       config: block.type === "ai_decision"
         ? sanitizeAiDecisionConfig(parseObject(block.metadata ?? {}))
         : parseObject(block.metadata ?? {}),
+    }))
+    .sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
+}
+
+export function createFlowBuilderBlocksFromPayloadBlocks(blocks: FlowBlockPayload[]): FlowBuilderBlockDraft[] {
+  return blocks
+    .map((block, index) => ({
+      clientId: createDraftId(),
+      type: block.type,
+      title: block.label,
+      description: block.description ?? "",
+      position: block.position ?? (index + 1) * 10,
+      config: block.type === "ai_decision"
+        ? sanitizeAiDecisionConfig(parseObject(block.config ?? {}))
+        : parseObject(block.config ?? {}),
     }))
     .sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
 }
@@ -846,7 +865,7 @@ export function buildFlowPayloadFromDraft(
       mode: flowDraft.triggerMode,
       value: flowDraft.triggerValue,
     }),
-    ai_company_prompt: flowDraft.aiCompanyPrompt.trim(),
+    ai_company_prompt: (flowDraft.aiCompanyPrompt ?? "").trim(),
     blocks: normalizedBlocks.map((block) => blockDraftToPayload(block)),
   };
 }
@@ -1268,7 +1287,9 @@ export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuil
 export function getConditionBranchOptions(block: FlowBuilderBlockDraft) {
   const config = parseObject(block.config);
   const branches = Array.isArray(config.branches)
-    ? config.branches.filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+    ? config.branches
+        .filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+        .slice(0, MAX_CONDITION_BRANCHES)
     : [];
 
   return {

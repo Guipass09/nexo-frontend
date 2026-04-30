@@ -3,12 +3,14 @@ import {
   AlertTriangle,
   Copy,
   Expand,
+  LoaderCircle,
   Minimize2,
   Pause,
   Play,
   Plus,
   Save,
   Search,
+  Sparkles,
   Trash2,
   Workflow,
 } from "lucide-react";
@@ -32,23 +34,28 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
 import { FlowCanvas } from "@/components/flows/FlowCanvas";
 import { FlowInspector } from "@/components/flows/FlowInspector";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateFlow,
   useDeleteFlow,
   useFlowBlocks,
   useFlows,
+  useGenerateFlowDraft,
   useUpdateFlow,
 } from "@/hooks/use-app-data";
 import { toast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import type { FlowStatus } from "@/types/domain";
+import type { GeneratedFlowDraft } from "@/services/flows";
 import {
   applyFlowBuilderManualLayout,
   buildFlowBuilderChart,
@@ -56,6 +63,7 @@ import {
   createEmptyFlowBuilderBlock,
   createEmptyFlowBuilderDraft,
   createFlowBuilderBlocks,
+  createFlowBuilderBlocksFromPayloadBlocks,
   createFlowBuilderDraft,
   flowBuilderBlockTypeMeta,
   flowBuilderBlockTypeOptions,
@@ -205,16 +213,21 @@ export default function Fluxos() {
   const [pendingDestination, setPendingDestination] = useState<PendingDestination>(null);
   const [confirmDeleteFlow, setConfirmDeleteFlow] = useState(false);
   const [pendingDeleteBlockId, setPendingDeleteBlockId] = useState<string | null>(null);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [useCurrentFlowAsAiBase, setUseCurrentFlowAsAiBase] = useState(true);
 
   const flowsQuery = useFlows();
   const flows = useMemo(() => flowsQuery.data ?? [], [flowsQuery.data]);
   const activeFlow = flows.find((flow) => flow.id === activeFlowId) ?? null;
   const flowBlocksQuery = useFlowBlocks(!isCreatingNewFlow ? activeFlowId : null);
   const createFlowMutation = useCreateFlow();
+  const generateFlowDraftMutation = useGenerateFlowDraft();
   const updateFlowMutation = useUpdateFlow();
   const deleteFlowMutation = useDeleteFlow();
   const isSaving = createFlowMutation.isPending || updateFlowMutation.isPending;
   const isDeleting = deleteFlowMutation.isPending;
+  const isGeneratingFlowWithAi = generateFlowDraftMutation.isPending;
 
   const filteredFlows = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
@@ -649,6 +662,82 @@ export default function Fluxos() {
     });
   }
 
+  function applyGeneratedFlow(generated: GeneratedFlowDraft) {
+    const triggerDraft = parseFlowTrigger(generated.trigger);
+    const nextBlocks = createFlowBuilderBlocksFromPayloadBlocks(generated.blocks);
+
+    if (!useCurrentFlowAsAiBase) {
+      setIsCreatingNewFlow(true);
+      setActiveFlowId(null);
+    }
+
+    setFlowDraft((current) => ({
+      id: useCurrentFlowAsAiBase ? current.id : undefined,
+      name: generated.name,
+      status: generated.status,
+      triggerMode: triggerDraft.mode,
+      triggerValue: triggerDraft.value,
+      aiCompanyPrompt: generated.aiCompanyPrompt,
+      created: useCurrentFlowAsAiBase ? current.created : "",
+    }));
+    setBlockDrafts(nextBlocks);
+    setSelectedBlockId(nextBlocks[0]?.clientId ?? null);
+    setHasUnsavedChanges(true);
+    setIsAiGeneratorOpen(false);
+
+    toast({
+      title: "Fluxo montado pela IA",
+      description: generated.notes[0] ?? "Revise o canvas, ajuste se quiser e salve quando estiver pronto.",
+    });
+  }
+
+  function generateFlowWithAi() {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Prompt obrigatorio",
+        description: "Descreva o fluxo que a IA deve criar ou complementar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let existingFlowPayload: ReturnType<typeof buildFlowPayloadFromDraft> | null = null;
+
+    if (useCurrentFlowAsAiBase && (orderedDraftBlocks.length > 0 || flowDraft.name.trim() || flowDraft.aiCompanyPrompt.trim())) {
+      try {
+        existingFlowPayload = buildFlowPayloadFromDraft({
+          ...flowDraft,
+          name: flowDraft.name.trim() || "Fluxo atual",
+        }, orderedDraftBlocks);
+      } catch (error) {
+        toast({
+          title: "Fluxo atual invalido para complementar",
+          description: getApiErrorMessage(error, "Revise os blocos atuais antes de pedir uma revisao por IA."),
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    generateFlowDraftMutation.mutate({
+      prompt: aiPrompt.trim(),
+      company_context: flowDraft.aiCompanyPrompt.trim(),
+      existing_flow: existingFlowPayload ? {
+        name: existingFlowPayload.name,
+        trigger: existingFlowPayload.trigger,
+        ai_company_prompt: existingFlowPayload.ai_company_prompt,
+        blocks: existingFlowPayload.blocks,
+      } : undefined,
+    }, {
+      onSuccess: applyGeneratedFlow,
+      onError: (error) => toast({
+        title: "Falha ao gerar fluxo com IA",
+        description: getApiErrorMessage(error),
+        variant: "destructive",
+      }),
+    });
+  }
+
   function duplicateCurrentFlow() {
     if (!flowDraft.name.trim()) {
       toast({
@@ -840,9 +929,9 @@ export default function Fluxos() {
 
             <div className="space-y-2">
               <Label htmlFor="flow-ai-company-prompt">Contexto geral da empresa para a IA</Label>
-              <textarea
+              <Textarea
                 id="flow-ai-company-prompt"
-                className="min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="min-h-[160px]"
                 placeholder="Descreva a empresa, servicos, publico, diferenciais, faixa de preco, como abordar clientes, quais respostas evitar, como direcionar para proposta, demo, agendamento ou atendimento humano. Esse contexto sera usado por todos os blocos de Decisao IA deste fluxo."
                 value={flowDraft.aiCompanyPrompt}
                 onChange={(event) => updateFlowDraft({ aiCompanyPrompt: event.target.value })}
@@ -854,6 +943,14 @@ export default function Fluxos() {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 xl:w-[340px]">
+            <Button
+              variant="outline"
+              className="gap-2 sm:col-span-2"
+              onClick={() => setIsAiGeneratorOpen(true)}
+              disabled={isSaving || isDeleting || isGeneratingFlowWithAi}
+            >
+              <Sparkles className="h-4 w-4" /> Criar fluxo com IA
+            </Button>
             <Button className="gap-2" onClick={() => saveFlow()} disabled={isSaving || isDeleting}>
               <Save className="h-4 w-4" /> {isSaving ? "Salvando..." : "Salvar"}
             </Button>
@@ -1042,6 +1139,63 @@ export default function Fluxos() {
           onApplyConditionBinaryModel={applyConditionBinaryModel}
         />
       </div>
+
+      <Dialog open={isAiGeneratorOpen} onOpenChange={setIsAiGeneratorOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Criar fluxo com IA</DialogTitle>
+            <DialogDescription>
+              Descreva o que a automacao deve fazer. Voce pode gerar do zero ou complementar o fluxo atual com mais contexto.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-5">
+            <div className="rounded-lg border border-info/20 bg-info/5 p-4">
+              <p className="text-sm font-medium">A IA gera no formato real do builder</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Ela pode montar mensagens, esperas, condicoes com ate 8 respostas, decisoes IA, handoff humano, midias e finais.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ai-flow-prompt">Prompt da automacao</Label>
+              <Textarea
+                id="ai-flow-prompt"
+                rows={10}
+                placeholder="Ex.: Crie um fluxo para uma clinica estetica. Apresente a empresa, descubra se a cliente quer agendar, saber valores, tirar duvidas, falar com humano ou entender procedimentos. Se houver interesse forte, leve para agendamento. Se a resposta vier confusa, faca uma pergunta curta antes de decidir."
+                value={aiPrompt}
+                onChange={(event) => setAiPrompt(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Depois voce pode voltar aqui, acrescentar mais instrucoes e pedir para a IA revisar o fluxo novamente.
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 rounded-lg border border-border/70 bg-secondary/20 p-4">
+              <Checkbox
+                checked={useCurrentFlowAsAiBase}
+                onCheckedChange={(checked) => setUseCurrentFlowAsAiBase(Boolean(checked))}
+              />
+              <div>
+                <p className="text-sm font-medium">Usar fluxo atual como base</p>
+                <p className="text-xs text-muted-foreground">
+                  Marcado: a IA tenta preservar o que ja existe e complementar. Desmarcado: a IA monta um novo rascunho.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAiGeneratorOpen(false)} disabled={isGeneratingFlowWithAi}>
+              Fechar
+            </Button>
+            <Button onClick={generateFlowWithAi} disabled={isGeneratingFlowWithAi}>
+              {isGeneratingFlowWithAi ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {useCurrentFlowAsAiBase ? "Complementar com IA" : "Gerar novo fluxo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isCanvasFullscreen} onOpenChange={setIsCanvasFullscreen}>
         <DialogContent className="grid h-[100vh] max-h-[100vh] w-[100vw] max-w-none grid-rows-[auto_minmax(0,1fr)] translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden rounded-none border-0 p-0 sm:rounded-none">
