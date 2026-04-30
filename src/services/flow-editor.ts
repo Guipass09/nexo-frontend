@@ -493,9 +493,26 @@ function createSequentialEdge(
   };
 }
 
-function preferredDecisionLaneOffset(branchIndex: number) {
-  const offsets = [-1, 1, -2, 2, -3, 3];
-  return offsets[branchIndex] ?? (branchIndex % 2 === 0 ? -(branchIndex + 2) : branchIndex + 1);
+function resolveKnownNextPosition(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : undefined;
+  }
+
+  return undefined;
+}
+
+function preferredDecisionPlacement(branchIndex: number) {
+  const rowOffsets = [-1, 1, -2, 2];
+
+  return {
+    laneOffset: rowOffsets[branchIndex % rowOffsets.length] ?? 0,
+    depthOffset: Math.floor(branchIndex / rowOffsets.length),
+  };
 }
 
 export function getConditionBranchDisplayName(name: string | undefined, index: number) {
@@ -932,6 +949,17 @@ function collectOutgoingLinks(
     }
   }
 
+  const explicitNextPosition = resolveKnownNextPosition(config.next_position);
+  if (explicitNextPosition !== undefined && !isDecisionBlockType(block.type)) {
+    const targetId = idByPosition.get(explicitNextPosition);
+    if (targetId) {
+      return [{
+        targetId,
+        relationship: "sequential",
+      }];
+    }
+  }
+
   if (block.type === "end" || block.type === "handoff_human" || block.type === "human") {
     return [];
   }
@@ -1126,10 +1154,13 @@ export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuil
     depths.set(block.clientId, depth);
 
     (outgoingLinksById.get(block.clientId) ?? []).forEach((link) => {
+      const branchPlacement = link.relationship === "decision" || link.relationship === "branch"
+        ? preferredDecisionPlacement(link.branchIndex ?? 0)
+        : { laneOffset: 0, depthOffset: 0 };
       const suggestedLane = link.relationship === "decision" || link.relationship === "branch"
-        ? lane + preferredDecisionLaneOffset(link.branchIndex ?? 0)
+        ? lane + branchPlacement.laneOffset
         : lane;
-      const suggestedDepth = depth + 1;
+      const suggestedDepth = depth + 1 + branchPlacement.depthOffset;
 
       const targetBlock = sortedBlocks.find((item) => item.clientId === link.targetId);
       const targetManualLayout = targetBlock ? parseManualLayout(targetBlock.config) : {};
@@ -1143,6 +1174,56 @@ export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuil
         depths.set(link.targetId, suggestedDepth);
       }
     });
+  });
+
+  const incomingSuggestions = new Map<string, Array<{ lane: number; depth: number }>>();
+
+  sortedBlocks.forEach((block) => {
+    const sourceLane = lanes.get(block.clientId) ?? 0;
+    const sourceDepth = depths.get(block.clientId) ?? 0;
+
+    (outgoingLinksById.get(block.clientId) ?? []).forEach((link) => {
+      const current = incomingSuggestions.get(link.targetId) ?? [];
+      current.push({
+        lane: sourceLane,
+        depth: sourceDepth,
+      });
+      incomingSuggestions.set(link.targetId, current);
+    });
+  });
+
+  sortedBlocks.forEach((block) => {
+    const manualLayout = parseManualLayout(block.config);
+    const incoming = incomingSuggestions.get(block.clientId) ?? [];
+
+    if (incoming.length < 2) {
+      return;
+    }
+
+    if (manualLayout.depth === undefined) {
+      depths.set(block.clientId, Math.max(...incoming.map((entry) => entry.depth)) + 1);
+    }
+
+    if (manualLayout.lane !== undefined) {
+      return;
+    }
+
+    const uniqueLanes = Array.from(new Set(incoming.map((entry) => entry.lane)));
+    if (uniqueLanes.length === 1) {
+      lanes.set(block.clientId, uniqueLanes[0]);
+      return;
+    }
+
+    const hasLeft = uniqueLanes.some((lane) => lane < 0);
+    const hasRight = uniqueLanes.some((lane) => lane > 0);
+
+    if (hasLeft && hasRight) {
+      lanes.set(block.clientId, 0);
+      return;
+    }
+
+    const averageLane = uniqueLanes.reduce((total, lane) => total + lane, 0) / uniqueLanes.length;
+    lanes.set(block.clientId, Math.round(averageLane));
   });
 
   sortedBlocks.forEach((block, index) => {

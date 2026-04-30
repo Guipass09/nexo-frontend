@@ -360,4 +360,44 @@ describe("flow editor helpers", () => {
     expect(branchEdges).toHaveLength(2);
     expect(branchEdges.map((edge) => edge.toId).sort()).toEqual([firstNestedCondition.clientId, secondNestedCondition.clientId].sort());
   });
+
+  it("keeps ai-generated condition responses grouped vertically and merged into the next main step", () => {
+    const condition = createEmptyFlowBuilderBlock("condition_keyword", 10);
+    const responseA = createEmptyFlowBuilderBlock("send_message", 20);
+    const responseB = createEmptyFlowBuilderBlock("send_message", 30);
+    const responseC = createEmptyFlowBuilderBlock("send_message", 40);
+    const responseD = createEmptyFlowBuilderBlock("send_message", 50);
+    const nextMainStep = createEmptyFlowBuilderBlock("send_message", 60);
+
+    condition.config = {
+      branches: [
+        { name: "A", keywords: ["a"], next_position: 20 },
+        { name: "B", keywords: ["b"], next_position: 30 },
+        { name: "C", keywords: ["c"], next_position: 40 },
+        { name: "D", keywords: ["d"], next_position: 50 },
+      ],
+      default_next_position: 60,
+    };
+
+    responseA.config = { text: "Resposta A", next_position: 60 };
+    responseB.config = { text: "Resposta B", next_position: 60 };
+    responseC.config = { text: "Resposta C", next_position: 60 };
+    responseD.config = { text: "Resposta D", next_position: 60 };
+
+    const chart = buildFlowBuilderChart([condition, responseA, responseB, responseC, responseD, nextMainStep]);
+
+    expect(chart.edges.find((edge) => edge.fromId === responseA.clientId && edge.toId === responseB.clientId)).toBeUndefined();
+    expect(chart.edges.find((edge) => edge.fromId === responseB.clientId && edge.toId === responseC.clientId)).toBeUndefined();
+
+    const nextStepIncomingEdges = chart.edges.filter((edge) => edge.toId === nextMainStep.clientId);
+    expect(nextStepIncomingEdges).toHaveLength(5);
+
+    const responseNodes = [responseA, responseB, responseC, responseD]
+      .map((block) => chart.nodes.find((node) => node.clientId === block.clientId));
+    const nextMainNode = chart.nodes.find((node) => node.clientId === nextMainStep.clientId);
+
+    expect(responseNodes.every((node) => typeof node?.depth === "number")).toBe(true);
+    expect(nextMainNode?.lane).toBe(0);
+    expect(nextMainNode?.depth).toBeGreaterThan(Math.max(...responseNodes.map((node) => node?.depth ?? 0)));
+  });
 });

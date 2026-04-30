@@ -479,7 +479,7 @@ export function FlowCanvas({
     <div
       ref={scrollRef}
       className={cn(
-        "overflow-auto rounded-lg border border-border/70 bg-[linear-gradient(180deg,hsl(var(--card)),hsl(var(--secondary)/0.35))] scrollbar-thin",
+        "overflow-x-auto overflow-y-auto overscroll-contain rounded-lg border border-border/70 bg-[linear-gradient(180deg,hsl(var(--card)),hsl(var(--secondary)/0.35))] scrollbar-thin",
         className,
       )}
     >
