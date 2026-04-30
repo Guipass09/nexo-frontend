@@ -1240,8 +1240,24 @@ export default function Fluxos() {
       </Dialog>
 
       {isCanvasFullscreen ? createPortal(
-        <div className="fixed inset-0 z-[120] flex h-screen w-screen flex-col bg-background">
-          <div className="flex min-h-0 h-full flex-col bg-background">
+        <>
+          <div
+            className="fixed inset-0 z-[119] bg-background"
+            style={{
+              width: "100vw",
+              height: "100dvh",
+            }}
+          />
+          <div
+            className="fixed inset-0 z-[120] isolate flex flex-col overflow-hidden bg-background"
+            style={{
+              width: "100vw",
+              height: "100dvh",
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            <div className="flex min-h-0 h-full flex-col bg-background">
             <div className="shrink-0 border-b border-border/70 px-6 py-4 pr-16 text-left">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -1339,7 +1355,8 @@ export default function Fluxos() {
               />
             </div>
           </div>
-        </div>,
+          </div>
+        </>,
         document.body,
       ) : null}
 
