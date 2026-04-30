@@ -70,6 +70,7 @@ import {
   formatFlowTrigger,
   getFlowBuilderManualLayout,
   parseConditionKeywordDraft,
+  parseFlowTrigger,
   normalizeFlowBuilderBlocks,
   replaceConditionKeywordConfig,
   type FlowBuilderBlockDraft,
