@@ -12,8 +12,6 @@ export interface ApiRequestConfig extends RequestInit {
   query?: Record<string, QueryValue>;
 }
 
-const DEFAULT_VERCEL_API_BASE_URL = "https://mossy-smugly-connector.ngrok-free.dev/api";
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -74,10 +72,6 @@ export function buildApiUrl(path: string, baseURL?: string, query?: Record<strin
 function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 
-  if (configuredBaseUrl) {
-    return configuredBaseUrl;
-  }
-
   if (typeof window === "undefined") {
     return "/api";
   }
@@ -86,11 +80,15 @@ function resolveApiBaseUrl() {
   const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
 
   if (isLocalHost) {
-    return "/api";
+    return configuredBaseUrl || "/api";
   }
 
   if (hostname.endsWith(".vercel.app")) {
-    return DEFAULT_VERCEL_API_BASE_URL;
+    return "/api";
+  }
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
   }
 
   return "/api";

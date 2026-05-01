@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://mossy-smugly-connector.ngrok-free.dev/api/:path*"
+    }
+  ]
+}
