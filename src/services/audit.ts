@@ -1,6 +1,6 @@
 import { ApiError, apiClient, buildApiUrl } from "@/lib/api/client";
 import { normalizeCollectionResponse } from "@/lib/api/normalizers";
-import { getAuthToken, handleUnauthorizedSession } from "@/lib/auth";
+import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 import type { AuditEvent, AuditEventTypeOption, OperatorOption } from "@/types/domain";
 import type { LaravelPaginationMeta } from "@/types/laravel";
 
@@ -83,7 +83,7 @@ export async function exportAuditEventsCsv(filters: AuditFilters = {}) {
 
   if (!response.ok) {
     if (response.status === 401) {
-      handleUnauthorizedSession();
+      handleUnauthorizedSessionForToken(token);
       throw new ApiError("Request failed with status 401", 401);
     }
 

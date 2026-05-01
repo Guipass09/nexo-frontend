@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { getAuthToken, getStoredTokenExpiresAt, handleUnauthorizedSession, setAuthSession } from "@/lib/auth";
+import { ApiError, getApiErrorMessage } from "@/lib/api/client";
+import { getAuthToken, getStoredTokenExpiresAt, setAuthSession } from "@/lib/auth";
 import { me, refreshSession } from "@/services/auth";
 
 const SESSION_REFRESH_OFFSET_MS = 5 * 60 * 1000;
@@ -14,7 +15,7 @@ export default function ProtectedRoute() {
   const refreshTimeoutRef = useRef<number | null>(null);
   const refreshInFlightRef = useRef(false);
   const authQuery = useQuery({
-    queryKey: ["auth", "me"],
+    queryKey: ["auth", "me", token],
     queryFn: async () => {
       const response = await me();
       return response.data;
@@ -30,12 +31,6 @@ export default function ProtectedRoute() {
       setAuthSession(token, authQuery.data, authQuery.data.tokenExpiresAt ?? null);
     }
   }, [authQuery.data, token]);
-
-  useEffect(() => {
-    if (token && authQuery.isError && !authQuery.data) {
-      handleUnauthorizedSession("Sua sessao nao conseguiu ser validada no refresh. Entre novamente.");
-    }
-  }, [authQuery.data, authQuery.isError, token]);
 
   useEffect(() => {
     if (refreshTimeoutRef.current !== null) {
@@ -119,11 +114,22 @@ export default function ProtectedRoute() {
   }
 
   if (token && authQuery.isError && !authQuery.data) {
+    if (authQuery.error instanceof ApiError && authQuery.error.status === 401) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+          <Card className="flex items-center gap-3 border-border/60 px-5 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Redirecionando para o login...
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <Card className="flex items-center gap-3 border-border/60 px-5 py-4 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Redirecionando para o login...
+        <Card className="max-w-md border-border/60 px-5 py-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Nao foi possivel validar sua sessao agora.</p>
+          <p className="mt-2">{getApiErrorMessage(authQuery.error, "Tente atualizar a pagina em alguns segundos.")}</p>
         </Card>
       </div>
     );

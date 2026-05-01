@@ -249,3 +249,30 @@ export function handleUnauthorizedSession(message = "Sua sessao expirou. Entre n
   setAuthNotice(message);
   window.location.replace(buildHashLoginUrl());
 }
+
+export function handleUnauthorizedSessionForToken(
+  token: string | null | undefined,
+  message = "Sua sessao expirou. Entre novamente para continuar.",
+) {
+  if (!isBrowser()) {
+    return false;
+  }
+
+  const currentToken = window.localStorage.getItem(TOKEN_KEY);
+
+  if (!token || !currentToken) {
+    handleUnauthorizedSession(message);
+    return true;
+  }
+
+  if (currentToken !== token) {
+    console.debug("[auth] ignoring unauthorized response for stale token", {
+      failedToken: maskToken(token),
+      currentToken: maskToken(currentToken),
+    });
+    return false;
+  }
+
+  handleUnauthorizedSession(message);
+  return true;
+}

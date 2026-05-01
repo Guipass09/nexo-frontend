@@ -1,4 +1,4 @@
-import { getAuthToken, handleUnauthorizedSession } from "@/lib/auth";
+import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 
 type Primitive = string | number | boolean | null | undefined;
 type QueryValue = Primitive | Primitive[];
@@ -169,7 +169,7 @@ export class ApiClient {
         const message = typeof data === "object" && data !== null && "message" in data && typeof data.message === "string"
           ? data.message
           : undefined;
-        handleUnauthorizedSession(message === "Session expired."
+        handleUnauthorizedSessionForToken(token, message === "Session expired."
           ? "Sua sessao expirou. Entre novamente para continuar."
           : message);
       }

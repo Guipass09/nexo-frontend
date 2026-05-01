@@ -1,5 +1,5 @@
 import { buildApiUrl } from "@/lib/api/client";
-import { getAuthToken, handleUnauthorizedSession } from "@/lib/auth";
+import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 import type { Conversation, ConversationMessage } from "@/types/domain";
 
 type RealtimeStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
@@ -204,7 +204,7 @@ export function createConversationRealtimeStream(options: CreateConversationReal
         );
 
         if (response.status === 401) {
-          handleUnauthorizedSession();
+          handleUnauthorizedSessionForToken(token);
           return;
         }
 
@@ -330,7 +330,7 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
         );
 
         if (response.status === 401) {
-          handleUnauthorizedSession();
+          handleUnauthorizedSessionForToken(token);
           return;
         }
 
