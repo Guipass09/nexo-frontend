@@ -64,6 +64,7 @@ interface SseEvent {
 }
 
 const RETRY_DELAY_MS = 600;
+const RECONNECT_STATUS_DELAY_MS = 1_500;
 
 export function isRealtimeSupported() {
   return typeof window !== "undefined"
@@ -122,6 +123,9 @@ export function createConversationRealtimeStream(options: CreateConversationReal
   let active = true;
   let abortController: AbortController | null = null;
   let status: RealtimeStatus = "idle";
+  let reconnectStatusTimer: number | null = null;
+  let reconnectPending = false;
+  let hadSuccessfulConnection = false;
 
   const setStatus = (nextStatus: RealtimeStatus) => {
     if (status === nextStatus) {
@@ -130,6 +134,35 @@ export function createConversationRealtimeStream(options: CreateConversationReal
 
     status = nextStatus;
     options.onStatusChange?.(nextStatus);
+  };
+
+  const clearReconnectStatusTimer = () => {
+    if (reconnectStatusTimer === null) {
+      return;
+    }
+
+    window.clearTimeout(reconnectStatusTimer);
+    reconnectStatusTimer = null;
+  };
+
+  const queueReconnectStatus = () => {
+    reconnectPending = true;
+    clearReconnectStatusTimer();
+
+    if (!hadSuccessfulConnection) {
+      setStatus("connecting");
+      return;
+    }
+
+    reconnectStatusTimer = window.setTimeout(() => {
+      reconnectStatusTimer = null;
+
+      if (!active || !reconnectPending) {
+        return;
+      }
+
+      setStatus("connecting");
+    }, RECONNECT_STATUS_DELAY_MS);
   };
 
   const readStream = async (response: Response) => {
@@ -171,10 +204,9 @@ export function createConversationRealtimeStream(options: CreateConversationReal
       }
 
       abortController = new AbortController();
+      queueReconnectStatus();
 
       try {
-        setStatus("connecting");
-
         const cursor = options.getCursor?.() ?? {};
         const url = buildApiUrl(`/conversations/${options.conversationId}/stream`, resolveApiBaseUrl(), {
           ...(cursor.updatedAt ? { cursor_updated_at: cursor.updatedAt } : {}),
@@ -198,20 +230,26 @@ export function createConversationRealtimeStream(options: CreateConversationReal
           throw new Error(`Realtime request failed with status ${response.status}`);
         }
 
+        reconnectPending = false;
+        clearReconnectStatusTimer();
+        hadSuccessfulConnection = true;
         setStatus("connected");
         await readStream(response);
 
         if (!active) {
           break;
         }
-
-        setStatus("disconnected");
       } catch (error) {
         if (!active || abortController.signal.aborted) {
           break;
         }
 
-        setStatus("error");
+        if (!hadSuccessfulConnection) {
+          reconnectPending = false;
+          clearReconnectStatusTimer();
+          setStatus("error");
+        }
+
         options.onError?.(error);
       }
 
@@ -228,6 +266,8 @@ export function createConversationRealtimeStream(options: CreateConversationReal
   return {
     close() {
       active = false;
+      reconnectPending = false;
+      clearReconnectStatusTimer();
       abortController?.abort();
       setStatus("disconnected");
     },
@@ -240,6 +280,9 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
   let status: RealtimeStatus = "idle";
   let cursorUpdatedAt: string | null = null;
   let cursorConversationId: string | null = null;
+  let reconnectStatusTimer: number | null = null;
+  let reconnectPending = false;
+  let hadSuccessfulConnection = false;
 
   const setStatus = (nextStatus: RealtimeStatus) => {
     if (status === nextStatus) {
@@ -248,6 +291,35 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
 
     status = nextStatus;
     options.onStatusChange?.(nextStatus);
+  };
+
+  const clearReconnectStatusTimer = () => {
+    if (reconnectStatusTimer === null) {
+      return;
+    }
+
+    window.clearTimeout(reconnectStatusTimer);
+    reconnectStatusTimer = null;
+  };
+
+  const queueReconnectStatus = () => {
+    reconnectPending = true;
+    clearReconnectStatusTimer();
+
+    if (!hadSuccessfulConnection) {
+      setStatus("connecting");
+      return;
+    }
+
+    reconnectStatusTimer = window.setTimeout(() => {
+      reconnectStatusTimer = null;
+
+      if (!active || !reconnectPending) {
+        return;
+      }
+
+      setStatus("connecting");
+    }, RECONNECT_STATUS_DELAY_MS);
   };
 
   const readStream = async (response: Response) => {
@@ -298,10 +370,9 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
       }
 
       abortController = new AbortController();
+      queueReconnectStatus();
 
       try {
-        setStatus("connecting");
-
         const url = buildApiUrl("/conversations/stream", resolveApiBaseUrl(), {
           ...(cursorUpdatedAt ? { cursor_updated_at: cursorUpdatedAt } : {}),
           ...(cursorConversationId ? { cursor_conversation_id: cursorConversationId } : {}),
@@ -324,20 +395,26 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
           throw new Error(`Conversations realtime request failed with status ${response.status}`);
         }
 
+        reconnectPending = false;
+        clearReconnectStatusTimer();
+        hadSuccessfulConnection = true;
         setStatus("connected");
         await readStream(response);
 
         if (!active) {
           break;
         }
-
-        setStatus("disconnected");
       } catch (error) {
         if (!active || abortController.signal.aborted) {
           break;
         }
 
-        setStatus("error");
+        if (!hadSuccessfulConnection) {
+          reconnectPending = false;
+          clearReconnectStatusTimer();
+          setStatus("error");
+        }
+
         options.onError?.(error);
       }
 
@@ -354,6 +431,8 @@ export function createConversationsRealtimeStream(options: CreateConversationsRe
   return {
     close() {
       active = false;
+      reconnectPending = false;
+      clearReconnectStatusTimer();
       abortController?.abort();
       setStatus("disconnected");
     },
