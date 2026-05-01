@@ -84,7 +84,7 @@ export function resolveApiBaseUrl() {
   }
 
   if (hostname.endsWith(".vercel.app")) {
-    return configuredBaseUrl || "http://localhost:8000/api";
+    return "http://localhost:8000/api";
   }
 
   if (configuredBaseUrl) {
