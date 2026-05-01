@@ -4,7 +4,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
-import { getAuthToken, getStoredTokenExpiresAt, setAuthSession } from "@/lib/auth";
+import { getAuthToken, getStoredAuthUser, getStoredTokenExpiresAt, setAuthSession } from "@/lib/auth";
 import { me, refreshSession } from "@/services/auth";
 
 const SESSION_REFRESH_OFFSET_MS = 5 * 60 * 1000;
@@ -12,6 +12,13 @@ const SESSION_REFRESH_OFFSET_MS = 5 * 60 * 1000;
 export default function ProtectedRoute() {
   const location = useLocation();
   const token = getAuthToken();
+  const storedUser = token ? getStoredAuthUser() : null;
+  const initialSessionUser = storedUser
+    ? {
+      ...storedUser,
+      tokenExpiresAt: storedUser.tokenExpiresAt ?? getStoredTokenExpiresAt(),
+    }
+    : undefined;
   const refreshTimeoutRef = useRef<number | null>(null);
   const refreshInFlightRef = useRef(false);
   const authQuery = useQuery({
@@ -20,6 +27,7 @@ export default function ProtectedRoute() {
       const response = await me();
       return response.data;
     },
+    initialData: initialSessionUser,
     enabled: Boolean(token),
     retry: false,
     refetchOnWindowFocus: false,

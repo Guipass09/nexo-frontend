@@ -17,6 +17,18 @@ interface RegisterPayload {
   password_confirmation: string;
 }
 
+interface SessionUserResponse {
+  data: AuthUser & { tokenExpiresAt?: string | null };
+}
+
+function isSessionUserPayload(value: unknown): value is SessionUserResponse["data"] {
+  return typeof value === "object"
+    && value !== null
+    && "id" in value
+    && "email" in value
+    && "role" in value;
+}
+
 export async function login(email: string, password: string) {
   return apiClient.post<LoginResponse>("/auth/login", { email, password });
 }
@@ -34,5 +46,15 @@ export async function logout() {
 }
 
 export async function me() {
-  return apiClient.get<{ data: AuthUser & { tokenExpiresAt?: string | null } }>("/auth/me");
+  const response = await apiClient.get<unknown>("/auth/me");
+
+  if (typeof response === "object" && response !== null && "data" in response && isSessionUserPayload(response.data)) {
+    return { data: response.data };
+  }
+
+  if (isSessionUserPayload(response)) {
+    return { data: response };
+  }
+
+  throw new Error("Resposta invalida ao validar sessao.");
 }
