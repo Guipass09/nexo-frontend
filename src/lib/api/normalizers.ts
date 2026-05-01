@@ -11,6 +11,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function looksLikeHtmlDocument(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return normalized.startsWith("<!doctype html") || normalized.startsWith("<html");
+}
+
 function isPaginationMeta(value: unknown): value is LaravelPaginationMeta {
   return (
     isRecord(value) &&
@@ -107,6 +112,10 @@ export function normalizeCollectionResponse<T>(payload: unknown): NormalizedColl
 }
 
 export function normalizeResourceResponse<T>(payload: unknown): NormalizedResourceResponse<T> {
+  if (typeof payload === "string" && looksLikeHtmlDocument(payload)) {
+    throw new Error("Invalid resource response format");
+  }
+
   if (!isRecord(payload) || !("data" in payload)) {
     return { data: payload as T };
   }
