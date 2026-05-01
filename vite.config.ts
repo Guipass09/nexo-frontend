@@ -5,7 +5,10 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const apiBaseUrl = env.VITE_API_BASE_URL || env.URL_BASE_API_VITE;
+  const apiBaseUrl = process.env.VITE_API_BASE_URL
+    || process.env.URL_BASE_API_VITE
+    || env.VITE_API_BASE_URL
+    || env.URL_BASE_API_VITE;
 
   return {
     define: apiBaseUrl
