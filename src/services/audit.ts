@@ -1,4 +1,4 @@
-import { ApiError, apiClient, buildApiUrl, resolveApiBaseUrl } from "@/lib/api/client";
+import { ApiError, apiClient, buildApiUrl, resolveApiBaseUrl, shouldSendNgrokBrowserWarningHeader } from "@/lib/api/client";
 import { normalizeCollectionResponse } from "@/lib/api/normalizers";
 import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 import type { AuditEvent, AuditEventTypeOption, OperatorOption } from "@/types/domain";
@@ -66,7 +66,7 @@ export async function listAuditEvents(filters: AuditFilters = {}): Promise<Audit
 
 export async function exportAuditEventsCsv(filters: AuditFilters = {}) {
   const token = getAuthToken();
-  const response = await fetch(buildApiUrl("/audit/events/export", resolveApiBaseUrl(), {
+  const url = buildApiUrl("/audit/events/export", resolveApiBaseUrl(), {
     ...(filters.operatorId ? { operator_id: filters.operatorId } : {}),
     ...(filters.type ? { type: filters.type } : {}),
     ...(filters.status ? { status: filters.status } : {}),
@@ -74,9 +74,11 @@ export async function exportAuditEventsCsv(filters: AuditFilters = {}) {
     ...(filters.conversationId ? { conversation_id: filters.conversationId } : {}),
     ...(filters.dateFrom ? { date_from: filters.dateFrom } : {}),
     ...(filters.dateTo ? { date_to: filters.dateTo } : {}),
-  }), {
+  });
+  const response = await fetch(url, {
     headers: {
       Accept: "text/csv",
+      ...(shouldSendNgrokBrowserWarningHeader(url) ? { "ngrok-skip-browser-warning": "true" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });

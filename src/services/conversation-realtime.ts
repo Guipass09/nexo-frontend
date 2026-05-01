@@ -1,4 +1,4 @@
-import { buildApiUrl, resolveApiBaseUrl } from "@/lib/api/client";
+import { buildApiUrl, resolveApiBaseUrl, shouldSendNgrokBrowserWarningHeader } from "@/lib/api/client";
 import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 import type { Conversation, ConversationMessage } from "@/types/domain";
 
@@ -65,16 +65,6 @@ interface SseEvent {
 
 const RETRY_DELAY_MS = 600;
 
-function isNgrokUrl(url: string) {
-  try {
-    const target = new URL(url, window.location.origin);
-
-    return target.hostname.endsWith(".ngrok-free.dev") || target.hostname.endsWith(".ngrok.app");
-  } catch {
-    return false;
-  }
-}
-
 export function isRealtimeSupported() {
   return typeof window !== "undefined"
     && typeof window.fetch === "function"
@@ -86,7 +76,7 @@ function buildRealtimeHeaders(token: string, url: string): HeadersInit {
   return {
     Accept: "text/event-stream",
     Authorization: `Bearer ${token}`,
-    ...(isNgrokUrl(url) ? { "ngrok-skip-browser-warning": "true" } : {}),
+    ...(shouldSendNgrokBrowserWarningHeader(url) ? { "ngrok-skip-browser-warning": "true" } : {}),
   };
 }
 

@@ -111,14 +111,26 @@ function maskToken(token: string | null) {
   return `${token.slice(0, 6)}...${token.slice(-4)}`;
 }
 
-function shouldSkipNgrokBrowserWarning(url: string) {
+export function shouldSendNgrokBrowserWarningHeader(url: string) {
   try {
-    const target = new URL(url);
+    const target = new URL(url, window.location.origin);
 
-    return target.hostname.endsWith(".ngrok-free.dev") || target.hostname.endsWith(".ngrok.app");
+    if (target.hostname.endsWith(".ngrok-free.dev") || target.hostname.endsWith(".ngrok.app")) {
+      return true;
+    }
+
+    const currentHostname = window.location.hostname;
+    const isVercelPreview = currentHostname.endsWith(".vercel.app");
+    const isSameOriginApiRequest = target.origin === window.location.origin && target.pathname.startsWith("/api/");
+
+    return isVercelPreview && isSameOriginApiRequest;
   } catch {
     return false;
   }
+}
+
+function shouldSkipNgrokBrowserWarning(url: string) {
+  return shouldSendNgrokBrowserWarningHeader(url);
 }
 
 export class ApiClient {
