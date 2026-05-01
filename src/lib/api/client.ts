@@ -84,7 +84,7 @@ export function resolveApiBaseUrl() {
   }
 
   if (hostname.endsWith(".vercel.app")) {
-    return "https://refuse-opened-throws-european.trycloudflare.com/api";
+    return "/api";
   }
 
   if (configuredBaseUrl) {
