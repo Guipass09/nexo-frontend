@@ -21,7 +21,7 @@ const shortcuts = [
 ];
 
 export default function Dashboard() {
-  const { data, error, isError } = useDashboardOverview();
+  const { data, error, isError, isPending, isFetching } = useDashboardOverview();
   const user = getStoredAuthUser();
   const isAdmin = user?.role === "admin";
   const workspaceTitle = isAdmin ? "Painel administrativo" : "Meu workspace";
@@ -35,6 +35,8 @@ export default function Dashboard() {
     recentConversations: [],
     auditSummary: null,
   };
+  const isInitialLoading = isPending && !data;
+  const isRefreshing = isFetching && !!data;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -43,6 +45,11 @@ export default function Dashboard() {
           Erro ao carregar /dashboard: {getApiErrorMessage(error)}
         </Card>
       )}
+      {isRefreshing ? (
+        <Card className="p-3 border-border/60 text-xs text-muted-foreground">
+          Atualizando dados do painel...
+        </Card>
+      ) : null}
 
       {/* Bot status banner */}
       <Card className="p-5 border-border/60 bg-gradient-to-r from-card via-card to-accent/5 overflow-hidden relative">
@@ -64,7 +71,11 @@ export default function Dashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {dashboard.kpis.map((k) => <KpiCard key={k.label} {...k} />)}
+        {isInitialLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="h-[132px] animate-pulse border-border/60 bg-secondary/30" />
+          ))
+          : dashboard.kpis.map((k) => <KpiCard key={k.label} {...k} />)}
       </div>
 
       {/* Charts row */}
@@ -81,26 +92,32 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dashboard.messagesChart}>
-                <defs>
-                  <linearGradient id="gMsg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gAud" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                <Area type="monotone" dataKey="mensagens" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gMsg)" />
-                <Area type="monotone" dataKey="audios" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#gAud)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isInitialLoading ? (
+              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/70 bg-secondary/20 text-sm text-muted-foreground">
+                Carregando volume de mensagens...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dashboard.messagesChart}>
+                  <defs>
+                    <linearGradient id="gMsg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gAud" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Area type="monotone" dataKey="mensagens" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gMsg)" />
+                  <Area type="monotone" dataKey="audios" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#gAud)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
@@ -110,15 +127,21 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Distribuição por etapa</p>
           </div>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dashboard.funnelData} layout="vertical" margin={{ left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis type="category" dataKey="stage" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={110} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {isInitialLoading ? (
+              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/70 bg-secondary/20 text-sm text-muted-foreground">
+                Carregando funil...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dashboard.funnelData} layout="vertical" margin={{ left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="stage" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={110} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
       </div>
@@ -145,7 +168,13 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="space-y-1">
-            {dashboard.recentConversations.length === 0 ? (
+            {isInitialLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="h-14 animate-pulse rounded-lg border border-border/60 bg-secondary/30" />
+                ))}
+              </div>
+            ) : dashboard.recentConversations.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border/70 p-6 text-center">
                 <p className="text-sm font-medium">Nenhuma conversa ainda</p>
                 <p className="mt-1 text-sm text-muted-foreground">

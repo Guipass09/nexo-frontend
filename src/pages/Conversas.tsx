@@ -527,6 +527,7 @@ export default function Conversas() {
   const listRealtime = useConversationsRealtime(conversationFilters);
   const conversationsQuery = useConversations(conversationFilters, { realtimeConnected: listRealtime.isConnected });
   const conversations = useMemo(() => conversationsQuery.data ?? [], [conversationsQuery.data]);
+  const isInitialConversationsLoading = conversationsQuery.isPending && !conversationsQuery.data;
   const [draftMessage, setDraftMessage] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
@@ -607,6 +608,10 @@ export default function Conversas() {
   const deleteConversationMutation = useDeleteConversation();
 
   useEffect(() => {
+    if (conversationsQuery.isPending) {
+      return;
+    }
+
     if (conversations.length === 0) {
       setSelectedId(null);
       return;
@@ -616,7 +621,7 @@ export default function Conversas() {
       selectedConversationChangeRef.current = true;
       setSelectedId(conversations[0].id);
     }
-  }, [conversations, selectedId]);
+  }, [conversations, conversationsQuery.isPending, selectedId]);
 
   useEffect(() => {
     if (!selectedId || !selected || selected.unread <= 0 || markAsReadMutation.isPending) {
@@ -1136,66 +1141,74 @@ export default function Conversas() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin bg-gradient-to-b from-background to-secondary/20">
-          {sidebarConversations.map((c) => (
-            (() => {
-              const isActiveConversation = c.id === selectedId;
-              const previewText = isActiveConversation
-                ? (latestRenderableMessage?.rawText ?? latestRenderableMessage?.text ?? c.lastMessage)
-                : c.lastMessage;
-              const previewTime = isActiveConversation
-                ? (latestRenderableMessage?.time || c.time)
-                : c.time;
+          {isInitialConversationsLoading ? (
+            <div className="space-y-3 p-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-24 animate-pulse rounded-2xl border border-border/60 bg-secondary/30" />
+              ))}
+            </div>
+          ) : (
+            sidebarConversations.map((c) => (
+              (() => {
+                const isActiveConversation = c.id === selectedId;
+                const previewText = isActiveConversation
+                  ? (latestRenderableMessage?.rawText ?? latestRenderableMessage?.text ?? c.lastMessage)
+                  : c.lastMessage;
+                const previewTime = isActiveConversation
+                  ? (latestRenderableMessage?.time || c.time)
+                  : c.time;
 
-              return (
-            <button
-              key={c.id}
-              onClick={() => {
-                if (c.id === selectedId) {
-                  return;
-                }
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      if (c.id === selectedId) {
+                        return;
+                      }
 
-                selectedConversationChangeRef.current = true;
-                shouldStickToBottomRef.current = true;
-                setSelectedId(c.id);
-              }}
-              className={cn(
-                "group w-full text-left px-4 py-3 border-b border-border/50 hover:bg-card transition-smooth flex items-start gap-3",
-                selected?.id === c.id && "bg-card shadow-[inset_3px_0_0_hsl(var(--primary))]"
-              )}
-            >
-              <ContactAvatar name={c.name} fallback={c.avatar} avatarUrl={c.avatarUrl} active={c.status === "ativo" || c.status === "humano"} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-0.5">
-                  <p className="font-semibold text-sm truncate text-foreground notranslate" translate="no" lang="pt-BR">{c.name}</p>
-                  <span className="text-[10px] text-muted-foreground shrink-0">{previewTime}</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground/80 truncate mb-1 notranslate" translate="no" lang="pt-BR">{formatPhoneForDisplay(c.phone)}</p>
-                <p
-                  className="text-xs text-muted-foreground truncate mb-2 notranslate"
-                  translate="no"
-                  lang="pt-BR"
-                  title={previewText || "Sem mensagens recentes"}
-                >
-                  {formatConversationPreviewText(previewText) || "Sem mensagens recentes"}
-                </p>
-                <div className="flex items-center gap-1.5 min-h-5">
-                  <StatusBadge status={c.status} className="text-[10px] py-0" />
-                  {c.deliveryStatus === "failed" ? (
-                    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
-                      Falha
-                    </span>
-                  ) : null}
-                  {c.unread > 0 && (
-                    <span className="ml-auto h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
-                      {c.unread}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </button>
-              );
-            })()
-          ))}
+                      selectedConversationChangeRef.current = true;
+                      shouldStickToBottomRef.current = true;
+                      setSelectedId(c.id);
+                    }}
+                    className={cn(
+                      "group w-full text-left px-4 py-3 border-b border-border/50 hover:bg-card transition-smooth flex items-start gap-3",
+                      selected?.id === c.id && "bg-card shadow-[inset_3px_0_0_hsl(var(--primary))]",
+                    )}
+                  >
+                    <ContactAvatar name={c.name} fallback={c.avatar} avatarUrl={c.avatarUrl} active={c.status === "ativo" || c.status === "humano"} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <p className="font-semibold text-sm truncate text-foreground notranslate" translate="no" lang="pt-BR">{c.name}</p>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{previewTime}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground/80 truncate mb-1 notranslate" translate="no" lang="pt-BR">{formatPhoneForDisplay(c.phone)}</p>
+                      <p
+                        className="text-xs text-muted-foreground truncate mb-2 notranslate"
+                        translate="no"
+                        lang="pt-BR"
+                        title={previewText || "Sem mensagens recentes"}
+                      >
+                        {formatConversationPreviewText(previewText) || "Sem mensagens recentes"}
+                      </p>
+                      <div className="flex items-center gap-1.5 min-h-5">
+                        <StatusBadge status={c.status} className="text-[10px] py-0" />
+                        {c.deliveryStatus === "failed" ? (
+                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                            Falha
+                          </span>
+                        ) : null}
+                        {c.unread > 0 && (
+                          <span className="ml-auto h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
+                            {c.unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })()
+            ))
+          )}
         </div>
       </Card>
 
@@ -1574,6 +1587,18 @@ export default function Conversas() {
               </div>
             </div>
           </>
+        ) : isInitialConversationsLoading ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+              <MessageSquareIcon />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Carregando conversas...</h3>
+              <p className="text-sm text-muted-foreground">
+                Estamos restaurando sua lista e o contexto do atendimento.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">

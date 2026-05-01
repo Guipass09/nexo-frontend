@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   audioSequences,
 } from "@/data/mocks";
@@ -607,7 +607,9 @@ export function useDashboardOverview() {
   return useQuery({
     queryKey: queryKeys.dashboard,
     queryFn: getDashboardOverview,
-    retry: false,
+    retry: shouldRetryTransientError,
+    placeholderData: keepPreviousData,
+    staleTime: 10_000,
   });
 }
 
@@ -620,6 +622,7 @@ export function useConversations(filters: ConversationFilters = {}, options?: { 
       return conversations.filter((conversation) => !deletedConversationIds.has(conversation.id));
     },
     retry: shouldRetryTransientError,
+    placeholderData: keepPreviousData,
     staleTime: 3_000,
     refetchInterval: () => resolvePollingInterval(!options?.realtimeConnected, CONVERSATIONS_POLL_INTERVAL_MS),
     refetchIntervalInBackground: false,
@@ -707,6 +710,7 @@ export function useConversationById(id: string | null, options?: { realtimeConne
     queryFn: () => getConversationById(id ?? ""),
     enabled: Boolean(id),
     retry: shouldRetryTransientError,
+    placeholderData: keepPreviousData,
     refetchInterval: () => resolvePollingInterval(
       Boolean(id),
       options?.realtimeConnected ? 10_000 : ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS,
@@ -722,6 +726,7 @@ export function useConversationMessages(id: string | null, options?: { realtimeC
     queryFn: () => listConversationMessages(id ?? ""),
     enabled: Boolean(id),
     retry: shouldRetryTransientError,
+    placeholderData: keepPreviousData,
     refetchInterval: () => resolvePollingInterval(
       Boolean(id),
       options?.realtimeConnected ? 8_000 : ACTIVE_CONVERSATION_POLL_INTERVAL_MS,
