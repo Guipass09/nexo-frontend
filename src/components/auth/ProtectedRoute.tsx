@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { getAuthToken, getStoredTokenExpiresAt, setAuthSession } from "@/lib/auth";
+import { getAuthToken, getStoredTokenExpiresAt, handleUnauthorizedSession, setAuthSession } from "@/lib/auth";
 import { me, refreshSession } from "@/services/auth";
 
 const SESSION_REFRESH_OFFSET_MS = 5 * 60 * 1000;
@@ -30,6 +30,12 @@ export default function ProtectedRoute() {
       setAuthSession(token, authQuery.data, authQuery.data.tokenExpiresAt ?? null);
     }
   }, [authQuery.data, token]);
+
+  useEffect(() => {
+    if (token && authQuery.isError && !authQuery.data) {
+      handleUnauthorizedSession("Sua sessao nao conseguiu ser validada no refresh. Entre novamente.");
+    }
+  }, [authQuery.data, authQuery.isError, token]);
 
   useEffect(() => {
     if (refreshTimeoutRef.current !== null) {
@@ -115,11 +121,9 @@ export default function ProtectedRoute() {
   if (token && authQuery.isError && !authQuery.data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <Card className="max-w-md border-border/60 p-6">
-          <h2 className="mb-2 text-lg font-semibold">Nao foi possivel restaurar a pagina</h2>
-          <p className="text-sm text-muted-foreground">
-            Sua sessao nao conseguiu ser validada no refresh. Tente entrar novamente.
-          </p>
+        <Card className="flex items-center gap-3 border-border/60 px-5 py-4 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Redirecionando para o login...
         </Card>
       </div>
     );
