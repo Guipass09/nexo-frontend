@@ -30,6 +30,7 @@ export type FlowBuilderFlowDraft = {
   triggerMode: FlowTriggerMode;
   triggerValue: string;
   aiCompanyPrompt: string;
+  confirmedAiCompanyPrompt: string;
   created: string;
 };
 
@@ -696,6 +697,7 @@ export function createEmptyFlowBuilderDraft(): FlowBuilderFlowDraft {
     triggerMode: "contains",
     triggerValue: "",
     aiCompanyPrompt: "",
+    confirmedAiCompanyPrompt: "",
     created: "",
   };
 }
@@ -732,6 +734,7 @@ export function createEmptyFlowBuilderBlock(
 
 export function createFlowBuilderDraft(flow: Flow): FlowBuilderFlowDraft {
   const triggerDraft = parseFlowTrigger(flow.trigger);
+  const aiCompanyPrompt = typeof flow.aiCompanyPrompt === "string" ? flow.aiCompanyPrompt : "";
 
   return {
     id: flow.id,
@@ -739,7 +742,8 @@ export function createFlowBuilderDraft(flow: Flow): FlowBuilderFlowDraft {
     status: flow.status,
     triggerMode: triggerDraft.mode,
     triggerValue: triggerDraft.value,
-    aiCompanyPrompt: typeof flow.aiCompanyPrompt === "string" ? flow.aiCompanyPrompt : "",
+    aiCompanyPrompt,
+    confirmedAiCompanyPrompt: aiCompanyPrompt.trim(),
     created: flow.created,
   };
 }

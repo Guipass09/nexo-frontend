@@ -258,6 +258,10 @@ export default function Fluxos() {
 
   const orderedDraftBlocks = useMemo(() => orderBlocksLikeFlow(blockDrafts), [blockDrafts]);
   const selectedBlock = orderedDraftBlocks.find((block) => block.clientId === selectedBlockId) ?? null;
+  const aiCompanyPrompt = flowDraft.aiCompanyPrompt.trim();
+  const confirmedAiCompanyPrompt = flowDraft.confirmedAiCompanyPrompt.trim();
+  const isAiCompanyContextConfirmed = aiCompanyPrompt.length > 0 && aiCompanyPrompt === confirmedAiCompanyPrompt;
+  const aiCompanyContextNeedsConfirmation = aiCompanyPrompt.length > 0 && aiCompanyPrompt !== confirmedAiCompanyPrompt;
   const flowStats = useMemo(() => ({
     actions: orderedDraftBlocks.filter((block) => ["send_message", "send_template", "send_media"].includes(block.type)).length,
     waits: orderedDraftBlocks.filter((block) => block.type === "wait_for_reply").length,
@@ -409,6 +413,72 @@ export default function Fluxos() {
       ...patch,
     }));
     setHasUnsavedChanges(true);
+  }
+
+  async function persistFlowDraft(
+    nextDraft: FlowBuilderFlowDraft,
+    {
+      successTitle,
+      successDescription,
+    }: {
+      successTitle: string;
+      successDescription: string;
+    },
+  ) {
+    if (!nextDraft.name.trim()) {
+      toast({
+        title: "Nome obrigatorio",
+        description: "Informe um nome para o fluxo antes de salvar.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    let payload;
+
+    try {
+      payload = buildFlowPayloadFromDraft(nextDraft, orderedDraftBlocks);
+    } catch (error) {
+      toast({
+        title: "Configuracao invalida",
+        description: getApiErrorMessage(error, "Revise os blocos antes de salvar."),
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const savedFlow = !isCreatingNewFlow && nextDraft.id
+        ? await updateFlowMutation.mutateAsync({ flowId: nextDraft.id, payload })
+        : await createFlowMutation.mutateAsync(payload);
+
+      const confirmedContext = (nextDraft.aiCompanyPrompt ?? "").trim();
+
+      setFlowDraft((current) => ({
+        ...current,
+        id: savedFlow.id,
+        status: nextDraft.status,
+        created: savedFlow.created,
+        confirmedAiCompanyPrompt: confirmedContext,
+      }));
+      setIsCreatingNewFlow(false);
+      setActiveFlowId(savedFlow.id);
+      setHasUnsavedChanges(false);
+
+      toast({
+        title: successTitle,
+        description: successDescription,
+      });
+
+      return savedFlow;
+    } catch (error) {
+      toast({
+        title: !isCreatingNewFlow && nextDraft.id ? "Falha ao salvar fluxo" : "Falha ao criar fluxo",
+        description: getApiErrorMessage(error),
+        variant: "destructive",
+      });
+      return null;
+    }
   }
 
   function updateBlock(blockId: string, updater: (block: FlowBuilderBlockDraft) => FlowBuilderBlockDraft) {
@@ -635,78 +705,36 @@ export default function Fluxos() {
   }
 
   function saveFlow(statusOverride?: FlowStatus) {
-    if (!flowDraft.name.trim()) {
-      toast({
-        title: "Nome obrigatorio",
-        description: "Informe um nome para o fluxo antes de salvar.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const nextDraft = {
       ...flowDraft,
       status: statusOverride ?? flowDraft.status,
     };
+    void persistFlowDraft(nextDraft, {
+      successTitle: "Fluxo salvo",
+      successDescription: "A estrutura visual foi persistida no backend Laravel com sucesso.",
+    });
+  }
 
-    let payload;
-
-    try {
-      payload = buildFlowPayloadFromDraft(nextDraft, orderedDraftBlocks);
-    } catch (error) {
+  function confirmAiCompanyContext() {
+    if (!aiCompanyPrompt) {
       toast({
-        title: "Configuracao invalida",
-        description: getApiErrorMessage(error, "Revise os blocos antes de salvar."),
+        title: "Contexto geral obrigatorio",
+        description: "Preencha o contexto geral da empresa antes de confirmar a base da IA.",
         variant: "destructive",
       });
       return;
     }
 
-    const onSuccess = (savedFlow: { id: string; created: string }) => {
-      setFlowDraft((current) => ({
-        ...current,
-        id: savedFlow.id,
-        status: nextDraft.status,
-        created: savedFlow.created,
-      }));
-      setIsCreatingNewFlow(false);
-      setActiveFlowId(savedFlow.id);
-      setHasUnsavedChanges(false);
-
-      toast({
-        title: "Fluxo salvo",
-        description: "A estrutura visual foi persistida no backend Laravel com sucesso.",
-      });
-    };
-
-    if (!isCreatingNewFlow && flowDraft.id) {
-      updateFlowMutation.mutate(
-        { flowId: flowDraft.id, payload },
-        {
-          onSuccess,
-          onError: (error) => toast({
-            title: "Falha ao salvar fluxo",
-            description: getApiErrorMessage(error),
-            variant: "destructive",
-          }),
-        },
-      );
-      return;
-    }
-
-    createFlowMutation.mutate(payload, {
-      onSuccess,
-      onError: (error) => toast({
-        title: "Falha ao criar fluxo",
-        description: getApiErrorMessage(error),
-        variant: "destructive",
-      }),
+    void persistFlowDraft(flowDraft, {
+      successTitle: "Contexto geral confirmado",
+      successDescription: "A IA vai usar esse contexto geral como base fixa deste fluxo antes de montar a automacao.",
     });
   }
 
   function applyGeneratedFlow(generated: GeneratedFlowDraft) {
     const triggerDraft = parseFlowTrigger(generated.trigger);
     const nextBlocks = createFlowBuilderBlocksFromPayloadBlocks(generated.blocks);
+    const preservedAiCompanyPrompt = confirmedAiCompanyPrompt || aiCompanyPrompt || generated.aiCompanyPrompt.trim();
 
     if (!useCurrentFlowAsAiBase) {
       setIsCreatingNewFlow(true);
@@ -719,7 +747,8 @@ export default function Fluxos() {
       status: generated.status,
       triggerMode: triggerDraft.mode,
       triggerValue: triggerDraft.value,
-      aiCompanyPrompt: generated.aiCompanyPrompt,
+      aiCompanyPrompt: preservedAiCompanyPrompt,
+      confirmedAiCompanyPrompt: preservedAiCompanyPrompt,
       created: useCurrentFlowAsAiBase ? current.created : "",
     }));
     setBlockDrafts(nextBlocks);
@@ -738,6 +767,24 @@ export default function Fluxos() {
       toast({
         title: "Prompt obrigatorio",
         description: "Descreva o fluxo que a IA deve criar ou complementar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!aiCompanyPrompt) {
+      toast({
+        title: "Confirme o contexto geral primeiro",
+        description: "Preencha e confirme o contexto geral da empresa para a IA entender a base do fluxo antes da geracao automatica.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isAiCompanyContextConfirmed) {
+      toast({
+        title: "Contexto geral ainda nao confirmado",
+        description: "Voce alterou o contexto geral. Confirme essa versao para a IA usar a empresa como base antes de gerar o fluxo.",
         variant: "destructive",
       });
       return;
@@ -763,11 +810,11 @@ export default function Fluxos() {
 
     generateFlowDraftMutation.mutate({
       prompt: aiPrompt.trim(),
-      company_context: flowDraft.aiCompanyPrompt.trim(),
+      company_context: confirmedAiCompanyPrompt,
       existing_flow: existingFlowPayload ? {
         name: existingFlowPayload.name,
         trigger: existingFlowPayload.trigger,
-        ai_company_prompt: existingFlowPayload.ai_company_prompt,
+        ai_company_prompt: confirmedAiCompanyPrompt || existingFlowPayload.ai_company_prompt,
         blocks: existingFlowPayload.blocks,
       } : undefined,
     }, {
@@ -981,6 +1028,47 @@ export default function Fluxos() {
               <p className="text-xs text-muted-foreground">
                 Esse prompt geral alimenta toda Decisao IA do fluxo. Quanto mais contexto real da empresa voce colocar aqui, melhor a IA consegue responder perguntas e conduzir a conversa no WhatsApp.
               </p>
+              <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-secondary/20 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {isAiCompanyContextConfirmed ? (
+                    <Badge className="rounded-md border-success/30 bg-success/10 text-success hover:bg-success/10">
+                      Base da IA confirmada
+                    </Badge>
+                  ) : aiCompanyContextNeedsConfirmation ? (
+                    <Badge variant="outline" className="rounded-md border-warning/30 bg-warning/10 text-warning">
+                      Confirmar nova versao do contexto
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-md border-info/30 bg-info/10 text-info">
+                      Contexto geral ainda nao confirmado
+                    </Badge>
+                  )}
+                  {confirmedAiCompanyPrompt ? (
+                    <Badge variant="outline" className="rounded-md">
+                      IA base pronta para este fluxo
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Confirme este contexto antes de usar a geracao automatica. Assim a IA entende a empresa por aqui e o prompt da automacao fica focado so em montar o fluxo.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={isAiCompanyContextConfirmed ? "outline" : "default"}
+                    className="gap-2"
+                    onClick={confirmAiCompanyContext}
+                    disabled={isSaving || isDeleting || isGeneratingFlowWithAi || !aiCompanyPrompt || isAiCompanyContextConfirmed}
+                  >
+                    <Save className="h-4 w-4" />
+                    {isAiCompanyContextConfirmed ? "Contexto confirmado" : aiCompanyContextNeedsConfirmation ? "Confirmar nova versao para IA" : "Confirmar contexto geral para IA"}
+                  </Button>
+                  {aiCompanyContextNeedsConfirmation ? (
+                    <p className="flex items-center text-xs text-warning">
+                      A IA ainda esta usando a ultima versao confirmada. Confirme novamente para atualizar a base deste fluxo.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1199,6 +1287,24 @@ export default function Fluxos() {
               </p>
             </div>
 
+            <div className={cn(
+              "rounded-lg border p-4",
+              isAiCompanyContextConfirmed
+                ? "border-success/20 bg-success/5"
+                : "border-warning/30 bg-warning/10",
+            )}>
+              <p className="text-sm font-medium">
+                {isAiCompanyContextConfirmed ? "Contexto geral confirmado para este fluxo" : "Confirme o contexto geral antes de gerar"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {isAiCompanyContextConfirmed
+                  ? "O prompt abaixo sera usado apenas para desenhar a automacao. A empresa e o jeito de atender ja virao do contexto geral confirmado."
+                  : aiCompanyContextNeedsConfirmation
+                    ? "Voce alterou o contexto geral. Confirme essa nova versao para a IA usar a empresa atualizada como base do fluxo."
+                    : "Preencha e confirme o contexto geral da empresa no formulario principal para a IA entender a base do negocio antes de montar o canvas."}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="ai-flow-prompt">Prompt da automacao</Label>
               <Textarea
@@ -1231,7 +1337,7 @@ export default function Fluxos() {
             <Button variant="outline" onClick={() => setIsAiGeneratorOpen(false)} disabled={isGeneratingFlowWithAi}>
               Fechar
             </Button>
-            <Button onClick={generateFlowWithAi} disabled={isGeneratingFlowWithAi}>
+            <Button onClick={generateFlowWithAi} disabled={isGeneratingFlowWithAi || !isAiCompanyContextConfirmed}>
               {isGeneratingFlowWithAi ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               {useCurrentFlowAsAiBase ? "Montar no canvas com IA" : "Gerar novo fluxo no canvas"}
             </Button>

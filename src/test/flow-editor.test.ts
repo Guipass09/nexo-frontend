@@ -151,6 +151,8 @@ describe("flow editor helpers", () => {
       status: "rascunho",
       triggerMode: "contains",
       triggerValue: "oi",
+      aiCompanyPrompt: "",
+      confirmedAiCompanyPrompt: "",
       created: "22/04/2026",
     }, blocks);
 
