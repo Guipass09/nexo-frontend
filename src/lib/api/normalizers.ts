@@ -30,8 +30,32 @@ export function normalizeCollectionResponse<T>(payload: unknown): NormalizedColl
     return { data: payload as T[] };
   }
 
+  if (payload === null || payload === undefined) {
+    return { data: [] };
+  }
+
   if (!isRecord(payload)) {
     throw new Error("Invalid collection response format");
+  }
+
+  if (payload.data === null || payload.data === undefined) {
+    const normalized: NormalizedCollectionResponse<T> = {
+      data: [],
+    };
+
+    if (typeof payload.message === "string") {
+      normalized.message = payload.message;
+    }
+
+    if (isLinksObject(payload.links)) {
+      normalized.links = payload.links;
+    }
+
+    if (isPaginationMeta(payload.meta)) {
+      normalized.meta = payload.meta;
+    }
+
+    return normalized;
   }
 
   if (Array.isArray(payload.data)) {
@@ -48,6 +72,31 @@ export function normalizeCollectionResponse<T>(payload: unknown): NormalizedColl
     }
 
     if (isPaginationMeta(payload.meta)) {
+      normalized.meta = payload.meta;
+    }
+
+    return normalized;
+  }
+
+  if (isRecord(payload.data) && Array.isArray(payload.data.data)) {
+    const nested = payload.data;
+    const normalized: NormalizedCollectionResponse<T> = {
+      data: nested.data as T[],
+    };
+
+    if (typeof payload.message === "string") {
+      normalized.message = payload.message;
+    }
+
+    if (isLinksObject(nested.links)) {
+      normalized.links = nested.links;
+    } else if (isLinksObject(payload.links)) {
+      normalized.links = payload.links;
+    }
+
+    if (isPaginationMeta(nested.meta)) {
+      normalized.meta = nested.meta;
+    } else if (isPaginationMeta(payload.meta)) {
       normalized.meta = payload.meta;
     }
 
