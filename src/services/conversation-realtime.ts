@@ -1,4 +1,4 @@
-import { buildApiUrl } from "@/lib/api/client";
+import { buildApiUrl, resolveApiBaseUrl } from "@/lib/api/client";
 import { getAuthToken, handleUnauthorizedSessionForToken } from "@/lib/auth";
 import type { Conversation, ConversationMessage } from "@/types/domain";
 
@@ -64,10 +64,6 @@ interface SseEvent {
 }
 
 const RETRY_DELAY_MS = 600;
-
-function resolveApiBaseUrl() {
-  return import.meta.env.VITE_API_BASE_URL ?? "/api";
-}
 
 function isNgrokUrl(url: string) {
   try {

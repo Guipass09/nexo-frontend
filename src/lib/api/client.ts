@@ -69,7 +69,7 @@ export function buildApiUrl(path: string, baseURL?: string, query?: Record<strin
   return buildUrl(path, baseURL, query);
 }
 
-function resolveApiBaseUrl() {
+export function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 
   if (typeof window === "undefined") {
@@ -84,7 +84,7 @@ function resolveApiBaseUrl() {
   }
 
   if (hostname.endsWith(".vercel.app")) {
-    return "/api";
+    return configuredBaseUrl || "http://localhost:8000/api";
   }
 
   if (configuredBaseUrl) {
