@@ -282,6 +282,48 @@ function useConversationMediaUrl(rawUrl?: string | null) {
   return useBrowserMediaUrl(rawUrl);
 }
 
+function canManageInboundMedia(message: ConversationMessage) {
+  return message.from === "client" && Boolean(message.mediaAsset?.id);
+}
+
+function isInboundMediaAlreadySaved(message: ConversationMessage) {
+  return (message.mediaAsset?.status ?? "active") !== "pending";
+}
+
+function ConversationMediaLibraryMenu({
+  message,
+  onSaveToLibrary,
+  isSavingToLibrary,
+}: {
+  message: ConversationMessage;
+  onSaveToLibrary?: (message: ConversationMessage) => void;
+  isSavingToLibrary?: boolean;
+}) {
+  if (!canManageInboundMedia(message)) {
+    return null;
+  }
+
+  const alreadySaved = isInboundMediaAlreadySaved(message);
+
+  return (
+    <div className="flex justify-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary || alreadySaved}>
+            <Save className="mr-2 h-4 w-4" />
+            {alreadySaved ? "Ja salva na biblioteca" : "Salvar na biblioteca"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 function ConversationImageContent({
   message,
   isClient,
@@ -297,7 +339,6 @@ function ConversationImageContent({
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
   const mediaName = message.mediaAsset?.originalName ?? message.text;
-  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2" translate="no">
@@ -330,23 +371,7 @@ function ConversationImageContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
-      {canSaveToLibrary ? (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar na biblioteca
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : null}
+      <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
     </div>
   );
 }
@@ -365,7 +390,6 @@ function ConversationVideoContent({
   isSavingToLibrary?: boolean;
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
-  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2" translate="no">
@@ -399,23 +423,7 @@ function ConversationVideoContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
-      {canSaveToLibrary ? (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar na biblioteca
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : null}
+      <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
     </div>
   );
 }
@@ -432,7 +440,6 @@ function ConversationAudioContent({
   isSavingToLibrary?: boolean;
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
-  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2 min-w-[220px]" translate="no">
@@ -453,23 +460,7 @@ function ConversationAudioContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
-      {canSaveToLibrary ? (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar na biblioteca
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : null}
+      <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
     </div>
   );
 }
@@ -492,7 +483,6 @@ function renderMessageBody(
   if (message.type === "document") {
     const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
     const mediaName = message.mediaAsset?.originalName ?? message.text;
-    const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
     return (
       <div className="space-y-2" translate="no">
         {mediaUrl ? (
@@ -517,23 +507,7 @@ function renderMessageBody(
             {message.rawText ?? message.text}
           </pre>
         ) : null}
-        {canSaveToLibrary ? (
-          <div className="flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar na biblioteca
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : null}
+        <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
       </div>
     );
   }
