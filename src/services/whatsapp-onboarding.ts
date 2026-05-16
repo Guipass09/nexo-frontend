@@ -6,6 +6,7 @@ import type {
   WhatsAppConnectionActionResult,
   WhatsAppExchangeTokenResult,
   WhatsAppEmbeddedSignupStartConfig,
+  WhatsAppWebQrStatus,
 } from "@/types/domain";
 
 export interface CompleteEmbeddedSignupPayload {
@@ -78,18 +79,21 @@ export async function getWhatsAppConnectionStatus() {
 
 export async function startEmbeddedSignup() {
   const response = normalizeResourceResponse<unknown>(
-    await apiClient.post<unknown>("/profile/whatsapp/embedded-signup/start"),
+    await apiClient.post<unknown>("/profile/whatsapp/cloud/start"),
   );
 
   return normalizeStartConfig(response.data);
 }
 
 export async function completeEmbeddedSignup(payload: CompleteEmbeddedSignupPayload): Promise<WhatsAppExchangeTokenResult> {
-  const response = normalizeResourceResponse<WhatsAppExchangeTokenResult>(
-    await apiClient.post<unknown>("/whatsapp/exchange-token", payload),
+  const response = normalizeResourceResponse<ProfileWhatsAppConnection | null>(
+    await apiClient.post<unknown>("/profile/whatsapp/cloud/complete", payload),
   );
 
-  return response.data;
+  return {
+    connection: response.data,
+    testMessage: null,
+  };
 }
 
 export async function testWhatsAppConnection() {
@@ -111,6 +115,36 @@ export async function syncProfileWhatsAppTemplates() {
 export async function disconnectWhatsApp() {
   const response = normalizeResourceResponse<{ message?: string }>(
     await apiClient.delete<unknown>("/profile/whatsapp"),
+  );
+
+  return response.data;
+}
+
+export async function startWhatsAppWebConnection() {
+  const response = normalizeResourceResponse<{
+    connection: ProfileWhatsAppConnection | null;
+    service?: Record<string, unknown> | null;
+  }>(
+    await apiClient.post<unknown>("/profile/whatsapp/web/start"),
+  );
+
+  return response.data;
+}
+
+export async function getWhatsAppWebQr() {
+  const response = normalizeResourceResponse<WhatsAppWebQrStatus>(
+    await apiClient.get<unknown>("/profile/whatsapp/web/qr"),
+  );
+
+  return response.data;
+}
+
+export async function disconnectWhatsAppWeb() {
+  const response = normalizeResourceResponse<{
+    message?: string;
+    connection?: ProfileWhatsAppConnection | null;
+  }>(
+    await apiClient.post<unknown>("/profile/whatsapp/web/disconnect"),
   );
 
   return response.data;

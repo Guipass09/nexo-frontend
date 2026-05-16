@@ -337,8 +337,9 @@ export interface WhatsAppSettings {
   ready: boolean;
 }
 
-export type WhatsAppConnectionStatus = "pending" | "connected" | "error" | "disconnected";
-export type WhatsAppConnectionType = "cloud_api" | "coexistence" | "unknown";
+export type WhatsAppConnectionProvider = "cloud_api" | "whatsapp_web";
+export type WhatsAppConnectionStatus = "pending" | "connected" | "error" | "failed" | "disconnected" | "qr_pending" | "reconnecting";
+export type WhatsAppConnectionType = "cloud_api" | "coexistence" | "whatsapp_web" | "unknown";
 export type WhatsAppConnectionHealth = "active" | "error" | "token_expired" | "webhook_pending" | "pending" | "disconnected";
 
 export interface WhatsAppCoexistenceEligibility {
@@ -351,11 +352,13 @@ export interface WhatsAppCoexistenceEligibility {
 export interface ProfileWhatsAppConnection {
   id: string;
   userId?: string | null;
+  provider?: WhatsAppConnectionProvider | null;
   businessAccountId: string | null;
   wabaId?: string | null;
   businessId?: string | null;
   phoneNumberId: string | null;
   phoneNumber: string | null;
+  webSessionId?: string | null;
   displayName?: string | null;
   status: WhatsAppConnectionStatus;
   connectionType: WhatsAppConnectionType | null;
@@ -369,6 +372,13 @@ export interface ProfileWhatsAppConnection {
   disconnectedAt?: string | null;
   tokenExpiresAt?: string | null;
   createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface WhatsAppWebQrStatus {
+  sessionId: string | null;
+  status: WhatsAppConnectionStatus;
+  qrCode: string | null;
   updatedAt?: string | null;
 }
 

@@ -29,15 +29,23 @@ export default function Perfil() {
     connectionQuery,
     startConnection,
     retryConnection,
+    startWebConnection,
     testConnection,
     syncTemplates,
     disconnectConnection,
+    disconnectWebConnection,
     uiError,
+    isWebQrModalOpen,
+    setIsWebQrModalOpen,
+    webQrStatus,
     isLoadingConnection,
     isConnecting,
+    isStartingWeb,
     isTesting,
     isSyncingTemplates,
     isDisconnecting,
+    isDisconnectingWeb,
+    isLoadingWebQr,
   } = useWhatsAppConnection();
 
   const queryErrorMessage = useMemo(
@@ -143,6 +151,38 @@ export default function Perfil() {
     }
   };
 
+  const handleStartWebConnection = async () => {
+    try {
+      await startWebConnection();
+      toast({
+        title: "QR Code iniciado",
+        description: "Escaneie com o celular para concluir a conexao do WhatsApp Web.",
+      });
+    } catch (error) {
+      toast({
+        title: "Falha ao iniciar QR Code",
+        description: getApiErrorMessage(error, "Nao foi possivel iniciar a sessao do WhatsApp Web."),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisconnectWeb = async () => {
+    try {
+      await disconnectWebConnection();
+      toast({
+        title: "WhatsApp Web desconectado",
+        description: "A sessao conectada por QR Code foi encerrada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Falha ao desconectar QR Code",
+        description: getApiErrorMessage(error, "Nao foi possivel desconectar a sessao do WhatsApp Web."),
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Card className="p-6 border-border/60 bg-gradient-to-br from-card via-card to-primary/5">
@@ -200,13 +240,22 @@ export default function Perfil() {
         connection={connection}
         isLoading={isLoadingConnection}
         isConnecting={isConnecting}
+        isStartingWeb={isStartingWeb}
         isTesting={isTesting}
         isSyncingTemplates={isSyncingTemplates}
         isDisconnecting={isDisconnecting}
+        isDisconnectingWeb={isDisconnectingWeb}
+        isWebQrModalOpen={isWebQrModalOpen}
+        onWebQrModalOpenChange={setIsWebQrModalOpen}
+        webQrStatus={webQrStatus}
+        isLoadingWebQr={isLoadingWebQr}
         error={uiError}
         queryErrorMessage={queryErrorMessage}
         onConnect={() => {
           void handleStartConnection();
+        }}
+        onConnectWeb={() => {
+          void handleStartWebConnection();
         }}
         onRetry={() => {
           void handleRetryConnection();
@@ -219,6 +268,9 @@ export default function Perfil() {
         }}
         onDisconnect={() => {
           void handleDisconnect();
+        }}
+        onDisconnectWeb={() => {
+          void handleDisconnectWeb();
         }}
       />
 

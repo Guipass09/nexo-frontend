@@ -5,8 +5,11 @@ import { extractMetaAuthorizationCode, launchMetaEmbeddedSignup, loadMetaSdk } f
 import {
   completeEmbeddedSignup,
   disconnectWhatsApp,
+  disconnectWhatsAppWeb,
   getWhatsAppConnectionStatus,
+  getWhatsAppWebQr,
   startEmbeddedSignup,
+  startWhatsAppWebConnection,
   syncProfileWhatsAppTemplates,
   testWhatsAppConnection,
 } from "@/services/whatsapp-onboarding";
@@ -14,6 +17,7 @@ import type {
   ProfileWhatsAppConnection,
   WhatsAppEmbeddedSignupStartConfig,
   WhatsAppExchangeTokenResult,
+  WhatsAppWebQrStatus,
 } from "@/types/domain";
 
 interface WhatsAppUiError {
@@ -85,11 +89,21 @@ function resolveEmbeddedSignupConfig(config: WhatsAppEmbeddedSignupStartConfig) 
 export function useWhatsAppConnection() {
   const queryClient = useQueryClient();
   const [uiError, setUiError] = useState<WhatsAppUiError | null>(null);
+  const [isWebQrModalOpen, setIsWebQrModalOpen] = useState(false);
 
   const connectionQuery = useQuery({
     queryKey: PROFILE_WHATSAPP_QUERY_KEY,
     queryFn: getWhatsAppConnectionStatus,
     retry: false,
+    refetchInterval: (query) => {
+      const connection = query.state.data;
+
+      if (!isWebQrModalOpen || !connection || connection.provider !== "whatsapp_web") {
+        return false;
+      }
+
+      return connection.status === "connected" ? 5000 : 3000;
+    },
   });
 
   const startMutation = useMutation({
@@ -101,6 +115,15 @@ export function useWhatsAppConnection() {
     onSuccess: (result) => {
       queryClient.setQueryData(PROFILE_WHATSAPP_QUERY_KEY, result.connection);
       void queryClient.invalidateQueries({ queryKey: PROFILE_WHATSAPP_QUERY_KEY });
+    },
+  });
+
+  const startWebMutation = useMutation({
+    mutationFn: startWhatsAppWebConnection,
+    onSuccess: (result) => {
+      queryClient.setQueryData(PROFILE_WHATSAPP_QUERY_KEY, result.connection ?? null);
+      void queryClient.invalidateQueries({ queryKey: PROFILE_WHATSAPP_QUERY_KEY });
+      setIsWebQrModalOpen(true);
     },
   });
 
@@ -123,10 +146,26 @@ export function useWhatsAppConnection() {
     },
   });
 
+  const disconnectWebMutation = useMutation({
+    mutationFn: disconnectWhatsAppWeb,
+    onSuccess: (result) => {
+      queryClient.setQueryData(PROFILE_WHATSAPP_QUERY_KEY, result.connection ?? null);
+      void queryClient.invalidateQueries({ queryKey: PROFILE_WHATSAPP_QUERY_KEY });
+    },
+  });
+
   const connection = useMemo(
     () => connectionQuery.data ?? null,
     [connectionQuery.data],
   );
+
+  const webQrQuery = useQuery<WhatsAppWebQrStatus | null>({
+    queryKey: [...PROFILE_WHATSAPP_QUERY_KEY, "web", "qr", connection?.webSessionId ?? "none"],
+    queryFn: getWhatsAppWebQr,
+    enabled: Boolean(isWebQrModalOpen && connection?.provider === "whatsapp_web" && connection?.webSessionId),
+    retry: false,
+    refetchInterval: connection?.status === "connected" ? 5000 : 3000,
+  });
 
   const startConnection = async () => {
     setUiError(null);
@@ -176,8 +215,21 @@ export function useWhatsAppConnection() {
     }
   };
 
-  const retryConnection = async () => {
-    return startConnection();
+  const retryConnection = async () => startConnection();
+
+  const startWebConnection = async () => {
+    setUiError(null);
+
+    try {
+      return await startWebMutation.mutateAsync();
+    } catch (error) {
+      setUiError({
+        title: "Nao foi possivel iniciar o WhatsApp Web",
+        message: getApiErrorMessage(error, "Falha ao iniciar a sessao por QR Code."),
+        technicalDetails: buildTechnicalDetails(error),
+      });
+      throw error;
+    }
   };
 
   const clearUiError = () => {
@@ -189,16 +241,24 @@ export function useWhatsAppConnection() {
     connectionQuery,
     startConnection,
     retryConnection,
+    startWebConnection,
     clearUiError,
     testConnection: testMutation.mutateAsync,
     syncTemplates: syncTemplatesMutation.mutateAsync,
     disconnectConnection: disconnectMutation.mutateAsync,
+    disconnectWebConnection: disconnectWebMutation.mutateAsync,
     uiError,
+    isWebQrModalOpen,
+    setIsWebQrModalOpen,
+    webQrStatus: webQrQuery.data ?? null,
     isLoadingConnection: connectionQuery.isLoading,
     isConnecting: startMutation.isPending || completeMutation.isPending,
+    isStartingWeb: startWebMutation.isPending,
     isTesting: testMutation.isPending,
     isSyncingTemplates: syncTemplatesMutation.isPending,
     isDisconnecting: disconnectMutation.isPending,
+    isDisconnectingWeb: disconnectWebMutation.isPending,
+    isLoadingWebQr: webQrQuery.isLoading || webQrQuery.isFetching,
     lastTestResult: testMutation.data ?? null,
     lastSyncResult: syncTemplatesMutation.data ?? null,
   };

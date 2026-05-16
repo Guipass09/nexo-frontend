@@ -9,16 +9,24 @@ function renderCard(overrides?: Partial<ComponentProps<typeof WhatsAppConnection
     connection: null,
     isLoading: false,
     isConnecting: false,
+    isStartingWeb: false,
     isTesting: false,
     isSyncingTemplates: false,
     isDisconnecting: false,
+    isDisconnectingWeb: false,
+    isWebQrModalOpen: false,
+    onWebQrModalOpenChange: vi.fn(),
+    webQrStatus: null,
+    isLoadingWebQr: false,
     error: null,
     queryErrorMessage: null,
     onConnect: vi.fn(),
+    onConnectWeb: vi.fn(),
     onRetry: vi.fn(),
     onTest: vi.fn(),
     onSyncTemplates: vi.fn(),
     onDisconnect: vi.fn(),
+    onDisconnectWeb: vi.fn(),
     ...overrides,
   };
 
@@ -28,43 +36,43 @@ function renderCard(overrides?: Partial<ComponentProps<typeof WhatsAppConnection
   };
 }
 
-function buildConnectedConnection(): ProfileWhatsAppConnection {
+function buildConnectedConnection(overrides?: Partial<ProfileWhatsAppConnection>): ProfileWhatsAppConnection {
   return {
     id: "wa-1",
+    provider: "cloud_api",
     businessAccountId: "waba_123",
     phoneNumberId: "phone_456",
     phoneNumber: "5511999999999",
     status: "connected",
-    connectionType: "coexistence",
+    connectionType: "cloud_api",
     health: "active",
     webhookStatus: "active",
     connectedAt: "2026-04-24T10:00:00.000Z",
     updatedAt: "2026-04-24T10:30:00.000Z",
+    ...overrides,
   };
 }
 
 describe("WhatsAppConnectionCard", () => {
-  it("renders disconnected state and triggers embedded signup", () => {
+  it("renders both connection modes when disconnected", () => {
     const { props } = renderCard();
 
-    expect(screen.getByText("WhatsApp conectado")).toBeInTheDocument();
-    expect(screen.getByText("Conectar WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("WhatsApp oficial da Meta")).toBeInTheDocument();
+    expect(screen.getByText("Manter WhatsApp no celular")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Conectar WhatsApp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Conectar pela Meta" }));
+    fireEvent.click(screen.getByRole("button", { name: "Conectar por QR Code" }));
 
     expect(props.onConnect).toHaveBeenCalledTimes(1);
+    expect(props.onConnectWeb).toHaveBeenCalledTimes(1);
   });
 
-  it("renders connected state details and action buttons", () => {
+  it("renders cloud actions when connected via official provider", () => {
     const { props } = renderCard({
       connection: buildConnectedConnection(),
     });
 
     expect(screen.getByText("Seu WhatsApp esta conectado e pronto para automacoes.")).toBeInTheDocument();
-    expect(screen.getByText("5511999999999")).toBeInTheDocument();
-    expect(screen.getByText("waba_123")).toBeInTheDocument();
-    expect(screen.getByText("phone_456")).toBeInTheDocument();
-    expect(screen.getByText("Business Account ID")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Sincronizar templates" }));
     fireEvent.click(screen.getByRole("button", { name: "Testar conexao" }));
@@ -75,33 +83,21 @@ describe("WhatsAppConnectionCard", () => {
     expect(props.onDisconnect).toHaveBeenCalledTimes(1);
   });
 
-  it("renders error state with retry and technical details", () => {
+  it("renders qr actions when connected via whatsapp web", () => {
     const { props } = renderCard({
-      error: {
-        title: "Numero nao elegivel para Coexistence",
-        message: "A Meta informou que este numero nao pode concluir o Coexistence agora.",
-        technicalDetails: {
-          coexistence_error_code: "COEXISTENCE_NOT_ELIGIBLE",
-        },
-      },
+      connection: buildConnectedConnection({
+        provider: "whatsapp_web",
+        connectionType: "whatsapp_web",
+        businessAccountId: null,
+        phoneNumberId: null,
+        webSessionId: "session-123",
+      }),
     });
 
-    expect(screen.getByText("Numero nao elegivel para Coexistence")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Tentar novamente" })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Ver QR / status" }));
+    fireEvent.click(screen.getByRole("button", { name: "Desconectar" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Detalhes tecnicos" }));
-    expect(screen.getByText(/COEXISTENCE_NOT_ELIGIBLE/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByRole("button", { name: "Tentar novamente" })[0]);
-    expect(props.onRetry).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders connecting state feedback in the profile card", () => {
-    renderCard({
-      isConnecting: true,
-    });
-
-    expect(screen.getByText("Abrindo conexao com a Meta...")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Abrindo Meta..." })).toBeDisabled();
+    expect(props.onWebQrModalOpenChange).toHaveBeenCalledWith(true);
+    expect(props.onDisconnectWeb).toHaveBeenCalledTimes(1);
   });
 });

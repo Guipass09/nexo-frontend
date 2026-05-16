@@ -4,13 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
-import type { ProfileWhatsAppConnection } from "@/types/domain";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { ProfileWhatsAppConnection, WhatsAppWebQrStatus } from "@/types/domain";
 import {
   AlertTriangle,
   ChevronDown,
   Link2,
+  LoaderCircle,
   MessageSquare,
+  QrCode,
   RefreshCcw,
   ShieldCheck,
   Unplug,
@@ -27,16 +35,24 @@ interface WhatsAppConnectionCardProps {
   connection: ProfileWhatsAppConnection | null;
   isLoading: boolean;
   isConnecting: boolean;
+  isStartingWeb: boolean;
   isTesting: boolean;
   isSyncingTemplates: boolean;
   isDisconnecting: boolean;
+  isDisconnectingWeb: boolean;
+  isWebQrModalOpen: boolean;
+  onWebQrModalOpenChange: (open: boolean) => void;
+  webQrStatus: WhatsAppWebQrStatus | null;
+  isLoadingWebQr: boolean;
   error: WhatsAppConnectionCardError | null;
   queryErrorMessage?: string | null;
   onConnect: () => void;
+  onConnectWeb: () => void;
   onRetry: () => void;
   onTest: () => void;
   onSyncTemplates: () => void;
   onDisconnect: () => void;
+  onDisconnectWeb: () => void;
 }
 
 function formatDateTime(value?: string | null) {
@@ -93,6 +109,8 @@ function healthBadgeClass(health?: ProfileWhatsAppConnection["health"]) {
 
 function connectionTypeLabel(connectionType?: ProfileWhatsAppConnection["connectionType"] | null) {
   switch (connectionType) {
+    case "whatsapp_web":
+      return "WhatsApp Web";
     case "cloud_api":
       return "Cloud API";
     case "coexistence":
@@ -103,32 +121,59 @@ function connectionTypeLabel(connectionType?: ProfileWhatsAppConnection["connect
   }
 }
 
+function statusLabel(status?: ProfileWhatsAppConnection["status"] | WhatsAppWebQrStatus["status"]) {
+  switch (status) {
+    case "qr_pending":
+      return "Aguardando leitura";
+    case "reconnecting":
+      return "Reconectando";
+    case "connected":
+      return "Conectado";
+    case "failed":
+    case "error":
+      return "Erro";
+    case "pending":
+      return "Gerando QR Code";
+    case "disconnected":
+    default:
+      return "Desconectado";
+  }
+}
+
 export function WhatsAppConnectionCard({
   connection,
   isLoading,
   isConnecting,
+  isStartingWeb,
   isTesting,
   isSyncingTemplates,
   isDisconnecting,
+  isDisconnectingWeb,
+  isWebQrModalOpen,
+  onWebQrModalOpenChange,
+  webQrStatus,
+  isLoadingWebQr,
   error,
   queryErrorMessage,
   onConnect,
+  onConnectWeb,
   onRetry,
   onTest,
   onSyncTemplates,
   onDisconnect,
+  onDisconnectWeb,
 }: WhatsAppConnectionCardProps) {
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
   const isConnected = connection?.status === "connected";
-  const hasErrorState = Boolean(error || connection?.status === "error" || queryErrorMessage);
-  const isDisconnected = !isConnected;
+  const isWebProvider = connection?.provider === "whatsapp_web";
+  const hasErrorState = Boolean(error || connection?.status === "error" || connection?.status === "failed" || queryErrorMessage);
   const errorPayload = useMemo<WhatsAppConnectionCardError | null>(() => {
     if (error) {
       return error;
     }
 
-    if (connection?.status === "error") {
+    if (connection?.status === "error" || connection?.status === "failed") {
       return {
         title: "Nao foi possivel concluir a conexao",
         message: connection.lastError ?? "A integracao foi salva com erro e precisa de nova tentativa.",
@@ -148,11 +193,11 @@ export function WhatsAppConnectionCard({
   }, [connection?.lastError, connection?.metadata, connection?.status, error, queryErrorMessage]);
 
   return (
-    <Card className="p-6 border-border/60">
+    <Card className="border-border/60 p-6">
       <div className="flex flex-col gap-3 border-b border-border/60 pb-5 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold">WhatsApp conectado</h3>
+            <h3 className="font-semibold">Conectar WhatsApp</h3>
             <Badge
               variant="outline"
               className={isConnected ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-700"}
@@ -166,127 +211,112 @@ export function WhatsAppConnectionCard({
             ) : null}
           </div>
           <p className="text-sm text-muted-foreground">
-            Conecte seu WhatsApp para usar fluxos, automacoes e atendimento no painel.
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border/60 bg-secondary/20 px-4 py-3 text-sm">
-          <p className="font-medium text-foreground">Coexistence</p>
-          <p className="text-muted-foreground">
-            Alguns numeros do WhatsApp Business App podem usar Coexistence quando elegiveis.
+            Escolha entre a Cloud API oficial da Meta ou o modo QR Code mantendo o WhatsApp no celular.
           </p>
         </div>
       </div>
 
-      <div className="mt-5 space-y-4">
-        {isDisconnected ? (
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="space-y-4">
-              <Alert>
-                <ShieldCheck className="h-4 w-4" />
-                <AlertTitle>Onboarding oficial da Meta</AlertTitle>
-                <AlertDescription>
-                  A conexao usa Meta Embedded Signup. A disponibilidade do Coexistence depende das regras e da elegibilidade do numero na Meta.
-                </AlertDescription>
-              </Alert>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    title: "Embedded Signup",
-                    description: "Autoriza a conta, cria ou conecta os ativos necessarios e retorna o numero para o sistema.",
-                  },
-                  {
-                    title: "Coexistence quando elegivel",
-                    description: "Numeros do WhatsApp Business App podem seguir no app e tambem operar na plataforma quando a Meta permitir.",
-                  },
-                  {
-                    title: "Compativel com o sistema atual",
-                    description: "A conexao fica por usuario e nao substitui a integracao global enquanto a transicao nao estiver completa.",
-                  },
-                ].map((item) => (
-                  <div key={item.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+      <div className="mt-5 space-y-5">
+        {!isConnected ? (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-3xl border border-border/60 bg-background/70 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                    <ShieldCheck className="h-5 w-5" />
                   </div>
-                ))}
+                  <div className="space-y-1">
+                    <h4 className="font-semibold">WhatsApp oficial da Meta</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Para numero novo ou operacao profissional via Cloud API oficial.
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={onConnect} disabled={isLoading || isConnecting} className="mt-5 w-full">
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {isConnecting ? "Abrindo Meta..." : "Conectar pela Meta"}
+                </Button>
               </div>
 
-              {hasErrorState && errorPayload ? (
-                <Alert variant="destructive">
+              <div className="rounded-3xl border border-border/60 bg-background/70 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold">Manter WhatsApp no celular</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Escaneie um QR Code como no WhatsApp Web e use seus fluxos sem sair do app.
+                    </p>
+                  </div>
+                </div>
+                <Alert className="mt-4">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>{errorPayload.title}</AlertTitle>
                   <AlertDescription>
-                    <div className="space-y-3">
-                      <p>{errorPayload.message}</p>
-                      {errorPayload.technicalDetails ? (
-                        <Collapsible open={showTechnicalDetails} onOpenChange={setShowTechnicalDetails}>
-                          <CollapsibleTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
-                              <ChevronDown className={`h-4 w-4 transition-transform ${showTechnicalDetails ? "rotate-180" : ""}`} />
-                              Detalhes tecnicos
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="mt-3">
-                            <pre className="overflow-x-auto rounded-xl bg-background/90 p-3 text-[11px] text-foreground">
-                              {JSON.stringify(errorPayload.technicalDetails, null, 2)}
-                            </pre>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ) : null}
-                      <Button size="sm" variant="outline" onClick={onRetry} disabled={isConnecting}>
-                        {isConnecting ? "Tentando..." : "Tentar novamente"}
-                      </Button>
-                    </div>
+                    Este modo mantem seu WhatsApp no celular, mas depende de sessao conectada via WhatsApp Web. Pode exigir reconexao caso a sessao caia.
                   </AlertDescription>
                 </Alert>
-              ) : null}
-
-              {isConnecting && !hasErrorState ? (
-                <Alert>
-                  <RefreshCcw className="h-4 w-4 animate-spin" />
-                  <AlertTitle>Conectando</AlertTitle>
-                  <AlertDescription>Abrindo conexao com a Meta...</AlertDescription>
-                </Alert>
-              ) : null}
-
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={onConnect} disabled={isLoading || isConnecting}>
-                  <Link2 className="mr-2 h-4 w-4" />
-                  {isConnecting ? "Abrindo Meta..." : "Conectar WhatsApp"}
+                <Button onClick={onConnectWeb} disabled={isLoading || isStartingWeb} variant="outline" className="mt-5 w-full">
+                  <QrCode className="mr-2 h-4 w-4" />
+                  {isStartingWeb ? "Gerando QR..." : "Conectar por QR Code"}
                 </Button>
-                {hasErrorState ? (
-                  <Button variant="outline" onClick={onRetry} disabled={isConnecting}>
-                    <RefreshCcw className="mr-2 h-4 w-4" />
-                    Tentar novamente
-                  </Button>
-                ) : null}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-border/60 bg-gradient-to-br from-background via-secondary/20 to-primary/10 p-5">
-              <p className="text-sm font-medium">O que voce vai ver apos conectar</p>
-              <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                <p>Status da conexao, numero conectado, Business Account ID e Phone Number ID.</p>
-                <p>Saude da conexao, erros de elegibilidade para Coexistence e data da ultima conexao.</p>
-                <p>Acao de testar conexao, sincronizar templates e desconectar sem expor token no frontend.</p>
-              </div>
-            </div>
-          </div>
+            {hasErrorState && errorPayload ? (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{errorPayload.title}</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-3">
+                    <p>{errorPayload.message}</p>
+                    {errorPayload.technicalDetails ? (
+                      <Collapsible open={showTechnicalDetails} onOpenChange={setShowTechnicalDetails}>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <ChevronDown className={`h-4 w-4 transition-transform ${showTechnicalDetails ? "rotate-180" : ""}`} />
+                            Detalhes tecnicos
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-3">
+                          <pre className="overflow-x-auto rounded-xl bg-background/90 p-3 text-[11px] text-foreground">
+                            {JSON.stringify(errorPayload.technicalDetails, null, 2)}
+                          </pre>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : null}
+                    <Button size="sm" variant="outline" onClick={onRetry} disabled={isConnecting}>
+                      {isConnecting ? "Tentando..." : "Tentar novamente"}
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </>
         ) : connection ? (
-          <div className="space-y-5">
+          <>
             <Alert>
               <Wifi className="h-4 w-4" />
               <AlertTitle>Seu WhatsApp esta conectado e pronto para automacoes.</AlertTitle>
               <AlertDescription>
-                O painel ja pode usar esse canal para conversas, fluxos, templates e atendimento, respeitando os estados reais da conexao retornados pelo backend.
+                O painel ja pode usar esse canal para conversas, fluxos, automacoes e atendimento no tenant correto.
               </AlertDescription>
             </Alert>
+
+            {isWebProvider ? (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Este modo depende da sessao do WhatsApp Web. Se o celular perder conexao ou a sessao cair, pode ser necessario escanear novamente.
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {[
                 { label: "Numero conectado", value: connection.phoneNumber ?? "Nao informado" },
-                { label: "Phone Number ID", value: connection.phoneNumberId ?? "Nao informado" },
-                { label: "Business Account ID", value: connection.businessAccountId ?? "Nao informado" },
+                { label: isWebProvider ? "Web Session ID" : "Phone Number ID", value: isWebProvider ? (connection.webSessionId ?? "Nao informado") : (connection.phoneNumberId ?? "Nao informado") },
+                { label: isWebProvider ? "Provider" : "Business Account ID", value: isWebProvider ? "whatsapp_web" : (connection.businessAccountId ?? "Nao informado") },
                 { label: "Tipo de conexao", value: connectionTypeLabel(connection.connectionType) },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl border border-border/60 bg-background/70 p-4">
@@ -301,11 +331,11 @@ export function WhatsAppConnectionCard({
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
-                    <p className="mt-2 text-sm font-medium">{connection.status}</p>
+                    <p className="mt-2 text-sm font-medium">{statusLabel(connection.status)}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Webhook</p>
-                    <p className="mt-2 text-sm font-medium">{connection.webhookStatus ?? "Ainda nao informado"}</p>
+                    <p className="mt-2 text-sm font-medium">{connection.webhookStatus ?? "Nao se aplica"}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Data da conexao</p>
@@ -316,63 +346,103 @@ export function WhatsAppConnectionCard({
                     <p className="mt-2 text-sm font-medium">{formatDateTime(connection.updatedAt)}</p>
                   </div>
                 </div>
-
-                {connection.coexistenceEligibility ? (
-                  <>
-                    <Separator className="my-4" />
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Elegibilidade Coexistence</p>
-                      <p className="text-sm text-muted-foreground">
-                        {connection.coexistenceEligibility.eligible === true
-                          ? "Seu numero esta elegivel para operar com Coexistence."
-                          : connection.coexistenceEligibility.eligible === false
-                            ? "A Meta informou que este numero nao esta elegivel para Coexistence agora."
-                            : "A elegibilidade ainda nao foi confirmada pela Meta."}
-                      </p>
-                      {connection.coexistenceEligibility.reason ? (
-                        <p className="text-xs text-muted-foreground">
-                          Motivo: {connection.coexistenceEligibility.reason}
-                        </p>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
-
-                {connection.lastError ? (
-                  <>
-                    <Separator className="my-4" />
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Ultimo erro registrado</AlertTitle>
-                      <AlertDescription>{connection.lastError}</AlertDescription>
-                    </Alert>
-                  </>
-                ) : null}
               </div>
 
-              <div className="space-y-3 rounded-2xl border border-border/60 p-5">
+              <div className="rounded-2xl border border-border/60 bg-background/70 p-5 space-y-3">
                 <p className="text-sm font-medium">Acoes</p>
-                <Button className="w-full justify-start" variant="outline" onClick={onSyncTemplates} disabled={isSyncingTemplates}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  {isSyncingTemplates ? "Sincronizando templates..." : "Sincronizar templates"}
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={onTest} disabled={isTesting}>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  {isTesting ? "Testando conexao..." : "Testar conexao"}
-                </Button>
-                <Button className="w-full justify-start" variant="outline" onClick={onDisconnect} disabled={isDisconnecting}>
-                  <Unplug className="mr-2 h-4 w-4" />
-                  {isDisconnecting ? "Desconectando..." : "Desconectar"}
-                </Button>
+                {!isWebProvider ? (
+                  <>
+                    <Button variant="outline" className="w-full justify-start" onClick={onTest} disabled={isTesting}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      {isTesting ? "Testando conexao..." : "Testar conexao"}
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={onSyncTemplates} disabled={isSyncingTemplates}>
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      {isSyncingTemplates ? "Sincronizando..." : "Sincronizar templates"}
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-destructive" onClick={onDisconnect} disabled={isDisconnecting}>
+                      <Unplug className="mr-2 h-4 w-4" />
+                      {isDisconnecting ? "Desconectando..." : "Desconectar"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => onWebQrModalOpenChange(true)}>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      Ver QR / status
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-destructive" onClick={onDisconnectWeb} disabled={isDisconnectingWeb}>
+                      <Unplug className="mr-2 h-4 w-4" />
+                      {isDisconnectingWeb ? "Desconectando..." : "Desconectar"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
-          </div>
+          </>
         ) : (
-          <div className="rounded-2xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">
-            {isLoading ? "Carregando status do WhatsApp..." : "Nenhuma conexao encontrada para este usuario."}
-          </div>
+          <Alert>
+            <AlertDescription>Carregando status do WhatsApp...</AlertDescription>
+          </Alert>
         )}
       </div>
+
+      <Dialog open={isWebQrModalOpen} onOpenChange={onWebQrModalOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Conectar por QR Code</DialogTitle>
+            <DialogDescription>
+              Escaneie com o celular e acompanhe o status da sessao em tempo real.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Este modo depende da sessao do WhatsApp Web. Se o celular perder conexao ou a sessao cair, pode ser necessario escanear novamente.
+              </AlertDescription>
+            </Alert>
+
+            <div className="rounded-3xl border border-dashed border-border/80 bg-secondary/20 p-6">
+              {webQrStatus?.qrCode ? (
+                <img
+                  src={webQrStatus.qrCode}
+                  alt="QR Code do WhatsApp Web"
+                  className="mx-auto h-64 w-64 rounded-2xl bg-white p-3 shadow-sm"
+                />
+              ) : (
+                <div className="flex h-64 flex-col items-center justify-center gap-3 text-center text-sm text-muted-foreground">
+                  <LoaderCircle className="h-6 w-6 animate-spin" />
+                  <p>{isLoadingWebQr ? "Gerando QR Code..." : "Aguardando QR Code da sessao..."}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border/60 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Estado</p>
+                <p className="mt-2 text-sm font-medium">{statusLabel(webQrStatus?.status ?? connection?.status ?? "pending")}</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Atualizado em</p>
+                <p className="mt-2 text-sm font-medium">{formatDateTime(webQrStatus?.updatedAt ?? connection?.updatedAt ?? null)}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={onConnectWeb} disabled={isStartingWeb}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                {isStartingWeb ? "Atualizando..." : "Atualizar QR"}
+              </Button>
+              <Button variant="outline" onClick={onDisconnectWeb} disabled={isDisconnectingWeb}>
+                <Unplug className="mr-2 h-4 w-4" />
+                {isDisconnectingWeb ? "Desconectando..." : "Desconectar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
