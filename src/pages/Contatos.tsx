@@ -4,6 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,10 +22,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
-import { useContacts, useCreateContact } from "@/hooks/use-app-data";
-import { Plus, Search, Filter, Phone, Download, MoreVertical } from "lucide-react";
+import { useContacts, useCreateContact, useDeleteContact } from "@/hooks/use-app-data";
+import { Plus, Search, Filter, Phone, Download, MoreVertical, Trash2 } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -43,6 +60,7 @@ export default function Contatos() {
   const [contactDraft, setContactDraft] = useState<ContactDraft>(emptyContactDraft);
   const { data: contacts = [], error, isError } = useContacts();
   const createContactMutation = useCreateContact();
+  const deleteContactMutation = useDeleteContact();
 
   const openCreateContact = () => {
     setContactDraft(emptyContactDraft);
@@ -76,6 +94,24 @@ export default function Contatos() {
         toast({
           title: "Falha ao criar contato",
           description: getApiErrorMessage(mutationError, "Verifique se POST /api/contacts existe no backend."),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const removeContact = (contactId: string, contactName: string) => {
+    deleteContactMutation.mutate(contactId, {
+      onSuccess: () => {
+        toast({
+          title: "Contato excluido",
+          description: `${contactName} foi removido e o historico desse numero foi resetado.`,
+        });
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha ao excluir contato",
+          description: getApiErrorMessage(mutationError, "Nao foi possivel excluir o contato agora."),
           variant: "destructive",
         });
       },
@@ -160,7 +196,44 @@ export default function Contatos() {
                   <td className="px-4 py-3 text-xs text-muted-foreground hidden lg:table-cell">{c.flow}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{c.lastInteraction}</td>
                   <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                    <AlertDialog>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={(event) => event.preventDefault()}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir contato
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir contato?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Isso vai remover o contato, as conversas e o historico vinculado a esse numero.
+                            Depois disso, o sistema vai tratar esse numero como se nunca tivesse visto antes.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => removeContact(c.id, c.name)}
+                            disabled={deleteContactMutation.isPending}
+                          >
+                            {deleteContactMutation.isPending ? "Excluindo..." : "Excluir contato"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </td>
                 </tr>
               ))}

@@ -41,7 +41,7 @@ import {
   sendConversationMediaMessage,
   sendConversationTemplateMessage,
 } from "@/services/conversations";
-import { createContact, listContacts, type ContactPayload } from "@/services/contacts";
+import { createContact, deleteContact, listContacts, type ContactPayload } from "@/services/contacts";
 import {
   createFlow,
   createFlowBlock,
@@ -1152,6 +1152,18 @@ export function useCreateContact() {
     mutationFn: (payload: ContactPayload) => createContact(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.contacts });
+    },
+  });
+}
+
+export function useDeleteContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (contactId: string) => deleteContact(contactId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.contacts });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });
 }

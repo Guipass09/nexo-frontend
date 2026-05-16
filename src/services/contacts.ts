@@ -22,3 +22,7 @@ export async function createContact(payload: ContactPayload) {
   const response = normalizeResourceResponse<Contact>(await apiClient.post<unknown>("/contacts", payload));
   return response.data;
 }
+
+export async function deleteContact(contactId: string) {
+  await apiClient.delete(`/contacts/${contactId}`);
+}
