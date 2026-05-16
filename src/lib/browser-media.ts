@@ -49,7 +49,13 @@ export async function getBrowserSafeMediaUrl(sourceUrl: string) {
     })
     .catch((error) => {
       browserSafeMediaUrlCache.delete(sourceUrl);
-      throw error;
+
+      console.warn("Falling back to direct media URL after browser-safe fetch failure.", {
+        sourceUrl,
+        message: error instanceof Error ? error.message : String(error),
+      });
+
+      return sourceUrl;
     });
 
   browserSafeMediaUrlCache.set(sourceUrl, pendingUrl);
