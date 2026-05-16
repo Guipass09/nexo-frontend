@@ -40,8 +40,7 @@ import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, Mess
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
-import { getBrowserSafeMediaUrl } from "@/lib/browser-media";
-import { resolveMediaUrl } from "@/lib/media-url";
+import { useBrowserMediaUrl } from "@/hooks/use-browser-media-url";
 import { toast } from "@/hooks/use-toast";
 import type { Conversation, ConversationMessage, MediaAssetType } from "@/types/domain";
 import type { RealtimeStatus } from "@/services/conversation-realtime";
@@ -280,37 +279,7 @@ function isMediaPlaceholder(text: string | undefined, type: ConversationMessage[
 }
 
 function useConversationMediaUrl(rawUrl?: string | null) {
-  const resolvedUrl = useMemo(() => resolveMediaUrl(rawUrl), [rawUrl]);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(resolvedUrl);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!resolvedUrl) {
-      setMediaUrl(null);
-      return undefined;
-    }
-
-    setMediaUrl(null);
-
-    void getBrowserSafeMediaUrl(resolvedUrl)
-      .then((nextUrl) => {
-        if (!cancelled) {
-          setMediaUrl(nextUrl);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMediaUrl(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [resolvedUrl]);
-
-  return mediaUrl;
+  return useBrowserMediaUrl(rawUrl);
 }
 
 function ConversationImageContent({
@@ -326,7 +295,7 @@ function ConversationImageContent({
   onSaveToLibrary?: (message: ConversationMessage) => void;
   isSavingToLibrary?: boolean;
 }) {
-  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
   const mediaName = message.mediaAsset?.originalName ?? message.text;
   const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
@@ -395,7 +364,7 @@ function ConversationVideoContent({
   onSaveToLibrary?: (message: ConversationMessage) => void;
   isSavingToLibrary?: boolean;
 }) {
-  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
   const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
@@ -462,7 +431,7 @@ function ConversationAudioContent({
   onSaveToLibrary?: (message: ConversationMessage) => void;
   isSavingToLibrary?: boolean;
 }) {
-  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
   const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
@@ -521,7 +490,7 @@ function renderMessageBody(
   }
 
   if (message.type === "document") {
-    const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+    const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
     const mediaName = message.mediaAsset?.originalName ?? message.text;
     const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
     return (
@@ -1211,13 +1180,13 @@ export default function Conversas() {
   const { data: templateMediaAssets = [] } = useMediaAssets(selectedTemplateMediaHeader?.type ?? null, { enabled: Boolean(selectedTemplateMediaHeader) });
   const selectedMediaAsset = mediaAssets.find((asset) => asset.id === mediaDraft.assetId);
   const selectedTemplateMediaAsset = templateMediaAssets.find((asset) => asset.id === templateMedia.assetId);
-  const selectedTemplateMediaAssetUrl = useConversationMediaUrl(selectedTemplateMediaAsset?.publicUrl);
+  const selectedTemplateMediaAssetUrl = useConversationMediaUrl(selectedTemplateMediaAsset?.downloadUrl ?? selectedTemplateMediaAsset?.publicUrl);
   const hasDataError = conversationsQuery.isError;
   const dataError = conversationsQuery.error;
   const activeConversationError = selectedQuery.error ?? conversationMessagesQuery.error;
   const hasConversationData = conversations.length > 0;
-  const selectedMediaAssetUrl = useConversationMediaUrl(selectedMediaAsset?.publicUrl);
-  const previewMessageMediaUrl = useConversationMediaUrl(previewMessage?.mediaAsset?.publicUrl);
+  const selectedMediaAssetUrl = useConversationMediaUrl(selectedMediaAsset?.downloadUrl ?? selectedMediaAsset?.publicUrl);
+  const previewMessageMediaUrl = useConversationMediaUrl(previewMessage?.mediaAsset?.downloadUrl ?? previewMessage?.mediaAsset?.publicUrl);
   const activeConversationNotFound = activeConversationError instanceof ApiError && activeConversationError.status === 404;
 
   useEffect(() => {

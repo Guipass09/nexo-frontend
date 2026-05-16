@@ -1,3 +1,5 @@
+import { getAuthToken } from "@/lib/auth";
+
 const browserSafeMediaUrlCache = new Map<string, Promise<string> | string>();
 
 function shouldBypassDirectBrowserLoad(sourceUrl: string) {
@@ -11,11 +13,22 @@ function shouldBypassDirectBrowserLoad(sourceUrl: string) {
 }
 
 async function fetchAsObjectUrl(sourceUrl: string) {
-  const response = await fetch(sourceUrl, {
-    headers: {
-      "ngrok-skip-browser-warning": "true",
-    },
+  const headers = new Headers({
+    "ngrok-skip-browser-warning": "true",
   });
+
+  try {
+    const url = new URL(sourceUrl, window.location.origin);
+    const token = getAuthToken();
+
+    if (token && url.pathname.startsWith("/api/media-assets/")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  } catch {
+    // Ignore malformed URLs and let fetch handle the failure.
+  }
+
+  const response = await fetch(sourceUrl, { headers });
 
   if (!response.ok) {
     throw new Error(`Media request failed with status ${response.status}`);

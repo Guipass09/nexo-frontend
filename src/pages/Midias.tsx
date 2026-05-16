@@ -16,12 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useBrowserMediaUrl } from "@/hooks/use-browser-media-url";
 import { useArchiveMediaAsset, useMediaAssetLibrary, useOperators, useRestoreMediaAsset, useUploadMediaAsset } from "@/hooks/use-app-data";
 import { ApiError } from "@/lib/api/client";
 import { getStoredAuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import type { MediaAssetType } from "@/types/domain";
+import type { MediaAsset, MediaAssetType } from "@/types/domain";
 
 const typeLabels = {
   image: "Imagem",
@@ -35,6 +36,21 @@ const sourceLabels = {
   url: "URL",
   meta_id: "Media ID",
 } as const;
+
+function MediaAssetThumb({ asset }: { asset: MediaAsset }) {
+  const mediaUrl = useBrowserMediaUrl(asset.downloadUrl ?? asset.publicUrl);
+  const Icon = asset.type === "image" ? FileImage : asset.type === "video" ? Film : asset.type === "audio" ? FileAudio : FileText;
+
+  return (
+    <div className={cn("h-9 w-9 rounded-md border border-border bg-secondary/50 flex items-center justify-center", asset.type === "image" && mediaUrl && "overflow-hidden")}>
+      {asset.type === "image" && mediaUrl ? (
+        <img src={mediaUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      )}
+    </div>
+  );
+}
 
 export default function Midias() {
   const [type, setType] = useState<"" | MediaAssetType>("");
@@ -233,18 +249,11 @@ export default function Midias() {
             </thead>
             <tbody>
               {assets.map((asset) => {
-                const Icon = asset.type === "image" ? FileImage : asset.type === "video" ? Film : asset.type === "audio" ? FileAudio : FileText;
                 return (
                   <tr key={asset.id} className="border-t border-border/60">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={cn("h-9 w-9 rounded-md border border-border bg-secondary/50 flex items-center justify-center", asset.type === "image" && asset.publicUrl && "overflow-hidden")}>
-                          {asset.type === "image" && asset.publicUrl ? (
-                            <img src={asset.publicUrl} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
+                        <MediaAssetThumb asset={asset} />
                         <div className="min-w-0">
                           <Link to={`/midias/${asset.id}`} className="font-medium truncate max-w-[260px] hover:text-primary block">
                             {asset.originalName ?? asset.publicUrl ?? `Asset ${asset.id}`}

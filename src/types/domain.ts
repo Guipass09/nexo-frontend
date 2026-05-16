@@ -84,6 +84,7 @@ export interface MediaAsset {
   size?: number | null;
   sizeLabel?: string | null;
   publicUrl?: string | null;
+  downloadUrl?: string | null;
   storageDisk?: string | null;
   storagePath?: string | null;
   storageVisibility?: string | null;

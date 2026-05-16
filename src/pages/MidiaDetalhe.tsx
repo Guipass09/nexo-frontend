@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useBrowserMediaUrl } from "@/hooks/use-browser-media-url";
 import { useArchiveMediaAsset, useMediaAsset, useRestoreMediaAsset } from "@/hooks/use-app-data";
 import { ApiError } from "@/lib/api/client";
 import { getStoredAuthUser } from "@/lib/auth";
@@ -51,6 +52,7 @@ export default function MidiaDetalhe() {
     error instanceof ApiError && typeof error.responseBody === "object" && error.responseBody !== null && "message" in error.responseBody
       ? String(error.responseBody.message)
       : fallback;
+  const assetMediaUrl = useBrowserMediaUrl(asset.downloadUrl ?? asset.publicUrl);
   const handleArchive = () => archiveMutation.mutate(asset.id, {
     onSuccess: () => toast({ title: "Asset arquivado", description: "O asset foi preservado e removido do reuso operacional." }),
     onError: (error) => toast({ title: "Nao foi possivel arquivar", description: getErrorMessage(error, "Tente novamente ou verifique suas permissoes."), variant: "destructive" }),
@@ -130,22 +132,21 @@ export default function MidiaDetalhe() {
       <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4">
         <Card className="p-4 border-border/60 space-y-4">
           <div className="aspect-video rounded-lg border border-border bg-secondary/40 flex items-center justify-center overflow-hidden">
-            {asset.type === "image" && asset.publicUrl ? (
-              <img src={asset.publicUrl} alt={asset.originalName ?? "Preview"} className="h-full w-full object-cover" />
-            ) : asset.type === "audio" && asset.publicUrl ? (
+            {asset.type === "image" && assetMediaUrl ? (
+              <img src={assetMediaUrl} alt={asset.originalName ?? "Preview"} className="h-full w-full object-cover" />
+            ) : asset.type === "audio" && assetMediaUrl ? (
               <div className="w-full px-4">
                 <FileAudio className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-                <audio src={asset.publicUrl} controls preload="metadata" className="h-9 w-full" />
+                <audio src={assetMediaUrl} controls preload="metadata" className="h-9 w-full" />
               </div>
-            ) : asset.type === "video" ? (
-              <div className="text-center text-sm text-muted-foreground">
-                <Film className="h-8 w-8 mx-auto mb-2" />
-                Video registrado
-              </div>
+            ) : asset.type === "video" && assetMediaUrl ? (
+              <video src={assetMediaUrl} controls preload="metadata" className="h-full w-full object-contain bg-black" />
             ) : (
               <div className="text-center text-sm text-muted-foreground">
                 <Icon className="h-8 w-8 mx-auto mb-2" />
-                Documento registrado
+                {asset.type === "image" || asset.type === "audio" || asset.type === "video"
+                  ? "Arquivo ainda nao disponivel para preview."
+                  : "Documento registrado"}
               </div>
             )}
           </div>

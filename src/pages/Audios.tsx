@@ -2,14 +2,30 @@ import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useBrowserMediaUrl } from "@/hooks/use-browser-media-url";
 import { useMediaAssets, useUploadMediaAsset } from "@/hooks/use-app-data";
 import { toast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Clock, Library, Mic, Plus, Upload } from "lucide-react";
+import type { MediaAsset } from "@/types/domain";
 
 const AUDIO_ACCEPT = "audio/aac,audio/mp4,audio/mpeg,audio/ogg,audio/opus,audio/webm,audio/wav";
 const MAX_AUDIO_BYTES = 16 * 1024 * 1024;
+
+function AudioLibraryPlayer({ asset }: { asset: MediaAsset }) {
+  const mediaUrl = useBrowserMediaUrl(asset.downloadUrl ?? asset.publicUrl);
+
+  if (!mediaUrl) {
+    return (
+      <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-muted-foreground">
+        Este audio existe na biblioteca, mas o arquivo ainda nao esta disponivel para ouvir no painel.
+      </div>
+    );
+  }
+
+  return <audio src={mediaUrl} controls preload="metadata" className="h-9 w-full" />;
+}
 
 export default function Audios() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -168,15 +184,7 @@ export default function Audios() {
                         ) : null}
                       </div>
                     </div>
-                    {audio.publicUrl ? (
-                      <audio src={audio.publicUrl} controls preload="metadata" className="h-9 w-full" />
-                    ) : (
-                      <div className={cn(
-                        "rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-muted-foreground",
-                      )}>
-                        Este audio tem Meta ID, mas nao possui arquivo local para ouvir no painel.
-                      </div>
-                    )}
+                    <AudioLibraryPlayer asset={audio} />
                     <div className="rounded-md bg-secondary/45 px-2 py-1 text-[11px] text-muted-foreground">
                       Use no fluxo como Asset #{audio.id}
                     </div>
