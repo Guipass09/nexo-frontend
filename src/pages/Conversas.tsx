@@ -1218,6 +1218,26 @@ export default function Conversas() {
   const hasConversationData = conversations.length > 0;
   const selectedMediaAssetUrl = useConversationMediaUrl(selectedMediaAsset?.publicUrl);
   const previewMessageMediaUrl = useConversationMediaUrl(previewMessage?.mediaAsset?.publicUrl);
+  const activeConversationNotFound = activeConversationError instanceof ApiError && activeConversationError.status === 404;
+
+  useEffect(() => {
+    if (!selectedId || !activeConversationNotFound) {
+      return;
+    }
+
+    queryClient.setQueriesData<Conversation[]>(
+      { queryKey: queryKeys.conversations },
+      (current) => Array.isArray(current)
+        ? current.filter((conversation) => conversation.id !== selectedId)
+        : current,
+    );
+    queryClient.removeQueries({ queryKey: queryKeys.conversation(selectedId) });
+    queryClient.removeQueries({ queryKey: queryKeys.conversationMessages(selectedId) });
+
+    const fallbackConversation = conversations.find((conversation) => conversation.id !== selectedId) ?? null;
+    selectedConversationChangeRef.current = true;
+    setSelectedId(fallbackConversation?.id ?? null);
+  }, [activeConversationNotFound, conversations, queryClient, selectedId]);
 
   if (hasDataError && !hasConversationData) {
     return (
