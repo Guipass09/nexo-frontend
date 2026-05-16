@@ -24,6 +24,7 @@ import {
   Unplug,
   Wifi,
 } from "lucide-react";
+import { BrandMark } from "@/components/nexo/BrandMark";
 
 interface WhatsAppConnectionCardError {
   title: string;
@@ -167,6 +168,7 @@ export function WhatsAppConnectionCard({
 
   const isConnected = connection?.status === "connected";
   const isWebProvider = connection?.provider === "whatsapp_web";
+  const isConnectedWebSession = isWebProvider && isConnected;
   const hasErrorState = Boolean(error || connection?.status === "error" || connection?.status === "failed" || queryErrorMessage);
   const errorPayload = useMemo<WhatsAppConnectionCardError | null>(() => {
     if (error) {
@@ -405,7 +407,24 @@ export function WhatsAppConnectionCard({
             </Alert>
 
             <div className="rounded-3xl border border-dashed border-border/80 bg-secondary/20 p-6">
-              {webQrStatus?.qrCode ? (
+              {isConnectedWebSession ? (
+                <div className="flex h-64 flex-col items-center justify-center gap-5 text-center">
+                  <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-8 py-7 shadow-sm">
+                    <div className="flex flex-col items-center gap-4">
+                      <BrandMark className="h-14 w-14 rounded-2xl shadow-none" letterClassName="text-xl" />
+                      <div className="space-y-2">
+                        <p className="text-lg font-semibold text-foreground">WhatsApp conectado com sucesso</p>
+                        <p className="max-w-xs text-sm text-muted-foreground">
+                          O Nexo ja reconheceu sua sessao. Agora voce pode fechar esta janela e usar conversas, fluxos e automacoes normalmente.
+                        </p>
+                      </div>
+                      <Badge className="border-emerald-200 bg-white text-emerald-700 hover:bg-white">
+                        Sessao conectada
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ) : webQrStatus?.qrCode ? (
                 <img
                   src={webQrStatus.qrCode}
                   alt="QR Code do WhatsApp Web"
@@ -433,7 +452,7 @@ export function WhatsAppConnectionCard({
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={onConnectWeb} disabled={isStartingWeb}>
                 <RefreshCcw className="mr-2 h-4 w-4" />
-                {isStartingWeb ? "Atualizando..." : "Atualizar QR"}
+                {isStartingWeb ? "Atualizando..." : isConnectedWebSession ? "Atualizar status" : "Atualizar QR"}
               </Button>
               <Button variant="outline" onClick={onDisconnectWeb} disabled={isDisconnectingWeb}>
                 <Unplug className="mr-2 h-4 w-4" />

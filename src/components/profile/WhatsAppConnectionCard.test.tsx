@@ -100,4 +100,27 @@ describe("WhatsAppConnectionCard", () => {
     expect(props.onWebQrModalOpenChange).toHaveBeenCalledWith(true);
     expect(props.onDisconnectWeb).toHaveBeenCalledTimes(1);
   });
+
+  it("shows a connected success state in the qr modal when whatsapp web is already connected", () => {
+    renderCard({
+      isWebQrModalOpen: true,
+      connection: buildConnectedConnection({
+        provider: "whatsapp_web",
+        connectionType: "whatsapp_web",
+        businessAccountId: null,
+        phoneNumberId: null,
+        webSessionId: "session-123",
+      }),
+      webQrStatus: {
+        sessionId: "session-123",
+        status: "connected",
+        qrCode: null,
+        updatedAt: "2026-04-24T10:30:00.000Z",
+      },
+    });
+
+    expect(screen.getByText("WhatsApp conectado com sucesso")).toBeInTheDocument();
+    expect(screen.queryByText("Aguardando QR Code da sessao...")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Atualizar status" })).toBeInTheDocument();
+  });
 });
