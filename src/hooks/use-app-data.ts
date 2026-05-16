@@ -11,6 +11,7 @@ import {
   listAudioSequences,
   listMediaAssetLibrary,
   listMediaAssets,
+  saveMediaAssetToLibrary,
   listTemplates,
   restoreMediaAsset,
   syncTemplates,
@@ -84,49 +85,6 @@ const CONVERSATIONS_POLL_INTERVAL_MS = 8_000;
 const ACTIVE_CONVERSATION_POLL_INTERVAL_MS = 2_500;
 const ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS = 5_000;
 const OPTIMISTIC_MATCH_WINDOW_MS = 120_000;
-const DELETED_CONVERSATION_TOMBSTONE_TTL_MS = 15_000;
-const deletedConversationTombstones = new Map<string, number>();
-
-function pruneDeletedConversationTombstones(now = Date.now()) {
-  deletedConversationTombstones.forEach((deletedAt, conversationId) => {
-    if (now - deletedAt > DELETED_CONVERSATION_TOMBSTONE_TTL_MS) {
-      deletedConversationTombstones.delete(conversationId);
-    }
-  });
-}
-
-function rememberDeletedConversation(conversationId: string, deletedAt = Date.now()) {
-  pruneDeletedConversationTombstones(deletedAt);
-  deletedConversationTombstones.set(conversationId, deletedAt);
-}
-
-function clearDeletedConversationTombstone(conversationId: string) {
-  deletedConversationTombstones.delete(conversationId);
-}
-
-function hasDeletedConversationTombstone(conversationId: string, now = Date.now()) {
-  pruneDeletedConversationTombstones(now);
-  return deletedConversationTombstones.has(conversationId);
-}
-
-function filterFreshConversationCollection(conversations: Conversation[], now = Date.now()) {
-  pruneDeletedConversationTombstones(now);
-
-  return conversations.filter((conversation) => {
-    const deletedAt = deletedConversationTombstones.get(conversation.id);
-
-    if (deletedAt === undefined) {
-      return true;
-    }
-
-    if (now - deletedAt > DELETED_CONVERSATION_TOMBSTONE_TTL_MS) {
-      deletedConversationTombstones.delete(conversation.id);
-      return true;
-    }
-
-    return false;
-  });
-}
 
 function shouldRetryTransientError(failureCount: number, error: unknown) {
   if (failureCount >= 2) {
@@ -492,11 +450,6 @@ export function syncConversationSummaryCaches(
   summary: Conversation,
   filters: ConversationFilters,
 ) {
-  if (hasDeletedConversationTombstone(summary.id)) {
-    removeConversationFromListCaches(queryClient, summary.id);
-    return;
-  }
-
   queryClient.setQueryData<Conversation | null>(queryKeys.conversation(summary.id), (current) => {
     if (!current || areConversationSummariesEqual(current, summary)) {
       return current;
@@ -658,11 +611,7 @@ export function useDashboardOverview() {
 export function useConversations(filters: ConversationFilters = {}, options?: { realtimeConnected?: boolean }) {
   return useQuery({
     queryKey: [...queryKeys.conversations, filters],
-    queryFn: async () => {
-      const conversations = await listConversations(filters);
-
-      return filterFreshConversationCollection(conversations);
-    },
+    queryFn: () => listConversations(filters),
     retry: shouldRetryTransientError,
     placeholderData: keepPreviousData,
     staleTime: 3_000,
@@ -728,7 +677,6 @@ export function useDeleteConversation() {
   return useMutation({
     mutationFn: (conversationId: string) => deleteConversation(conversationId),
     onMutate: async (conversationId) => {
-      rememberDeletedConversation(conversationId);
       await queryClient.cancelQueries({ queryKey: queryKeys.conversations });
       removeConversationFromListCaches(queryClient, conversationId);
       queryClient.removeQueries({ queryKey: queryKeys.conversation(conversationId) });
@@ -740,8 +688,7 @@ export function useDeleteConversation() {
       queryClient.removeQueries({ queryKey: queryKeys.conversationMessages(conversationId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
-    onError: (_error, conversationId) => {
-      clearDeletedConversationTombstone(conversationId);
+    onError: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });
@@ -1314,6 +1261,21 @@ export function useUploadMediaAsset() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.mediaAssets(type) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.mediaAssets(null) });
       void queryClient.invalidateQueries({ queryKey: ["media-assets", "library"] });
+    },
+  });
+}
+
+export function useSaveMediaAssetToLibrary() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (assetId: string) => saveMediaAssetToLibrary(assetId),
+    onSuccess: (asset) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.mediaAssets });
+      void queryClient.invalidateQueries({ queryKey: ["media-assets", "library"] });
+      if (asset?.id) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.mediaAsset(String(asset.id)) });
+      }
     },
   });
 }

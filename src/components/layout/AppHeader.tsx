@@ -1,10 +1,12 @@
 import { Bell, Search, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLocation } from "react-router-dom";
-import { getStoredAuthUser } from "@/lib/auth";
+import { getStoredAuthUser, subscribeToAuthUserChanges } from "@/lib/auth";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Visão geral do robô de atendimento" },
@@ -24,7 +26,10 @@ const titles: Record<string, { title: string; subtitle: string }> = {
 export function AppHeader() {
   const location = useLocation();
   const meta = titles[location.pathname] || { title: "Nexo", subtitle: "" };
-  const user = getStoredAuthUser();
+  const [user, setUser] = useState(() => getStoredAuthUser());
+
+  useEffect(() => subscribeToAuthUserChanges(setUser), []);
+
   const initials = user?.name
     ?.split(/\s+/)
     .filter(Boolean)
@@ -61,6 +66,7 @@ export function AppHeader() {
           <span className="text-[11px] text-muted-foreground">{roleLabel}</span>
         </div>
         <Avatar className="h-9 w-9 ring-2 ring-border cursor-pointer">
+          {user?.avatarUrl ? <AvatarImage src={resolveMediaUrl(user.avatarUrl) ?? undefined} alt={user.name} className="object-cover" /> : null}
           <AvatarFallback className="gradient-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
         </Avatar>
       </div>

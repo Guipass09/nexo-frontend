@@ -78,7 +78,7 @@ export interface MediaAsset {
   id: string;
   type: MediaAssetType;
   sourceType: "upload" | "url" | "meta_id";
-  status?: "active" | "archived";
+  status?: "active" | "archived" | "pending";
   originalName?: string | null;
   mimeType?: string | null;
   size?: number | null;

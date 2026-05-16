@@ -12,6 +12,8 @@ export interface ApiRequestConfig extends RequestInit {
   query?: Record<string, QueryValue>;
 }
 
+const API_REQUEST_TIMEOUT_MS = 15_000;
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -133,6 +135,38 @@ function shouldSkipNgrokBrowserWarning(url: string) {
   return shouldSendNgrokBrowserWarningHeader(url);
 }
 
+function buildRequestSignal(signal?: AbortSignal | null) {
+  const controller = new AbortController();
+  let timeoutId: number | null = null;
+
+  const abortWithReason = (reason?: unknown) => {
+    if (!controller.signal.aborted) {
+      controller.abort(reason);
+    }
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortWithReason(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => abortWithReason(signal.reason), { once: true });
+    }
+  }
+
+  timeoutId = window.setTimeout(() => {
+    abortWithReason(new Error("API request timed out."));
+  }, API_REQUEST_TIMEOUT_MS);
+
+  return {
+    signal: controller.signal,
+    cleanup() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    },
+  };
+}
+
 export class ApiClient {
   constructor(private readonly config: ApiClientConfig = {}) {}
 
@@ -143,6 +177,7 @@ export class ApiClient {
     const url = buildUrl(path, this.config.baseURL, query);
     const method = requestInit.method ?? "GET";
     const skipNgrokBrowserWarning = shouldSkipNgrokBrowserWarning(url);
+    const requestSignal = buildRequestSignal(requestInit.signal);
 
     console.debug("[api] request", {
       method,
@@ -152,17 +187,32 @@ export class ApiClient {
       token: maskToken(token),
     });
 
-    const response = await fetch(url, {
-      ...requestInit,
-      headers: {
-        Accept: "application/json",
-        ...(!isFormData ? { "Content-Type": "application/json" } : {}),
-        ...(skipNgrokBrowserWarning ? { "ngrok-skip-browser-warning": "true" } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...this.config.headers,
-        ...headers,
-      },
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        ...requestInit,
+        signal: requestSignal.signal,
+        headers: {
+          Accept: "application/json",
+          ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+          ...(skipNgrokBrowserWarning ? { "ngrok-skip-browser-warning": "true" } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...this.config.headers,
+          ...headers,
+        },
+      });
+    } catch (error) {
+      requestSignal.cleanup();
+
+      if (requestSignal.signal.aborted) {
+        throw new ApiError("Request timed out.", 408);
+      }
+
+      throw error;
+    }
+
+    requestSignal.cleanup();
 
     const data = await parseResponse(response);
 

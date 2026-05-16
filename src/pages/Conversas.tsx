@@ -28,6 +28,7 @@ import {
   useDeleteConversation,
   useMarkConversationAsRead,
   useMediaAssets,
+  useSaveMediaAssetToLibrary,
   useSendConversationMediaMessage,
   useSendConversationMessage,
   useSendConversationTemplateMessage,
@@ -35,16 +36,21 @@ import {
   useUploadMediaAsset,
 } from "@/hooks/use-app-data";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download } from "lucide-react";
+import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
-import { getStoredAuthUser } from "@/lib/auth";
 import { getBrowserSafeMediaUrl } from "@/lib/browser-media";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { toast } from "@/hooks/use-toast";
 import type { Conversation, ConversationMessage, MediaAssetType } from "@/types/domain";
 import type { RealtimeStatus } from "@/services/conversation-realtime";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type ConversationDraft = {
   contactId: string;
@@ -83,63 +89,6 @@ const emptyContactDraft: ContactDraft = {
   flow: "",
   responsible: "",
 };
-
-type ConversationsViewSnapshot = {
-  conversations: Conversation[];
-  selectedId: string | null;
-  selectedConversation: Conversation | null;
-  selectedConversationMessages: ConversationMessage[];
-  savedAt: number;
-};
-
-const MAX_CONVERSATION_SNAPSHOT_ITEMS = 60;
-const MAX_MESSAGE_SNAPSHOT_ITEMS = 80;
-
-function resolveConversationSnapshotKey() {
-  return `nexo_conversations_view_snapshot_v2:${getStoredAuthUser()?.id ?? "anon"}`;
-}
-
-function readConversationViewSnapshot(): ConversationsViewSnapshot | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.sessionStorage.getItem(resolveConversationSnapshotKey());
-
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<ConversationsViewSnapshot>;
-
-    return {
-      conversations: Array.isArray(parsed.conversations) ? parsed.conversations : [],
-      selectedId: typeof parsed.selectedId === "string" ? parsed.selectedId : null,
-      selectedConversation: parsed.selectedConversation && typeof parsed.selectedConversation === "object"
-        ? parsed.selectedConversation as Conversation
-        : null,
-      selectedConversationMessages: Array.isArray(parsed.selectedConversationMessages)
-        ? parsed.selectedConversationMessages
-        : [],
-      savedAt: typeof parsed.savedAt === "number" ? parsed.savedAt : 0,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writeConversationViewSnapshot(snapshot: ConversationsViewSnapshot) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.sessionStorage.setItem(resolveConversationSnapshotKey(), JSON.stringify(snapshot));
-  } catch {
-    // Ignore storage issues and keep the in-memory experience.
-  }
-}
 
 function messageTypeLabel(type: ConversationMessage["type"]) {
   switch (type) {
@@ -368,13 +317,18 @@ function ConversationImageContent({
   message,
   isClient,
   onOpenMedia,
+  onSaveToLibrary,
+  isSavingToLibrary,
 }: {
   message: ConversationMessage;
   isClient: boolean;
   onOpenMedia?: (message: ConversationMessage) => void;
+  onSaveToLibrary?: (message: ConversationMessage) => void;
+  isSavingToLibrary?: boolean;
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
   const mediaName = message.mediaAsset?.originalName ?? message.text;
+  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2" translate="no">
@@ -407,6 +361,23 @@ function ConversationImageContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
+      {canSaveToLibrary ? (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
+                <Save className="mr-2 h-4 w-4" />
+                Salvar na biblioteca
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -415,12 +386,17 @@ function ConversationVideoContent({
   message,
   isClient,
   onOpenMedia,
+  onSaveToLibrary,
+  isSavingToLibrary,
 }: {
   message: ConversationMessage;
   isClient: boolean;
   onOpenMedia?: (message: ConversationMessage) => void;
+  onSaveToLibrary?: (message: ConversationMessage) => void;
+  isSavingToLibrary?: boolean;
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2" translate="no">
@@ -454,6 +430,23 @@ function ConversationVideoContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
+      {canSaveToLibrary ? (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
+                <Save className="mr-2 h-4 w-4" />
+                Salvar na biblioteca
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -461,11 +454,16 @@ function ConversationVideoContent({
 function ConversationAudioContent({
   message,
   isClient,
+  onSaveToLibrary,
+  isSavingToLibrary,
 }: {
   message: ConversationMessage;
   isClient: boolean;
+  onSaveToLibrary?: (message: ConversationMessage) => void;
+  isSavingToLibrary?: boolean;
 }) {
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+  const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
 
   return (
     <div className="space-y-2 min-w-[220px]" translate="no">
@@ -486,6 +484,23 @@ function ConversationAudioContent({
           {message.rawText ?? message.text}
         </pre>
       ) : null}
+      {canSaveToLibrary ? (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
+                <Save className="mr-2 h-4 w-4" />
+                Salvar na biblioteca
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -494,16 +509,21 @@ function renderMessageBody(
   message: ConversationMessage,
   isClient: boolean,
   onOpenMedia?: (message: ConversationMessage) => void,
+  onSaveToLibrary?: (message: ConversationMessage) => void,
+  isSavingToLibrary?: boolean,
 ) {
   if (message.type === "image") {
-    return <ConversationImageContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} />;
+    return <ConversationImageContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />;
   }
 
   if (message.type === "video") {
-    return <ConversationVideoContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} />;
+    return <ConversationVideoContent message={message} isClient={isClient} onOpenMedia={onOpenMedia} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />;
   }
 
   if (message.type === "document") {
+    const mediaUrl = useConversationMediaUrl(message.mediaAsset?.publicUrl);
+    const mediaName = message.mediaAsset?.originalName ?? message.text;
+    const canSaveToLibrary = message.from === "client" && message.mediaAsset?.status === "pending";
     return (
       <div className="space-y-2" translate="no">
         {mediaUrl ? (
@@ -528,12 +548,29 @@ function renderMessageBody(
             {message.rawText ?? message.text}
           </pre>
         ) : null}
+        {canSaveToLibrary ? (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onSaveToLibrary?.(message)} disabled={isSavingToLibrary}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar na biblioteca
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : null}
       </div>
     );
   }
 
   if (message.type === "audio") {
-    return <ConversationAudioContent message={message} isClient={isClient} />;
+    return <ConversationAudioContent message={message} isClient={isClient} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />;
   }
 
   const label = messageTypeLabel(message.type);
@@ -561,7 +598,6 @@ function renderMessageBody(
 }
 
 export default function Conversas() {
-  const [snapshot, setSnapshot] = useState<ConversationsViewSnapshot | null>(() => readConversationViewSnapshot());
   const [conversationDialogOpen, setConversationDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationDraft, setConversationDraft] = useState<ConversationDraft>(emptyConversationDraft);
@@ -574,7 +610,7 @@ export default function Conversas() {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [flowFilter, setFlowFilter] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(() => readConversationViewSnapshot()?.selectedId ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const conversationFilters = useMemo(() => ({
     status: statusFilter,
     unread: unreadFilter,
@@ -586,10 +622,9 @@ export default function Conversas() {
   const listRealtime = useConversationsRealtime(conversationFilters);
   const conversationsQuery = useConversations(conversationFilters, { realtimeConnected: listRealtime.isConnected });
   const conversations = useMemo(
-    () => conversationsQuery.data ?? snapshot?.conversations ?? [],
-    [conversationsQuery.data, snapshot?.conversations],
+    () => conversationsQuery.data ?? [],
+    [conversationsQuery.data],
   );
-  const isUsingConversationSnapshot = conversationsQuery.data === undefined && (snapshot?.conversations.length ?? 0) > 0;
   const isInitialConversationsLoading = conversationsQuery.isPending && conversations.length === 0;
   const [draftMessage, setDraftMessage] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -622,22 +657,9 @@ export default function Conversas() {
   const selectedQuery = useConversationById(selectedId, { realtimeConnected: realtime.isConnected });
   const conversationMessagesQuery = useConversationMessages(selectedId, { realtimeConnected: realtime.isConnected });
   const conversationMessages = useMemo(
-    () => {
-      if (conversationMessagesQuery.data) {
-        return conversationMessagesQuery.data;
-      }
-
-      if (snapshot?.selectedId === selectedId) {
-        return snapshot.selectedConversationMessages;
-      }
-
-      return [];
-    },
-    [conversationMessagesQuery.data, selectedId, snapshot?.selectedConversationMessages, snapshot?.selectedId],
+    () => conversationMessagesQuery.data ?? [],
+    [conversationMessagesQuery.data],
   );
-  const isUsingMessageSnapshot = conversationMessagesQuery.data === undefined
-    && snapshot?.selectedId === selectedId
-    && snapshot.selectedConversationMessages.length > 0;
   const latestRenderableMessage = useMemo(
     () => [...conversationMessages].reverse().find((message) => message.type !== "event") ?? null,
     [conversationMessages],
@@ -664,18 +686,7 @@ export default function Conversas() {
     () => sidebarConversations.find((conversation) => conversation.id === selectedId) ?? null,
     [selectedId, sidebarConversations],
   );
-  const selectedSnapshotConversation = useMemo(() => {
-    if (!selectedId) {
-      return null;
-    }
-
-    if (snapshot?.selectedConversation?.id === selectedId) {
-      return snapshot.selectedConversation;
-    }
-
-    return snapshot?.conversations.find((conversation) => conversation.id === selectedId) ?? null;
-  }, [selectedId, snapshot?.conversations, snapshot?.selectedConversation]);
-  const selected = selectedListConversation ?? selectedQuery.data ?? selectedSnapshotConversation;
+  const selected = selectedListConversation ?? selectedQuery.data ?? null;
   const lastSyncedMessageRef = useRef<string | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -687,6 +698,7 @@ export default function Conversas() {
   const markAsReadMutation = useMarkConversationAsRead();
   const sendMessageMutation = useSendConversationMessage();
   const sendMediaMutation = useSendConversationMediaMessage();
+  const saveMediaToLibraryMutation = useSaveMediaAssetToLibrary();
   const sendTemplateMutation = useSendConversationTemplateMessage();
   const uploadMediaMutation = useUploadMediaAsset();
   const { data: contacts = [] } = useContacts();
@@ -725,47 +737,6 @@ export default function Conversas() {
 
     syncConversationSummaryCaches(queryClient, selectedQuery.data, conversationFilters);
   }, [conversationFilters, queryClient, selectedQuery.data]);
-
-  useEffect(() => {
-    const nextConversations = conversationsQuery.data ?? snapshot?.conversations ?? [];
-    const nextSelectedConversation = selectedQuery.data
-      ?? selectedListConversation
-      ?? (snapshot?.selectedConversation?.id === selectedId ? snapshot.selectedConversation : null);
-    const nextMessages = conversationMessagesQuery.data
-      ?? (snapshot?.selectedId === selectedId ? snapshot.selectedConversationMessages : []);
-
-    if (nextConversations.length === 0 && !nextSelectedConversation && nextMessages.length === 0) {
-      return;
-    }
-
-    setSnapshot((current) => {
-      const updated: ConversationsViewSnapshot = {
-        conversations: nextConversations.slice(0, MAX_CONVERSATION_SNAPSHOT_ITEMS),
-        selectedId,
-        selectedConversation: nextSelectedConversation ?? null,
-        selectedConversationMessages: nextMessages.slice(-MAX_MESSAGE_SNAPSHOT_ITEMS),
-        savedAt: Date.now(),
-      };
-
-      if (JSON.stringify(current) === JSON.stringify(updated)) {
-        return current;
-      }
-
-      writeConversationViewSnapshot(updated);
-
-      return updated;
-    });
-  }, [
-    conversationsQuery.data,
-    conversationMessagesQuery.data,
-    selectedId,
-    selectedListConversation,
-    selectedQuery.data,
-    snapshot?.conversations,
-    snapshot?.selectedConversation,
-    snapshot?.selectedConversationMessages,
-    snapshot?.selectedId,
-  ]);
 
   useEffect(() => {
     if (!selectedId || conversationMessages.length === 0) {
@@ -989,6 +960,49 @@ export default function Conversas() {
         },
       },
     );
+  };
+
+  const handleSaveConversationMedia = (message: ConversationMessage) => {
+    const assetId = message.mediaAsset?.id;
+
+    if (!assetId) {
+      return;
+    }
+
+    saveMediaToLibraryMutation.mutate(assetId, {
+      onSuccess: (savedAsset) => {
+        toast({
+          title: "Midia salva",
+          description: "A midia agora esta disponivel na aba Midias e pode ser usada em fluxos.",
+        });
+
+        if (!selectedId) {
+          return;
+        }
+
+        queryClient.setQueryData<ConversationMessage[]>(
+          queryKeys.conversationMessages(selectedId),
+          (current = []) => current.map((currentMessage) => (
+            currentMessage.id === message.id
+              ? {
+                ...currentMessage,
+                mediaAsset: currentMessage.mediaAsset ? {
+                  ...currentMessage.mediaAsset,
+                  ...savedAsset,
+                } : currentMessage.mediaAsset,
+              }
+              : currentMessage
+          )),
+        );
+      },
+      onError: (error) => {
+        toast({
+          title: "Falha ao salvar midia",
+          description: getApiErrorMessage(error, "Nao foi possivel mover essa midia para a biblioteca agora."),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleUploadMedia = (file: File | undefined, type: MediaAssetType, target: "template" | "manual") => {
@@ -1223,11 +1237,6 @@ export default function Conversas() {
               Oscilacao de conexao detectada. Mantendo os dados carregados e tentando reconectar.
             </div>
           ) : null}
-          {isUsingConversationSnapshot ? (
-            <div className="rounded-md border border-border/70 bg-secondary/35 px-3 py-2 text-xs text-muted-foreground">
-              Restaurando a ultima lista conhecida enquanto sincronizamos as conversas ao vivo.
-            </div>
-          ) : null}
           <div className="flex items-center justify-between gap-2">
             {listRealtime.enabled ? <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} /> : <span />}
             <Button variant="outline" size="sm" className="gap-1.5" onClick={openCreateConversation}>
@@ -1405,11 +1414,6 @@ export default function Conversas() {
                   Nao foi possivel carregar o detalhe desta conversa agora. A lista continua ativa por realtime/polling.
                 </div>
               ) : null}
-              {isUsingMessageSnapshot ? (
-                <div className="rounded-md border border-border/60 bg-secondary/35 px-3 py-2 text-xs text-muted-foreground">
-                  Restaurando o contexto recente desta conversa enquanto a sincronizacao termina.
-                </div>
-              ) : null}
               {conversationMessagesQuery.isPending && conversationMessages.length === 0 ? (
                 <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-muted-foreground">
                   Carregando conversa...
@@ -1461,7 +1465,13 @@ export default function Conversas() {
                         : "bg-card/95 text-foreground rounded-bl-md ring-border/70 backdrop-blur",
                       isFailed && "ring-destructive/30"
                     )}>
-                      {renderMessageBody(m, isClient, setPreviewMessage)}
+                      {renderMessageBody(
+                        m,
+                        isClient,
+                        setPreviewMessage,
+                        handleSaveConversationMedia,
+                        saveMediaToLibraryMutation.isPending,
+                      )}
                       <div className={cn("mt-2 flex items-center gap-1.5 text-[10px]", isClient ? "text-white/70" : "text-muted-foreground")}>
                         <span>{m.time}</span>
                         {deliveryStatusLabel(m.deliveryStatus) ? <span>· {deliveryStatusLabel(m.deliveryStatus)}</span> : null}

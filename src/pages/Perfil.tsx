@@ -1,23 +1,49 @@
-import { useMemo } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
-import { Bell, Camera, Globe, LogOut, Moon } from "lucide-react";
+import { Bell, Camera, Globe, Loader2, LogOut, Moon, Trash2 } from "lucide-react";
 import { queryClient } from "@/App";
-import { clearAuthSession, getStoredAuthUser } from "@/lib/auth";
+import { clearAuthSession, getStoredAuthUser, subscribeToAuthUserChanges, updateStoredAuthUser } from "@/lib/auth";
 import { logout } from "@/services/auth";
 import { toast } from "@/hooks/use-toast";
 import { getWhatsAppConnectionErrorMessage, useWhatsAppConnection } from "@/hooks/use-whatsapp-connection";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { WhatsAppConnectionCard } from "@/components/profile/WhatsAppConnectionCard";
+import { resolveMediaUrl } from "@/lib/media-url";
+import { updateProfile } from "@/services/profile";
 
 export default function Perfil() {
   const nav = useNavigate();
-  const user = getStoredAuthUser();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [user, setUser] = useState(() => getStoredAuthUser());
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [companyName, setCompanyName] = useState(user?.companyName ?? "");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => subscribeToAuthUserChanges(setUser), []);
+
+  useEffect(() => {
+    setName(user?.name ?? "");
+    setEmail(user?.email ?? "");
+    setCompanyName(user?.companyName ?? "");
+  }, [user?.companyName, user?.email, user?.name]);
+
+  useEffect(() => () => {
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+  }, [avatarPreviewUrl]);
+
+  const currentAvatarUrl = avatarPreviewUrl ?? (removeAvatar ? null : resolveMediaUrl(user?.avatarUrl ?? null));
   const initials = user?.name
     ?.split(/\s+/)
     .filter(Boolean)
@@ -52,6 +78,86 @@ export default function Perfil() {
     () => connectionQuery.isError ? getApiErrorMessage(connectionQuery.error, "Nao foi possivel carregar o status do WhatsApp.") : null,
     [connectionQuery.error, connectionQuery.isError],
   );
+
+  const handleAvatarSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+
+    if (!file) {
+      return;
+    }
+
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+
+    setAvatarFile(file);
+    setRemoveAvatar(false);
+    setAvatarPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemoveAvatar = () => {
+    if (avatarPreviewUrl) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+
+    setAvatarPreviewUrl(null);
+    setAvatarFile(null);
+    setRemoveAvatar(true);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) {
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      formData.append("email", email.trim());
+      formData.append("company_name", companyName.trim());
+
+      if (removeAvatar) {
+        formData.append("remove_avatar", "1");
+      }
+
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      const response = await updateProfile(formData);
+
+      updateStoredAuthUser({
+        ...response.data,
+        tokenExpiresAt: response.data.tokenExpiresAt ?? user.tokenExpiresAt ?? null,
+      });
+
+      setAvatarFile(null);
+      setRemoveAvatar(false);
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+      setAvatarPreviewUrl(null);
+
+      toast({
+        title: "Perfil atualizado",
+        description: response.message ?? "Sua foto e seus dados foram salvos com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Falha ao salvar perfil",
+        description: getApiErrorMessage(error, "Nao foi possivel salvar suas alteracoes agora."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleStartConnection = async () => {
     try {
@@ -189,11 +295,23 @@ export default function Perfil() {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
           <div className="relative">
             <Avatar className="h-24 w-24 ring-4 ring-background shadow-elegant">
+              {currentAvatarUrl ? <AvatarImage src={currentAvatarUrl} alt={user?.name ?? "Conta Nexo"} className="object-cover" /> : null}
               <AvatarFallback className="gradient-primary text-primary-foreground text-2xl font-bold">{initials}</AvatarFallback>
             </Avatar>
-            <button className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-card border-2 border-background shadow-md flex items-center justify-center hover:scale-110 transition-smooth">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-card border-2 border-background shadow-md flex items-center justify-center hover:scale-110 transition-smooth"
+            >
               <Camera className="h-3.5 w-3.5" />
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/jpg"
+              className="hidden"
+              onChange={handleAvatarSelection}
+            />
           </div>
           <div className="flex-1 text-center sm:text-left">
             <h2 className="text-xl font-semibold">{user?.name ?? "Conta Nexo"}</h2>
@@ -201,6 +319,15 @@ export default function Perfil() {
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
               {user?.role === "admin" ? "Administrador" : "Usuario"}
             </span>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                Trocar foto
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={!user?.avatarUrl && !avatarPreviewUrl}>
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Remover foto
+              </Button>
+            </div>
           </div>
           <Button
             variant="outline"
@@ -225,14 +352,16 @@ export default function Perfil() {
       <Card className="p-6 border-border/60">
         <h3 className="font-semibold mb-5 pb-5 border-b border-border/60">Informacoes pessoais</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2"><Label>Nome completo</Label><Input defaultValue={user?.name ?? ""} /></div>
-          <div className="space-y-2"><Label>E-mail</Label><Input type="email" defaultValue={user?.email ?? ""} /></div>
-          <div className="space-y-2"><Label>Empresa</Label><Input defaultValue={user?.companyName ?? ""} placeholder="Empresa ou negocio" /></div>
-          <div className="space-y-2"><Label>Cargo</Label><Input defaultValue={user?.role === "admin" ? "Administrador do sistema" : "Usuario operacional"} /></div>
-          <div className="space-y-2"><Label>Telefone</Label><Input placeholder="Adicionar telefone" /></div>
+          <div className="space-y-2"><Label>Nome completo</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
+          <div className="space-y-2"><Label>E-mail</Label><Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div>
+          <div className="space-y-2"><Label>Empresa</Label><Input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Empresa ou negocio" /></div>
+          <div className="space-y-2"><Label>Cargo</Label><Input value={user?.role === "admin" ? "Administrador do sistema" : "Usuario operacional"} readOnly /></div>
         </div>
         <div className="flex justify-end mt-5">
-          <Button className="gradient-primary text-primary-foreground">Salvar alteracoes</Button>
+          <Button className="gradient-primary text-primary-foreground" onClick={() => void handleSaveProfile()} disabled={isSavingProfile}>
+            {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Salvar alteracoes
+          </Button>
         </div>
       </Card>
 

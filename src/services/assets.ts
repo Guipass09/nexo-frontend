@@ -112,6 +112,12 @@ export async function restoreMediaAsset(assetId: string) {
   return response.data;
 }
 
+export async function saveMediaAssetToLibrary(assetId: string) {
+  const response = await apiClient.post<{ data: MediaAsset }>(`/media-assets/${assetId}/save`);
+
+  return response.data;
+}
+
 export async function uploadMediaAsset(type: MediaAssetType, file: File) {
   const formData = new FormData();
   formData.append("type", type);

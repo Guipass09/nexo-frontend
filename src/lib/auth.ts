@@ -2,12 +2,14 @@ const TOKEN_KEY = "nexo_auth_token";
 const USER_KEY = "nexo_auth_user";
 const NOTICE_KEY = "nexo_auth_notice";
 const TOKEN_EXPIRES_AT_KEY = "nexo_auth_token_expires_at";
+const AUTH_USER_UPDATED_EVENT = "nexo-auth-user-updated";
 
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
   companyName?: string | null;
+  avatarUrl?: string | null;
   role: string;
   status?: "active" | "blocked";
   permissions?: Record<string, boolean> | null;
@@ -104,6 +106,16 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function notifyAuthUserUpdated(user: AuthUser | null) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<AuthUser | null>(AUTH_USER_UPDATED_EVENT, {
+    detail: user,
+  }));
+}
+
 function buildHashLoginUrl() {
   if (!isBrowser()) {
     return "/";
@@ -160,6 +172,10 @@ export function setAuthSession(token: string, user: AuthUser, expiresAt?: string
     expiresAt: expiresAt ?? null,
     token: maskToken(token),
   });
+  notifyAuthUserUpdated({
+    ...user,
+    tokenExpiresAt: expiresAt ?? user.tokenExpiresAt ?? null,
+  });
 }
 
 export function clearAuthSession() {
@@ -171,6 +187,7 @@ export function clearAuthSession() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
   window.localStorage.removeItem(TOKEN_EXPIRES_AT_KEY);
+  notifyAuthUserUpdated(null);
 }
 
 export function setAuthNotice(message: string) {
@@ -213,6 +230,41 @@ export function getStoredAuthUser(): AuthUser | null {
   } catch {
     return null;
   }
+}
+
+export function updateStoredAuthUser(user: AuthUser) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  const currentToken = window.localStorage.getItem(TOKEN_KEY);
+  const expiresAt = user.tokenExpiresAt ?? window.localStorage.getItem(TOKEN_EXPIRES_AT_KEY);
+
+  if (!currentToken) {
+    window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+    notifyAuthUserUpdated(user);
+    return;
+  }
+
+  setAuthSession(currentToken, user, expiresAt);
+}
+
+export function subscribeToAuthUserChanges(listener: (user: AuthUser | null) => void) {
+  if (!isBrowser()) {
+    return () => undefined;
+  }
+
+  const handler = (event: Event) => {
+    if (event instanceof CustomEvent) {
+      listener((event as CustomEvent<AuthUser | null>).detail ?? null);
+    }
+  };
+
+  window.addEventListener(AUTH_USER_UPDATED_EVENT, handler);
+
+  return () => {
+    window.removeEventListener(AUTH_USER_UPDATED_EVENT, handler);
+  };
 }
 
 export function isAuthenticated() {
