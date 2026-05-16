@@ -84,7 +84,49 @@ const CONVERSATIONS_POLL_INTERVAL_MS = 8_000;
 const ACTIVE_CONVERSATION_POLL_INTERVAL_MS = 2_500;
 const ACTIVE_CONVERSATION_SUMMARY_POLL_INTERVAL_MS = 5_000;
 const OPTIMISTIC_MATCH_WINDOW_MS = 120_000;
-const deletedConversationIds = new Set<string>();
+const DELETED_CONVERSATION_TOMBSTONE_TTL_MS = 15_000;
+const deletedConversationTombstones = new Map<string, number>();
+
+function pruneDeletedConversationTombstones(now = Date.now()) {
+  deletedConversationTombstones.forEach((deletedAt, conversationId) => {
+    if (now - deletedAt > DELETED_CONVERSATION_TOMBSTONE_TTL_MS) {
+      deletedConversationTombstones.delete(conversationId);
+    }
+  });
+}
+
+function rememberDeletedConversation(conversationId: string, deletedAt = Date.now()) {
+  pruneDeletedConversationTombstones(deletedAt);
+  deletedConversationTombstones.set(conversationId, deletedAt);
+}
+
+function clearDeletedConversationTombstone(conversationId: string) {
+  deletedConversationTombstones.delete(conversationId);
+}
+
+function hasDeletedConversationTombstone(conversationId: string, now = Date.now()) {
+  pruneDeletedConversationTombstones(now);
+  return deletedConversationTombstones.has(conversationId);
+}
+
+function filterFreshConversationCollection(conversations: Conversation[], now = Date.now()) {
+  pruneDeletedConversationTombstones(now);
+
+  return conversations.filter((conversation) => {
+    const deletedAt = deletedConversationTombstones.get(conversation.id);
+
+    if (deletedAt === undefined) {
+      return true;
+    }
+
+    if (now - deletedAt > DELETED_CONVERSATION_TOMBSTONE_TTL_MS) {
+      deletedConversationTombstones.delete(conversation.id);
+      return true;
+    }
+
+    return false;
+  });
+}
 
 function shouldRetryTransientError(failureCount: number, error: unknown) {
   if (failureCount >= 2) {
@@ -450,7 +492,7 @@ export function syncConversationSummaryCaches(
   summary: Conversation,
   filters: ConversationFilters,
 ) {
-  if (deletedConversationIds.has(summary.id)) {
+  if (hasDeletedConversationTombstone(summary.id)) {
     removeConversationFromListCaches(queryClient, summary.id);
     return;
   }
@@ -619,7 +661,7 @@ export function useConversations(filters: ConversationFilters = {}, options?: { 
     queryFn: async () => {
       const conversations = await listConversations(filters);
 
-      return conversations.filter((conversation) => !deletedConversationIds.has(conversation.id));
+      return filterFreshConversationCollection(conversations);
     },
     retry: shouldRetryTransientError,
     placeholderData: keepPreviousData,
@@ -686,7 +728,7 @@ export function useDeleteConversation() {
   return useMutation({
     mutationFn: (conversationId: string) => deleteConversation(conversationId),
     onMutate: async (conversationId) => {
-      deletedConversationIds.add(conversationId);
+      rememberDeletedConversation(conversationId);
       await queryClient.cancelQueries({ queryKey: queryKeys.conversations });
       removeConversationFromListCaches(queryClient, conversationId);
       queryClient.removeQueries({ queryKey: queryKeys.conversation(conversationId) });
@@ -696,9 +738,10 @@ export function useDeleteConversation() {
       removeConversationFromListCaches(queryClient, conversationId);
       queryClient.removeQueries({ queryKey: queryKeys.conversation(conversationId) });
       queryClient.removeQueries({ queryKey: queryKeys.conversationMessages(conversationId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
     onError: (_error, conversationId) => {
-      deletedConversationIds.delete(conversationId);
+      clearDeletedConversationTombstone(conversationId);
       void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });
