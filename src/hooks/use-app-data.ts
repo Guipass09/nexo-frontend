@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { getAiAgentProfile, updateAiAgentProfile, type UpdateAiAgentProfilePayload } from "@/services/ai-agent";
 import {
   audioSequences,
 } from "@/data/mocks";
@@ -596,6 +597,7 @@ export const queryKeys = {
   auditEventTypes: ["audit-event-types"] as const,
   whatsAppSettings: ["settings", "whatsapp"] as const,
   aiVocabularyMappings: ["settings", "ai-vocabulary", "mappings"] as const,
+  aiAgent: ["automation", "ai-agent"] as const,
 };
 
 export function useDashboardOverview() {
@@ -937,6 +939,25 @@ export function useAiVocabularyChat() {
     onSuccess: (result) => {
       queryClient.setQueryData(queryKeys.aiVocabularyMappings, result.recentMappings);
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiVocabularyMappings });
+    },
+  });
+}
+
+export function useAiAgentProfile() {
+  return useQuery({
+    queryKey: queryKeys.aiAgent,
+    queryFn: getAiAgentProfile,
+    retry: false,
+  });
+}
+
+export function useUpdateAiAgentProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateAiAgentProfilePayload) => updateAiAgentProfile(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
     },
   });
 }

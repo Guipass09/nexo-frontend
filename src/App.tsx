@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Conversas from "./pages/Conversas";
 import Jornada from "./pages/Jornada";
 import Fluxos from "./pages/Fluxos";
+import AgentIa from "./pages/AgentIa";
 import Sequencias from "./pages/Sequencias";
 import Audios from "./pages/Audios";
 import Templates from "./pages/Templates";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/conversas" element={<PermissionGate permission="conversations"><Conversas /></PermissionGate>} />
               <Route path="/jornada" element={<PermissionGate permission="journey"><Jornada /></PermissionGate>} />
               <Route path="/fluxos" element={<PermissionGate permission="flows"><Fluxos /></PermissionGate>} />
+              <Route path="/agent-ia" element={<PermissionGate permission="ai_agent"><AgentIa /></PermissionGate>} />
               <Route path="/sequencias" element={<PermissionGate permission="sequences"><Sequencias /></PermissionGate>} />
               <Route path="/audios" element={<PermissionGate permission="audios"><Audios /></PermissionGate>} />
               <Route path="/templates" element={<PermissionGate permission="templates"><Templates /></PermissionGate>} />

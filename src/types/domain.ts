@@ -196,6 +196,23 @@ export interface AudioSequence {
   order: number;
 }
 
+export interface AiAgentPrompt {
+  id: string;
+  title?: string | null;
+  content: string;
+  sortOrder: number;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface AiAgentProfile {
+  enabled: boolean;
+  takesPriorityOverFlows: boolean;
+  promptCount: number;
+  combinedPromptPreview?: string;
+  prompts: AiAgentPrompt[];
+}
+
 export interface Template {
   id: string;
   name: string;

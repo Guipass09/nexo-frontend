@@ -21,6 +21,7 @@ export type UserPermissionKey =
   | "conversations"
   | "journey"
   | "flows"
+  | "ai_agent"
   | "sequences"
   | "audios"
   | "templates"
@@ -36,6 +37,7 @@ export const USER_PERMISSION_LABELS: Record<UserPermissionKey, string> = {
   conversations: "Conversas",
   journey: "Jornada",
   flows: "Fluxos",
+  ai_agent: "Agent IA",
   sequences: "Sequencias",
   audios: "Audios",
   templates: "Templates",
@@ -54,6 +56,7 @@ export function getDefaultPermissionsForRole(role: string): Record<UserPermissio
       conversations: true,
       journey: true,
       flows: true,
+      ai_agent: true,
       sequences: true,
       audios: true,
       templates: true,
@@ -71,6 +74,7 @@ export function getDefaultPermissionsForRole(role: string): Record<UserPermissio
     conversations: true,
     journey: true,
     flows: true,
+    ai_agent: true,
     sequences: true,
     audios: true,
     templates: true,
