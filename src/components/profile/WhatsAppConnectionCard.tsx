@@ -169,15 +169,16 @@ export function WhatsAppConnectionCard({
   const isConnected = connection?.status === "connected";
   const isWebProvider = connection?.provider === "whatsapp_web";
   const isConnectedWebSession = isWebProvider && isConnected;
-  const hasErrorState = Boolean(error || connection?.status === "error" || connection?.status === "failed" || queryErrorMessage);
+  const hasRuntimeConnectionFailure = isConnected && (connection?.status === "error" || connection?.status === "failed");
+  const hasErrorState = Boolean(error || queryErrorMessage || hasRuntimeConnectionFailure);
   const errorPayload = useMemo<WhatsAppConnectionCardError | null>(() => {
     if (error) {
       return error;
     }
 
-    if (connection?.status === "error" || connection?.status === "failed") {
+    if (hasRuntimeConnectionFailure) {
       return {
-        title: "Nao foi possivel concluir a conexao",
+        title: isWebProvider ? "Falha na sessao do WhatsApp Web" : "Nao foi possivel concluir a conexao",
         message: connection.lastError ?? "A integracao foi salva com erro e precisa de nova tentativa.",
         technicalDetails: connection.metadata ?? null,
       };
@@ -192,7 +193,7 @@ export function WhatsAppConnectionCard({
     }
 
     return null;
-  }, [connection?.lastError, connection?.metadata, connection?.status, error, queryErrorMessage]);
+  }, [connection?.lastError, connection?.metadata, error, hasRuntimeConnectionFailure, isWebProvider, queryErrorMessage]);
 
   return (
     <Card className="border-border/60 p-6">
