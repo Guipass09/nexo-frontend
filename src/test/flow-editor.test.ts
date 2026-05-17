@@ -7,7 +7,9 @@ import {
   createFlowBuilderBlocksFromPayloadBlocks,
   createEmptyFlowBuilderBlock,
   formatFlowTrigger,
+  getFlowBuilderManualLayout,
   normalizeFlowBuilderBlocks,
+  organizeFlowBuilderBlocks,
   parseConditionKeywordDraft,
   parseFlowTrigger,
 } from "@/services/flow-editor";
@@ -126,6 +128,144 @@ describe("flow editor helpers", () => {
     expect(blocks).toHaveLength(2);
     expect(blocks[1].type).toBe("condition_keyword");
     expect(parseConditionKeywordDraft(blocks[1].config).branches[0]?.name).toBe("Sim");
+  });
+
+  it("auto-organizes generated decision branches for canvas editing", () => {
+    const blocks = createFlowBuilderBlocksFromPayloadBlocks([
+      {
+        type: "start",
+        label: "Inicio",
+        description: "Entrada",
+        position: 10,
+        config: {},
+      },
+      {
+        type: "condition_keyword",
+        label: "Escolha",
+        description: "Decide caminho",
+        position: 20,
+        config: {
+          branches: [
+            { name: "Agendar", keywords: ["agendar"], next_position: 30 },
+            { name: "Duvidas", keywords: ["duvidas"], next_position: 40 },
+          ],
+          default_next_position: 50,
+        },
+      },
+      {
+        type: "send_message",
+        label: "Resposta agenda",
+        description: "Seguimos para agendar",
+        position: 30,
+        config: {
+          text: "Seguimos para agendar",
+          next_position: 50,
+        },
+      },
+      {
+        type: "send_message",
+        label: "Resposta duvidas",
+        description: "Vou te explicar melhor",
+        position: 40,
+        config: {
+          text: "Vou te explicar melhor",
+          next_position: 50,
+        },
+      },
+      {
+        type: "wait_for_reply",
+        label: "Aguardar",
+        description: "Aguarda resposta",
+        position: 50,
+        config: {
+          reason: "customer_reply",
+        },
+      },
+    ]);
+
+    const agendar = blocks.find((block) => block.position === 30);
+    const duvidas = blocks.find((block) => block.position === 40);
+
+    expect(getFlowBuilderManualLayout(agendar!).branchParentPosition).toBe(20);
+    expect(getFlowBuilderManualLayout(duvidas!).branchParentPosition).toBe(20);
+    expect(getFlowBuilderManualLayout(agendar!).lane).not.toBe(0);
+    expect(getFlowBuilderManualLayout(duvidas!).lane).not.toBe(0);
+
+    const chart = buildFlowBuilderChart(blocks);
+    const agendarNode = chart.nodes.find((node) => node.position === 30);
+    const duvidasNode = chart.nodes.find((node) => node.position === 40);
+    const waitNode = chart.nodes.find((node) => node.position === 50);
+
+    expect(agendarNode?.depth).toBe(duvidasNode?.depth);
+    expect(agendarNode?.lane).not.toBe(duvidasNode?.lane);
+    expect(waitNode?.lane).toBe(0);
+    expect(waitNode?.depth).toBeGreaterThan(agendarNode?.depth ?? 0);
+  });
+
+  it("reorganizes an existing messy flow without changing its branch targets", () => {
+    const blocks = normalizeFlowBuilderBlocks([
+      {
+        ...createEmptyFlowBuilderBlock("condition_keyword", 20),
+        config: {
+          branches: [
+            { name: "Agendar", keywords: ["agendar"], next_position: 30 },
+            { name: "Duvidas", keywords: ["duvidas"], next_position: 40 },
+          ],
+          default_next_position: 50,
+          ui: {
+            lane: 4,
+            depth: 8,
+          },
+        },
+      },
+      {
+        ...createEmptyFlowBuilderBlock("send_message", 30),
+        config: {
+          text: "Seguimos para agendar",
+          next_position: 50,
+          ui: {
+            lane: 3,
+            depth: 11,
+            branch_side: "right",
+          },
+        },
+      },
+      {
+        ...createEmptyFlowBuilderBlock("send_message", 40),
+        config: {
+          text: "Vou te explicar melhor",
+          next_position: 50,
+          ui: {
+            lane: -4,
+            depth: 1,
+            branch_side: "left",
+          },
+        },
+      },
+      createEmptyFlowBuilderBlock("wait_for_reply", 50),
+    ]);
+
+    const organized = organizeFlowBuilderBlocks(blocks);
+    const condition = organized.find((block) => block.position === 10 || block.position === 20)?.type === "condition_keyword"
+      ? organized.find((block) => block.type === "condition_keyword")
+      : organized.find((block) => block.type === "condition_keyword");
+    const leftBranch = organized.find((block) => block.position === 20 || block.position === 30);
+    const rightBranch = organized.find((block) => block.position === 30 || block.position === 40);
+
+    const conditionBlock = organized.find((block) => block.type === "condition_keyword");
+    const conditionConfig = conditionBlock?.config as Record<string, unknown> | undefined;
+    const branchTargets = Array.isArray(conditionConfig?.branches)
+      ? conditionConfig?.branches.map((branch) => (branch as Record<string, unknown>).next_position)
+      : [];
+
+    expect(branchTargets).toHaveLength(2);
+    expect(branchTargets).toContain(20);
+    expect(branchTargets).toContain(30);
+
+    const messageBlocks = organized.filter((block) => block.type === "send_message");
+    expect(messageBlocks).toHaveLength(2);
+    expect(messageBlocks.every((block) => getFlowBuilderManualLayout(block).branchParentPosition === 10)).toBe(true);
+    expect(new Set(messageBlocks.map((block) => getFlowBuilderManualLayout(block).lane)).size).toBe(2);
   });
 
   it("remaps branch targets when block order changes before save", () => {

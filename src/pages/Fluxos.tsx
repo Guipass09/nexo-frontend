@@ -75,6 +75,7 @@ import {
   flowBuilderBlockTypeOptions,
   formatFlowTrigger,
   getFlowBuilderManualLayout,
+  organizeFlowBuilderBlocks,
   parseConditionKeywordDraft,
   parseFlowTrigger,
   normalizeFlowBuilderBlocks,
@@ -592,6 +593,19 @@ export default function Fluxos() {
     nextCollection.splice(nextIndex, 0, moved);
     applyBlockCollection(nextCollection);
     setSelectedBlockId(blockId);
+  }
+
+  function organizeCurrentFlow() {
+    if (orderedDraftBlocks.length === 0) {
+      return;
+    }
+
+    applyBlockCollection(organizeFlowBuilderBlocks(orderedDraftBlocks));
+
+    toast({
+      title: "Fluxo reorganizado",
+      description: "O canvas foi limpo e redistribuido de cima para baixo, com ramos laterais mais claros para edicao.",
+    });
   }
 
   function repositionBlock({
@@ -1218,6 +1232,15 @@ export default function Fluxos() {
                   variant="outline"
                   size="sm"
                   className="gap-2"
+                  onClick={organizeCurrentFlow}
+                  disabled={orderedDraftBlocks.length === 0}
+                >
+                  <Workflow className="h-4 w-4" /> Organizar fluxo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
                   onClick={() => setIsCanvasFullscreen(true)}
                 >
                   <Expand className="h-4 w-4" /> Tela cheia
@@ -1376,6 +1399,15 @@ export default function Fluxos() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={organizeCurrentFlow}
+                    disabled={orderedDraftBlocks.length === 0}
+                  >
+                    <Workflow className="h-4 w-4" /> Organizar fluxo
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"

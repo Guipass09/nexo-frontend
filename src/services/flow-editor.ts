@@ -540,6 +540,164 @@ function preferredDecisionPlacement(branchIndex: number, branchGroupSize: number
   };
 }
 
+function getAutoSequentialTargetPosition(block: FlowBuilderBlockDraft) {
+  const config = parseObject(block.config);
+  const ui = typeof config.ui === "object" && config.ui !== null && !Array.isArray(config.ui)
+    ? config.ui as Record<string, unknown>
+    : {};
+
+  if (isDecisionBlockType(block.type) || block.type === "end" || block.type === "handoff_human" || block.type === "human") {
+    return undefined;
+  }
+
+  return resolveKnownNextPosition(config.next_position ?? ui.next_position);
+}
+
+function autoLayoutGeneratedFlowBuilderBlocks(blocks: FlowBuilderBlockDraft[]) {
+  const sorted = [...blocks].sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
+  const byPosition = new Map(sorted.map((block) => [block.position, block]));
+  const incomingCount = new Map<number, number>();
+  const nextByPosition = new Map<number, number>();
+
+  sorted.forEach((block) => {
+    const config = parseObject(block.config);
+    const branchTargets = Array.isArray(config.branches)
+      ? config.branches
+          .filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+          .map((branch) => resolveKnownNextPosition(branch.next_position))
+      : [];
+
+    const directTargets = [
+      resolveKnownNextPosition(config.next_position),
+      resolveKnownNextPosition(config.default_next_position),
+      resolveKnownNextPosition(config.fallback_next_position),
+      ...branchTargets,
+    ].filter((target): target is number => target !== undefined);
+
+    directTargets.forEach((target) => {
+      incomingCount.set(target, (incomingCount.get(target) ?? 0) + 1);
+    });
+
+    const sequentialTarget = getAutoSequentialTargetPosition(block);
+    if (sequentialTarget !== undefined) {
+      nextByPosition.set(block.position, sequentialTarget);
+    }
+  });
+
+  const layouts = new Map<string, FlowBuilderManualLayout>();
+
+  sorted.forEach((block) => {
+    layouts.set(block.clientId, getFlowBuilderManualLayout(block));
+  });
+
+  sorted.forEach((block) => {
+    if (!isDecisionBlockType(block.type)) {
+      return;
+    }
+
+    const config = parseObject(block.config);
+    const parentLayout = layouts.get(block.clientId) ?? {};
+    const parentIndex = sorted.findIndex((candidate) => candidate.clientId === block.clientId);
+    const parentLane = parentLayout.lane ?? 0;
+    const parentDepth = parentLayout.depth ?? parentIndex;
+    const branchTargets = Array.isArray(config.branches)
+      ? config.branches
+          .filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+          .map((branch, branchIndex) => ({
+            branchIndex,
+            targetPosition: resolveKnownNextPosition(branch.next_position),
+          }))
+          .filter((entry): entry is { branchIndex: number; targetPosition: number } => entry.targetPosition !== undefined)
+      : [];
+
+    branchTargets.forEach(({ branchIndex, targetPosition }) => {
+      const branchBlock = byPosition.get(targetPosition);
+      if (!branchBlock) {
+        return;
+      }
+
+      const branchPlacement = preferredDecisionPlacement(branchIndex, branchTargets.length);
+      const suggestedLane = parentLane + branchPlacement.laneOffset;
+      const suggestedDepth = parentDepth + 1;
+      const branchSide = suggestedLane < parentLane ? "left" : suggestedLane > parentLane ? "right" : undefined;
+      const branchLayout = layouts.get(branchBlock.clientId) ?? {};
+
+      layouts.set(branchBlock.clientId, {
+        ...branchLayout,
+        lane: branchLayout.lane ?? suggestedLane,
+        depth: branchLayout.depth ?? suggestedDepth,
+        branchParentPosition: branchLayout.branchParentPosition ?? block.position,
+        branchSide: branchLayout.branchSide ?? branchSide,
+      });
+
+      let cursor = branchBlock;
+      let cursorDepth = layouts.get(cursor.clientId)?.depth ?? suggestedDepth;
+      const visited = new Set<number>();
+
+      while (!visited.has(cursor.position)) {
+        visited.add(cursor.position);
+
+        const nextPosition = nextByPosition.get(cursor.position);
+        if (nextPosition === undefined) {
+          break;
+        }
+
+        const nextBlock = byPosition.get(nextPosition);
+        if (!nextBlock) {
+          break;
+        }
+
+        if ((incomingCount.get(nextPosition) ?? 0) > 1 || isDecisionBlockType(nextBlock.type)) {
+          break;
+        }
+
+        const nextLayout = layouts.get(nextBlock.clientId) ?? {};
+        layouts.set(nextBlock.clientId, {
+          ...nextLayout,
+          lane: nextLayout.lane ?? suggestedLane,
+          depth: nextLayout.depth ?? (cursorDepth + 1),
+          branchParentPosition: nextLayout.branchParentPosition ?? block.position,
+          branchSide: nextLayout.branchSide ?? branchSide,
+        });
+
+        cursorDepth = layouts.get(nextBlock.clientId)?.depth ?? (cursorDepth + 1);
+        cursor = nextBlock;
+      }
+    });
+  });
+
+  return sorted.map((block, index) => {
+    const layout = layouts.get(block.clientId) ?? {};
+
+    return applyFlowBuilderManualLayout(block, {
+      lane: layout.lane ?? 0,
+      depth: layout.depth ?? index,
+      nextPosition: layout.nextPosition,
+      branchParentPosition: layout.branchParentPosition,
+      branchSide: layout.branchSide,
+    });
+  });
+}
+
+function clearFlowBuilderVisualLayout(block: FlowBuilderBlockDraft) {
+  const layout = getFlowBuilderManualLayout(block);
+
+  return applyFlowBuilderManualLayout(block, {
+    lane: undefined,
+    depth: undefined,
+    branchParentPosition: undefined,
+    branchSide: undefined,
+    nextPosition: layout.nextPosition,
+  });
+}
+
+export function organizeFlowBuilderBlocks(blocks: FlowBuilderBlockDraft[]) {
+  const normalized = normalizeFlowBuilderBlocks(blocks);
+  const cleaned = normalized.map(clearFlowBuilderVisualLayout);
+
+  return autoLayoutGeneratedFlowBuilderBlocks(cleaned);
+}
+
 export function getConditionBranchDisplayName(name: string | undefined, index: number) {
   const normalized = name?.trim();
 
@@ -765,7 +923,7 @@ export function createFlowBuilderBlocks(blocks: FlowBlock[]): FlowBuilderBlockDr
 }
 
 export function createFlowBuilderBlocksFromPayloadBlocks(blocks: FlowBlockPayload[]): FlowBuilderBlockDraft[] {
-  return blocks
+  const drafts = blocks
     .map((block, index) => ({
       clientId: createDraftId(),
       type: block.type,
@@ -777,6 +935,8 @@ export function createFlowBuilderBlocksFromPayloadBlocks(blocks: FlowBlockPayloa
         : parseObject(block.config ?? {}),
     }))
     .sort((left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId));
+
+  return autoLayoutGeneratedFlowBuilderBlocks(drafts);
 }
 
 export function normalizeFlowBuilderBlocks(blocks: FlowBuilderBlockDraft[]) {
