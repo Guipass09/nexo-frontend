@@ -63,8 +63,8 @@ interface SseEvent {
   data: string;
 }
 
-const RETRY_DELAY_MS = 600;
-const RECONNECT_STATUS_DELAY_MS = 1_500;
+const RETRY_DELAY_MS = 1_000;
+const RECONNECT_STATUS_DELAY_MS = 5_000;
 
 export function isRealtimeSupported() {
   return typeof window !== "undefined"
