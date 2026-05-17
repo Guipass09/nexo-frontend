@@ -122,6 +122,17 @@ export function useWhatsAppConnection() {
     mutationFn: startWhatsAppWebConnection,
     onSuccess: (result) => {
       queryClient.setQueryData(PROFILE_WHATSAPP_QUERY_KEY, result.connection ?? null);
+      if (result.connection?.webSessionId) {
+        queryClient.setQueryData(
+          [...PROFILE_WHATSAPP_QUERY_KEY, "web", "qr", result.connection.webSessionId],
+          {
+            sessionId: result.connection.webSessionId,
+            status: (result.service?.status as WhatsAppWebQrStatus["status"] | undefined) ?? result.connection.status,
+            qrCode: result.service?.qrCode ?? null,
+            updatedAt: result.service?.updatedAt ?? result.connection.updatedAt ?? null,
+          } satisfies WhatsAppWebQrStatus,
+        );
+      }
       void queryClient.invalidateQueries({ queryKey: PROFILE_WHATSAPP_QUERY_KEY });
       setIsWebQrModalOpen(true);
     },

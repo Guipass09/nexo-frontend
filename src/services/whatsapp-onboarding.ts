@@ -123,7 +123,12 @@ export async function disconnectWhatsApp() {
 export async function startWhatsAppWebConnection() {
   const response = normalizeResourceResponse<{
     connection: ProfileWhatsAppConnection | null;
-    service?: Record<string, unknown> | null;
+    service?: {
+      session?: Record<string, unknown> | null;
+      status?: string | null;
+      qrCode?: string | null;
+      updatedAt?: string | null;
+    } | null;
   }>(
     await apiClient.post<unknown>("/profile/whatsapp/web/start"),
   );
