@@ -117,17 +117,140 @@ function anchorPoint(node: FlowBuilderNode, anchor: "top" | "right" | "bottom" |
   }
 }
 
-function controlPoint(point: { x: number; y: number }, anchor: "top" | "right" | "bottom" | "left", strength = 72) {
+function moveFromAnchor(point: { x: number; y: number }, anchor: "top" | "right" | "bottom" | "left", distance = 28) {
   switch (anchor) {
     case "top":
-      return { x: point.x, y: point.y - strength };
+      return { x: point.x, y: point.y - distance };
     case "right":
-      return { x: point.x + strength, y: point.y };
+      return { x: point.x + distance, y: point.y };
     case "left":
-      return { x: point.x - strength, y: point.y };
+      return { x: point.x - distance, y: point.y };
     default:
-      return { x: point.x, y: point.y + strength };
+      return { x: point.x, y: point.y + distance };
   }
+}
+
+function dedupePolylinePoints(points: Array<{ x: number; y: number }>) {
+  return points.filter((point, index) => {
+    if (index === 0) {
+      return true;
+    }
+
+    const previous = points[index - 1];
+    return previous.x !== point.x || previous.y !== point.y;
+  });
+}
+
+function buildOrthogonalRoute(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  startAnchor: "top" | "right" | "bottom" | "left",
+  endAnchor: "top" | "right" | "bottom" | "left",
+) {
+  const startStub = moveFromAnchor(start, startAnchor);
+  const endStub = moveFromAnchor(end, endAnchor);
+
+  let middlePoints: Array<{ x: number; y: number }> = [];
+
+  if (startAnchor === "left" || startAnchor === "right") {
+    const midX = Math.round((startStub.x + endStub.x) / 2);
+    middlePoints = [
+      { x: midX, y: startStub.y },
+      { x: midX, y: endStub.y },
+    ];
+  } else {
+    const midY = Math.round((startStub.y + endStub.y) / 2);
+    middlePoints = [
+      { x: startStub.x, y: midY },
+      { x: endStub.x, y: midY },
+    ];
+  }
+
+  return dedupePolylinePoints([start, startStub, ...middlePoints, endStub, end]);
+}
+
+function roundedPathFromPolyline(points: Array<{ x: number; y: number }>, radius = 14) {
+  if (points.length <= 1) {
+    return "";
+  }
+
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const next = points[index + 1];
+
+    const incomingDx = current.x - previous.x;
+    const incomingDy = current.y - previous.y;
+    const outgoingDx = next.x - current.x;
+    const outgoingDy = next.y - current.y;
+
+    const incomingLength = Math.hypot(incomingDx, incomingDy);
+    const outgoingLength = Math.hypot(outgoingDx, outgoingDy);
+
+    if (incomingLength === 0 || outgoingLength === 0) {
+      continue;
+    }
+
+    const cornerRadius = Math.min(radius, incomingLength / 2, outgoingLength / 2);
+
+    const entry = {
+      x: current.x - (incomingDx / incomingLength) * cornerRadius,
+      y: current.y - (incomingDy / incomingLength) * cornerRadius,
+    };
+
+    const exit = {
+      x: current.x + (outgoingDx / outgoingLength) * cornerRadius,
+      y: current.y + (outgoingDy / outgoingLength) * cornerRadius,
+    };
+
+    path += ` L ${entry.x} ${entry.y} Q ${current.x} ${current.y} ${exit.x} ${exit.y}`;
+  }
+
+  const last = points[points.length - 1];
+  path += ` L ${last.x} ${last.y}`;
+
+  return path;
+}
+
+function midpointAlongPolyline(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) {
+    return { x: 0, y: 0 };
+  }
+
+  if (points.length === 1) {
+    return points[0];
+  }
+
+  const segments = points.slice(1).map((point, index) => {
+    const previous = points[index];
+    const length = Math.hypot(point.x - previous.x, point.y - previous.y);
+
+    return { previous, point, length };
+  });
+
+  const totalLength = segments.reduce((sum, segment) => sum + segment.length, 0);
+  const halfway = totalLength / 2;
+  let travelled = 0;
+
+  for (const segment of segments) {
+    if (travelled + segment.length >= halfway && segment.length > 0) {
+      const ratio = (halfway - travelled) / segment.length;
+      return {
+        x: segment.previous.x + (segment.point.x - segment.previous.x) * ratio,
+        y: segment.previous.y + (segment.point.y - segment.previous.y) * ratio,
+      };
+    }
+
+    travelled += segment.length;
+  }
+
+  return points[points.length - 1];
 }
 
 function BlockMenu({
@@ -704,29 +827,31 @@ export const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function
 
               const start = anchorPoint(source, edge.sourceAnchor ?? "bottom");
               const end = anchorPoint(target, edge.targetAnchor ?? "top");
-              const startX = start.x;
-              const startY = start.y;
-              const endX = end.x;
-              const endY = end.y;
-              const startControl = controlPoint(start, edge.sourceAnchor ?? "bottom", Math.max(72, Math.abs(end.x - start.x) * 0.2));
-              const endControl = controlPoint(end, edge.targetAnchor ?? "top", Math.max(72, Math.abs(end.x - start.x) * 0.2));
-              const labelX = (startX + endX) / 2;
-              const labelY = startY + (endY - startY) / 2;
+              const route = buildOrthogonalRoute(
+                start,
+                end,
+                edge.sourceAnchor ?? "bottom",
+                edge.targetAnchor ?? "top",
+              );
+              const pathDefinition = roundedPathFromPolyline(route);
+              const labelPoint = midpointAlongPolyline(route);
+              const endPoint = route[route.length - 1] ?? end;
 
               return (
                 <g key={edge.id}>
                   <path
-                    d={`M ${startX} ${startY} C ${startControl.x} ${startControl.y}, ${endControl.x} ${endControl.y}, ${endX} ${endY}`}
+                    d={pathDefinition}
                     fill="none"
                     stroke={strokeColor(edge.tone)}
                     strokeWidth="2.5"
+                    strokeLinejoin="round"
                     strokeLinecap="round"
                     strokeDasharray={edge.kind === "fallback" ? "6 6" : undefined}
                     opacity={0.9}
                   />
-                  <circle cx={endX} cy={endY} r="4" fill={strokeColor(edge.tone)} />
+                  <circle cx={endPoint.x} cy={endPoint.y} r="4" fill={strokeColor(edge.tone)} />
                   {edge.label ? (
-                    <foreignObject x={labelX - 58} y={labelY - 13} width={116} height={28}>
+                    <foreignObject x={labelPoint.x - 58} y={labelPoint.y - 13} width={116} height={28}>
                       <div className="flex h-full items-center justify-center">
                         <span className={cn("rounded-full border px-2 py-1 text-[11px] font-medium shadow-sm", edgeBadgeClass(edge.kind))}>
                           {edge.label}
