@@ -125,6 +125,21 @@ function deliveryStatusLabel(status: ConversationMessage["deliveryStatus"]) {
   }
 }
 
+function isRecentClientMessage(message: ConversationMessage | null) {
+  if (!message || message.from !== "client") {
+    return false;
+  }
+
+  const rawTimestamp = message.updatedAt ?? message.sentAt ?? message.createdAt;
+  const timestamp = rawTimestamp ? Date.parse(rawTimestamp) : Number.NaN;
+
+  if (Number.isNaN(timestamp)) {
+    return true;
+  }
+
+  return Date.now() - timestamp <= 90_000;
+}
+
 function realtimeStatusView(status: RealtimeStatus, idleLabel = "Aguardando") {
   switch (status) {
     case "connected":
@@ -154,6 +169,26 @@ function realtimeStatusView(status: RealtimeStatus, idleLabel = "Aguardando") {
         dotClassName: "bg-muted-foreground/70",
       };
   }
+}
+
+function AiProcessingBubble() {
+  return (
+    <div className="flex gap-2.5 justify-start">
+      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+        <Bot className="h-4 w-4 text-white" />
+      </div>
+      <div className="max-w-[78%] rounded-[1.35rem] rounded-bl-md bg-card/95 px-4 py-3 text-foreground shadow-sm ring-1 ring-border/70 backdrop-blur">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Nexo IA analisando o atendimento</span>
+          <span className="inline-flex gap-1">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/70 [animation-delay:-0.2s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/70 [animation-delay:-0.1s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/70" />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function formatPhoneForDisplay(phone?: string | null) {
@@ -607,6 +642,7 @@ export default function Conversas() {
     () => [...conversationMessages].reverse().find((message) => message.type !== "event") ?? null,
     [conversationMessages],
   );
+  const showAiProcessingBubble = isRecentClientMessage(latestRenderableMessage);
   const sidebarConversations = useMemo(() => {
     if (!selectedId || !latestRenderableMessage) {
       return conversations;
@@ -1457,6 +1493,7 @@ export default function Conversas() {
                   </div>
                 );
               })}
+              {showAiProcessingBubble ? <AiProcessingBubble /> : null}
             </div>
 
             <div className="p-3 border-t border-border/70 bg-card/95 shadow-[0_-12px_30px_hsl(var(--background)/0.55)]">
