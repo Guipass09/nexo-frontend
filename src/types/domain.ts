@@ -205,12 +205,31 @@ export interface AiAgentPrompt {
   updatedAt?: string | null;
 }
 
+export interface AiAgentVirtualAgent {
+  agentName: string;
+  roleTitle: string;
+  businessName: string;
+  segment: string;
+  primaryGoal: string;
+  tone: string;
+  businessDescription: string;
+  services: string;
+  faq: string;
+  operatingHours: string;
+  pricingPolicy: string;
+  schedulingInstructions: string;
+  handoffRules: string;
+  boundaries: string;
+  extraKnowledge: string;
+}
+
 export interface AiAgentProfile {
   enabled: boolean;
   takesPriorityOverFlows: boolean;
   promptCount: number;
   combinedPromptPreview?: string;
   prompts: AiAgentPrompt[];
+  virtualAgent?: AiAgentVirtualAgent;
 }
 
 export interface Template {

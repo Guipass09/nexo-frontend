@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import { normalizeResourceResponse } from "@/lib/api/normalizers";
-import type { AiAgentProfile } from "@/types/domain";
+import type { AiAgentProfile, AiAgentVirtualAgent } from "@/types/domain";
 
 export type AiAgentPromptPayload = {
   title?: string;
@@ -10,6 +10,7 @@ export type AiAgentPromptPayload = {
 export type UpdateAiAgentProfilePayload = {
   enabled: boolean;
   prompts: AiAgentPromptPayload[];
+  virtualAgent?: AiAgentVirtualAgent;
 };
 
 export async function getAiAgentProfile() {
