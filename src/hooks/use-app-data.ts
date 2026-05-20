@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { getAiAgentProfile, updateAiAgentProfile, type UpdateAiAgentProfilePayload } from "@/services/ai-agent";
+import {
+  createAiAgentProfile,
+  deleteAiAgentProfile,
+  getAiAgentProfile,
+  updateAiAgentProfile,
+  type CreateAiAgentProfilePayload,
+  type UpdateAiAgentProfilePayload,
+} from "@/services/ai-agent";
 import {
   audioSequences,
 } from "@/data/mocks";
@@ -957,6 +964,28 @@ export function useUpdateAiAgentProfile() {
 
   return useMutation({
     mutationFn: (payload: UpdateAiAgentProfilePayload) => updateAiAgentProfile(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+    },
+  });
+}
+
+export function useCreateAiAgentProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateAiAgentProfilePayload) => createAiAgentProfile(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+    },
+  });
+}
+
+export function useDeleteAiAgentProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (profileId: string | number) => deleteAiAgentProfile(profileId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
     },

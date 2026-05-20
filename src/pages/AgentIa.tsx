@@ -7,8 +7,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Handshake,
+  KeyRound,
+  Plus,
   Save,
   Sparkles,
+  Trash2,
   UserRound,
   Wand2,
   type LucideIcon,
@@ -27,12 +30,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { useAiAgentProfile, useUpdateAiAgentProfile } from "@/hooks/use-app-data";
-import type { AiAgentVirtualAgent } from "@/types/domain";
+import {
+  useAiAgentProfile,
+  useCreateAiAgentProfile,
+  useDeleteAiAgentProfile,
+  useUpdateAiAgentProfile,
+} from "@/hooks/use-app-data";
+import type { AiAgentProfile, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
 
 const emptyVirtualAgent: AiAgentVirtualAgent = {
   agentName: "",
@@ -270,23 +285,91 @@ function composeVirtualAgentFromWizard(answers: WizardAnswerMap): AiAgentVirtual
   };
 }
 
+function normalizeProfileId(id?: string | number | null) {
+  return id == null ? null : String(id);
+}
+
+function profilesFromResponse(data?: AiAgentProfile | null): AiAgentProfile[] {
+  if (!data) {
+    return [];
+  }
+
+  if (Array.isArray(data.profiles) && data.profiles.length > 0) {
+    return data.profiles;
+  }
+
+  return [data];
+}
+
+function parseKeywords(value: string): string[] {
+  return value
+    .split(/[\n,;]+/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
+    .filter((keyword, index, list) => {
+      const normalized = keyword.toLocaleLowerCase("pt-BR");
+      return list.findIndex((item) => item.toLocaleLowerCase("pt-BR") === normalized) === index;
+    })
+    .slice(0, 30);
+}
+
+function triggerLabel(triggerType?: AiAgentTriggerType) {
+  switch (triggerType) {
+    case "unsaved_contacts":
+      return "Nao salvos";
+    case "saved_contacts":
+      return "Salvos";
+    case "keyword":
+      return "Palavra-chave";
+    default:
+      return "Todos";
+  }
+}
+
 export default function AgentIa() {
   const { toast } = useToast();
   const { data, isLoading, error, isError } = useAiAgentProfile();
   const updateMutation = useUpdateAiAgentProfile();
+  const createProfileMutation = useCreateAiAgentProfile();
+  const deleteProfileMutation = useDeleteAiAgentProfile();
+  const [profiles, setProfiles] = useState<AiAgentProfile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState("Assistente principal");
+  const [triggerType, setTriggerType] = useState<AiAgentTriggerType>("all_contacts");
+  const [triggerKeywordsText, setTriggerKeywordsText] = useState("");
   const [enabled, setEnabled] = useState(false);
+  const [allowSavedContacts, setAllowSavedContacts] = useState(true);
   const [virtualAgent, setVirtualAgent] = useState<AiAgentVirtualAgent>(emptyVirtualAgent);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStepIndex, setWizardStepIndex] = useState(0);
   const [wizardAnswers, setWizardAnswers] = useState<WizardAnswerMap>(wizardInitialAnswers);
+
+  const applyProfileToForm = (profile: AiAgentProfile) => {
+    setActiveProfileId(normalizeProfileId(profile.id));
+    setProfileName(profile.name || "Assistente principal");
+    setTriggerType(profile.triggerType ?? (profile.allowSavedContacts === false ? "unsaved_contacts" : "all_contacts"));
+    setTriggerKeywordsText((profile.triggerKeywords ?? []).join("\n"));
+    setEnabled(profile.enabled);
+    setAllowSavedContacts(profile.allowSavedContacts ?? true);
+    setVirtualAgent(mergeVirtualAgent(profile.virtualAgent));
+  };
 
   useEffect(() => {
     if (!data) {
       return;
     }
 
-    setEnabled(data.enabled);
-    setVirtualAgent(mergeVirtualAgent(data.virtualAgent));
+    const nextProfiles = profilesFromResponse(data);
+    const active =
+      nextProfiles.find((profile) => normalizeProfileId(profile.id) === activeProfileId) ??
+      nextProfiles[0];
+
+    setProfiles(nextProfiles);
+
+    if (active) {
+      applyProfileToForm(active);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const filledFieldsCount = useMemo(() => {
@@ -369,7 +452,12 @@ export default function AgentIa() {
 
   const handleSave = () => {
     updateMutation.mutate({
+      profileId: activeProfileId,
+      name: profileName,
       enabled,
+      allowSavedContacts,
+      triggerType,
+      triggerKeywords: parseKeywords(triggerKeywordsText),
       prompts: [],
       virtualAgent,
     }, {
@@ -384,6 +472,68 @@ export default function AgentIa() {
       onError: (mutationError) => {
         toast({
           title: "Falha ao salvar Agent IA",
+          description: getApiErrorMessage(mutationError),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleSelectProfile = (profile: AiAgentProfile) => {
+    applyProfileToForm(profile);
+  };
+
+  const handleCreateProfile = () => {
+    createProfileMutation.mutate({
+      name: `Assistente ${profiles.length + 1}`,
+      triggerType: "keyword",
+    }, {
+      onSuccess: (result) => {
+        const nextProfiles = profilesFromResponse(result);
+        const created = nextProfiles[nextProfiles.length - 1] ?? nextProfiles[0];
+        setProfiles(nextProfiles);
+
+        if (created) {
+          applyProfileToForm(created);
+        }
+
+        toast({
+          title: "Novo assistente criado",
+          description: "Configure um gatilho diferente antes de ligar.",
+        });
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha ao criar assistente",
+          description: getApiErrorMessage(mutationError),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleDeleteProfile = () => {
+    if (!activeProfileId) {
+      return;
+    }
+
+    deleteProfileMutation.mutate(activeProfileId, {
+      onSuccess: (result) => {
+        const nextProfiles = profilesFromResponse(result);
+        setProfiles(nextProfiles);
+
+        if (nextProfiles[0]) {
+          applyProfileToForm(nextProfiles[0]);
+        }
+
+        toast({
+          title: "Assistente removido",
+          description: "As proximas conversas vao usar os assistentes restantes.",
+        });
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha ao remover assistente",
           description: getApiErrorMessage(mutationError),
           variant: "destructive",
         });
@@ -419,6 +569,17 @@ export default function AgentIa() {
               </div>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
             </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Responder contatos salvos</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Desligue para atender apenas numeros novos no WhatsApp conectado.
+                  </p>
+                </div>
+                <Switch checked={allowSavedContacts} onCheckedChange={setAllowSavedContacts} />
+              </div>
+            </div>
             <Badge variant={enabled ? "default" : "secondary"} className="w-fit">
               {enabled ? "Ligado" : "Desligado"}
             </Badge>
@@ -435,6 +596,126 @@ export default function AgentIa() {
           Erro ao carregar Agent IA: {getApiErrorMessage(error)}
         </Card>
       )}
+
+      <Card className="border-border/60 p-4 md:p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">Assistentes e gatilhos</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Use mais de um assistente ligado, desde que cada um tenha um gatilho diferente.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-2"
+                onClick={handleCreateProfile}
+                disabled={createProfileMutation.isPending || isLoading}
+              >
+                <Plus className="h-4 w-4" />
+                Novo assistente
+              </Button>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {profiles.map((profile, index) => {
+                const id = normalizeProfileId(profile.id) ?? `profile-${index}`;
+                const isActive = id === activeProfileId;
+
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => handleSelectProfile(profile)}
+                    className={[
+                      "min-w-[190px] rounded-2xl border px-4 py-3 text-left transition",
+                      isActive
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-border bg-background hover:border-primary/40 hover:bg-muted/30",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-slate-950">
+                        {profile.name || `Assistente ${index + 1}`}
+                      </span>
+                      <Badge variant={profile.enabled ? "default" : "secondary"}>
+                        {profile.enabled ? "Ligado" : "Off"}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Gatilho: {triggerLabel(profile.triggerType)}
+                    </p>
+                    {profile.triggerType === "keyword" && (profile.triggerKeywords ?? []).length > 0 && (
+                      <p className="mt-1 truncate text-xs text-primary">
+                        {(profile.triggerKeywords ?? []).join(", ")}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid gap-3 rounded-3xl border border-border/70 bg-muted/20 p-4 xl:w-[430px]">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+              <Field label="Nome deste assistente">
+                <Input
+                  value={profileName}
+                  onChange={(event) => setProfileName(event.target.value)}
+                  placeholder="Ex.: Captação de novos contatos"
+                />
+              </Field>
+              <Field label="Gatilho de ativação">
+                <Select value={triggerType} onValueChange={(value) => setTriggerType(value as AiAgentTriggerType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_contacts">Todos os contatos</SelectItem>
+                    <SelectItem value="unsaved_contacts">Apenas contatos não salvos</SelectItem>
+                    <SelectItem value="saved_contacts">Apenas contatos salvos</SelectItem>
+                    <SelectItem value="keyword">Palavra-chave</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            {triggerType === "keyword" && (
+              <Field label="Palavras-chave">
+                <Textarea
+                  rows={3}
+                  value={triggerKeywordsText}
+                  onChange={(event) => setTriggerKeywordsText(event.target.value)}
+                  placeholder={"Ex.: avaliacao\norcamento\nquero agendar"}
+                />
+              </Field>
+            )}
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-950">
+              <div className="mb-1 flex items-center gap-2 font-semibold">
+                <KeyRound className="h-3.5 w-3.5" />
+                Trava de conversa ativa
+              </div>
+              Quando um assistente assumir uma conversa, esse gatilho fica seguro ate o atendimento terminar.
+              Palavra-chave enviada no meio nao troca o assistente.
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 text-destructive hover:text-destructive"
+              onClick={handleDeleteProfile}
+              disabled={profiles.length <= 1 || !activeProfileId || deleteProfileMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+              Remover assistente atual
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto rounded-3xl p-0">

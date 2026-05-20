@@ -223,13 +223,21 @@ export interface AiAgentVirtualAgent {
   extraKnowledge: string;
 }
 
+export type AiAgentTriggerType = "all_contacts" | "unsaved_contacts" | "saved_contacts" | "keyword";
+
 export interface AiAgentProfile {
+  id?: string | number;
+  name?: string;
   enabled: boolean;
   takesPriorityOverFlows: boolean;
+  allowSavedContacts: boolean;
+  triggerType?: AiAgentTriggerType;
+  triggerKeywords?: string[];
   promptCount: number;
   combinedPromptPreview?: string;
   prompts: AiAgentPrompt[];
   virtualAgent?: AiAgentVirtualAgent;
+  profiles?: AiAgentProfile[];
 }
 
 export interface Template {
