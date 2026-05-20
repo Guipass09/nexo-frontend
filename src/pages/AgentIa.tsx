@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Handshake,
   Save,
-  ShieldCheck,
   Sparkles,
   UserRound,
   Wand2,
@@ -725,6 +724,9 @@ export default function AgentIa() {
               <InfoBlock title="Fluxos em segundo plano">
                 Quando ligado, o Agent IA responde primeiro. Quando desligado, seus fluxos voltam a assumir normalmente.
               </InfoBlock>
+              <InfoBlock title="Base humana do Nexo">
+                Mesmo com pouco contexto, o Nexo ja orienta a IA a acolher, responder a pergunta e manter continuidade sem parecer robo.
+              </InfoBlock>
             </div>
           </Card>
 
@@ -738,20 +740,6 @@ export default function AgentIa() {
               <pre className="max-h-[520px] whitespace-pre-wrap break-words text-xs leading-6 text-foreground/90">
                 {contextPreview || "Preencha a ficha da pessoa virtual para formar o contexto do atendimento."}
               </pre>
-            </div>
-          </Card>
-
-          <Card className="border-emerald-200 bg-emerald-50/70 p-5 md:p-6">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-emerald-950">Base humana do Nexo</h2>
-                <p className="mt-1 text-sm leading-6 text-emerald-900/80">
-                  Mesmo com pouco contexto, o Nexo ja orienta a IA a acolher, responder a pergunta, manter continuidade e conduzir sem parecer robo.
-                </p>
-              </div>
             </div>
           </Card>
         </aside>
