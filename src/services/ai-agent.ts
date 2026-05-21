@@ -14,7 +14,7 @@ export type UpdateAiAgentProfilePayload = {
   allowSavedContacts?: boolean;
   triggerType?: AiAgentTriggerType;
   triggerKeywords?: string[];
-  prompts: AiAgentPromptPayload[];
+  prompts?: AiAgentPromptPayload[];
   virtualAgent?: AiAgentVirtualAgent;
 };
 

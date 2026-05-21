@@ -148,7 +148,7 @@ export default function AgentIa() {
     setTriggerType(profile.triggerType ?? (profile.allowSavedContacts === false ? "unsaved_contacts" : "all_contacts"));
     setTriggerKeywordsText((profile.triggerKeywords ?? []).join("\n"));
     setEnabled(profile.enabled);
-    setAllowSavedContacts(profile.allowSavedContacts ?? true);
+    setAllowSavedContacts(profile.triggerType === "unsaved_contacts" ? false : (profile.allowSavedContacts ?? true));
     setVirtualAgent(mergeVirtualAgent(profile.virtualAgent));
   };
 
@@ -249,14 +249,20 @@ export default function AgentIa() {
   };
 
   const handleSave = () => {
+    const normalizedTriggerType =
+      triggerType === "all_contacts" && !allowSavedContacts
+        ? "unsaved_contacts"
+        : triggerType === "unsaved_contacts" && allowSavedContacts
+          ? "all_contacts"
+          : triggerType;
+
     updateMutation.mutate({
       profileId: activeProfileId,
       name: profileName,
       enabled,
-      allowSavedContacts,
-      triggerType,
+      allowSavedContacts: normalizedTriggerType === "unsaved_contacts" ? false : allowSavedContacts,
+      triggerType: normalizedTriggerType,
       triggerKeywords: parseKeywords(triggerKeywordsText),
-      prompts: [],
       virtualAgent,
     }, {
       onSuccess: () => {
@@ -375,7 +381,20 @@ export default function AgentIa() {
                     Desligue para atender apenas numeros novos no WhatsApp conectado.
                   </p>
                 </div>
-                <Switch checked={allowSavedContacts} onCheckedChange={setAllowSavedContacts} />
+                <Switch
+                  checked={allowSavedContacts}
+                  onCheckedChange={(checked) => {
+                    setAllowSavedContacts(checked);
+
+                    if (checked && triggerType === "unsaved_contacts") {
+                      setTriggerType("all_contacts");
+                    }
+
+                    if (!checked && triggerType === "all_contacts") {
+                      setTriggerType("unsaved_contacts");
+                    }
+                  }}
+                />
               </div>
             </div>
             <Badge variant={enabled ? "default" : "secondary"} className="w-fit">
@@ -467,7 +486,20 @@ export default function AgentIa() {
                 />
               </Field>
               <Field label="Gatilho de ativação">
-                <Select value={triggerType} onValueChange={(value) => setTriggerType(value as AiAgentTriggerType)}>
+                <Select
+                  value={triggerType}
+                  onValueChange={(value) => {
+                    const nextTriggerType = value as AiAgentTriggerType;
+                    setTriggerType(nextTriggerType);
+
+                    if (nextTriggerType === "unsaved_contacts") {
+                      setAllowSavedContacts(false);
+                      return;
+                    }
+
+                    setAllowSavedContacts(true);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
