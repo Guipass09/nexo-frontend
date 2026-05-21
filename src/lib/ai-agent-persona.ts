@@ -225,10 +225,18 @@ function buildFaqSection(answers: WizardAnswerMap) {
   }
 
   return joinSections([
-    answers.process && `Como funciona: ${ensureSentence(answers.process)}`,
-    answers.pricing && `Valores e pagamento: ${ensureSentence(answers.pricing)}`,
-    answers.hours && `Horário de atendimento: ${ensureSentence(answers.hours)}`,
+    answers.process && ensureSentence(`A plataforma e o atendimento funcionam assim: ${normalizeSingleLine(answers.process)}`),
+    answers.pricing && ensureSentence(`Sobre valores e pagamento: ${normalizeSingleLine(answers.pricing)}`),
+    answers.hours && ensureSentence(`O atendimento acontece em ${normalizeSingleLine(answers.hours)}`),
   ]);
+}
+
+function joinPlainParagraphs(parts: Array<string | false | null | undefined>) {
+  return parts
+    .filter(Boolean)
+    .map((part) => normalizeWhitespace(String(part)))
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export function composeVirtualAgentFromWizard(answers: WizardAnswerMap): AiAgentVirtualAgent {
@@ -245,6 +253,8 @@ export function composeVirtualAgentFromWizard(answers: WizardAnswerMap): AiAgent
   const handoff = normalizeWhitespace(answers.handoff);
   const limits = normalizeWhitespace(answers.limits);
   const faq = buildFaqSection(answers);
+  const processSummary = normalizeSingleLine(process);
+  const servicesSummary = normalizeSingleLine(services);
 
   return {
     agentName: normalizeSingleLine(answers.agentName),
@@ -253,31 +263,41 @@ export function composeVirtualAgentFromWizard(answers: WizardAnswerMap): AiAgent
     segment,
     primaryGoal: mainGoal,
     tone: buildTone(answers.tone),
-    businessDescription: joinSections([
-      businessName && `Empresa/profissional: ${ensureSentence(businessName)}`,
-      segment && `Segmento: ${ensureSentence(segment)}`,
-      audience && `Público atendido: ${ensureSentence(audience)}`,
-      mainGoal && `Objetivo principal deste atendimento: ${ensureSentence(mainGoal)}`,
-      formatSection("Resumo claro do negócio", businessSummary),
+    businessDescription: joinPlainParagraphs([
+      businessName && segment
+        ? ensureSentence(`${businessName} atua em ${segment}`)
+        : businessName
+          ? ensureSentence(businessName)
+          : segment
+            ? ensureSentence(`Atua em ${segment}`)
+            : "",
+      audience && ensureSentence(`Atende principalmente ${audience}`),
+      businessSummary && ensureSentence(businessSummary),
     ]),
-    services: joinSections([
-      formatSection("Serviços, produtos e entregas principais", services),
-      formatSection("Como o atendimento, a plataforma ou o processo funcionam", process),
+    services: joinPlainParagraphs([
+      services,
+      processSummary && ensureSentence(`O fluxo principal funciona assim: ${processSummary}`),
     ]),
     faq,
     operatingHours: hours,
     pricingPolicy: pricing,
-    schedulingInstructions: scheduling || DEFAULT_SCHEDULING,
+    schedulingInstructions: joinPlainParagraphs([
+      scheduling || DEFAULT_SCHEDULING,
+      processSummary && /cadastro/iu.test(processSummary)
+        ? ensureSentence(`Antes do agendamento, confirme se o cadastro já foi concluído`)
+        : "",
+    ]),
     handoffRules: handoff || DEFAULT_HANDOFF,
     boundaries: limits
       ? `${ensureSentence(limits)} Não use linguagem robótica, genérica ou com cara de tradução automática.`
       : DEFAULT_BOUNDARIES,
-    extraKnowledge: joinSections([
+    extraKnowledge: joinPlainParagraphs([
       "Use estas informações como contexto interpretável, nunca como resposta pronta.",
       "Responda sempre em português do Brasil natural, com boa acentuação, pontuação consistente e frases que soem humanas no WhatsApp.",
       "Responda primeiro a dúvida do cliente e, quando fizer sentido, conduza o próximo passo com leveza e objetividade.",
-      process && formatSection("Detalhes operacionais importantes", process),
-      faq && formatSection("Fatos que merecem atenção especial", faq),
+      processSummary && ensureSentence(`Se a conversa evoluir bem, siga este fluxo sem expor bastidores: ${processSummary}`),
+      servicesSummary && ensureSentence(`Use estas entregas como fatos do negócio, sem transformar em lista ou ficha: ${servicesSummary}`),
+      faq && ensureSentence(`Quando o cliente tiver dúvidas, use este contexto de forma natural: ${normalizeSingleLine(faq)}`),
     ]),
   };
 }
