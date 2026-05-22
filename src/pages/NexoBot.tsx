@@ -52,6 +52,13 @@ type NormalizedFlow = {
   blocks: NormalizedFlowBlock[];
 };
 
+type NormalizedMediaAsset = {
+  assetId: string;
+  name: string;
+  type: string;
+  mimeType: string;
+};
+
 type NormalizedWorkspace = {
   assistantName: string;
   introMessage: string;
@@ -64,6 +71,7 @@ type NormalizedWorkspace = {
   messages: NormalizedAssistantMessage[];
   recentConversations: NormalizedConversation[];
   flows: NormalizedFlow[];
+  mediaAssets: NormalizedMediaAsset[];
 };
 
 const examplePhrases = [
@@ -174,6 +182,15 @@ function normalizeWorkspace(data: unknown): NormalizedWorkspace {
     }))
     : [];
 
+  const mediaAssets = Array.isArray(workspace.mediaAssets)
+    ? workspace.mediaAssets.filter(isRecord).map((asset, assetIndex) => ({
+      assetId: toText(asset.assetId, `asset-${assetIndex}`),
+      name: toText(asset.name, "Midia"),
+      type: toText(asset.type, "document"),
+      mimeType: toText(asset.mimeType, ""),
+    }))
+    : [];
+
   return {
     assistantName: toText(workspace.assistantName, "Nexo bot"),
     introMessage: toText(
@@ -189,6 +206,7 @@ function normalizeWorkspace(data: unknown): NormalizedWorkspace {
     messages,
     recentConversations,
     flows,
+    mediaAssets,
   };
 }
 
@@ -450,6 +468,29 @@ export default function NexoBot() {
                           </Badge>
                         ))}
                       </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="border-border/60 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Biblioteca conectada</p>
+            {workspace.mediaAssets.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Nenhuma mídia ativa foi encontrada ainda. Quando houver áudios, imagens, vídeos ou documentos na biblioteca, o Nexo bot poderá aprender quando enviar cada um por assunto.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {workspace.mediaAssets.slice(0, 6).map((asset) => (
+                  <div key={asset.assetId} className="rounded-2xl border border-border/60 bg-background px-3 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm font-semibold text-foreground">{asset.name}</p>
+                      <Badge variant="outline">{asset.type}</Badge>
+                    </div>
+                    {asset.mimeType ? (
+                      <p className="mt-1 text-xs text-muted-foreground">{asset.mimeType}</p>
                     ) : null}
                   </div>
                 ))}
