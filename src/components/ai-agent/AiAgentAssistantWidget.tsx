@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, Eraser, Expand, Loader2, MessageCircle, Minimize2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useAiAgentAssistantChat, useAiAgentAssistantReset, useAiAgentAssistantW
 import { useToast } from "@/hooks/use-toast";
 import { getStoredAuthUser } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { AppRenderBoundary } from "@/components/layout/AppRenderBoundary";
 
 const NEXO_AI_ASSISTANT_OPEN_EVENT = "nexo-ai-assistant-open";
 
@@ -171,22 +172,31 @@ export function AiAgentAssistantWidget() {
 
   return (
     <div className="fixed bottom-5 right-5 z-[70]">
+      <Button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="h-14 rounded-full border-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 px-4 text-white shadow-2xl shadow-cyan-500/25 hover:opacity-95"
+      >
+        <Sparkles className="h-5 w-5" />
+        <span className="text-sm font-semibold">Nexo bot</span>
+      </Button>
+
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            className="h-14 rounded-full border-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 px-4 text-white shadow-2xl shadow-cyan-500/25 hover:opacity-95"
+        {open ? (
+          <DialogContent
+            className={`overflow-hidden rounded-3xl border-slate-200 p-0 ${
+              maximized
+                ? "h-[92vh] w-[calc(100vw-2rem)] max-w-[min(1400px,calc(100vw-2rem))]"
+                : "w-[calc(100vw-2rem)] max-w-4xl"
+            }`}
           >
-            <Sparkles className="h-5 w-5" />
-            <span className="text-sm font-semibold">Nexo bot</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent
-          className={`overflow-hidden rounded-3xl border-slate-200 p-0 ${
-            maximized
-              ? "h-[92vh] w-[calc(100vw-2rem)] max-w-[min(1400px,calc(100vw-2rem))]"
-              : "w-[calc(100vw-2rem)] max-w-4xl"
-          }`}
-        >
+            <AppRenderBoundary
+              fallback={(
+                <div className="flex min-h-[280px] items-center justify-center p-8 text-center text-sm text-slate-600">
+                  Nao foi possivel abrir o chat de ajuste agora. Feche e tente novamente.
+                </div>
+              )}
+            >
           <div className="grid max-h-[82vh] md:grid-cols-[320px_1fr]">
             <div className="border-b border-slate-200 bg-slate-50/80 p-5 md:border-b-0 md:border-r">
               <DialogHeader className="space-y-2 text-left">
@@ -494,7 +504,9 @@ export function AiAgentAssistantWidget() {
               </div>
             </div>
           </div>
-        </DialogContent>
+            </AppRenderBoundary>
+          </DialogContent>
+        ) : null}
       </Dialog>
     </div>
   );
