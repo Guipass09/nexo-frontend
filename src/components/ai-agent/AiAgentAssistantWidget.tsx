@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Eraser, Expand, Loader2, MessageCircle, Minimize2, Send, Sparkles } from "lucide-react";
+import { Bot, Eraser, Expand, Loader2, MessageCircle, Minimize2, Send, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -181,37 +180,39 @@ export function AiAgentAssistantWidget() {
         <span className="text-sm font-semibold">Nexo bot</span>
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        {open ? (
-          <DialogContent
-            className={`overflow-hidden rounded-3xl border-slate-200 p-0 ${
-              maximized
-                ? "h-[92vh] w-[calc(100vw-2rem)] max-w-[min(1400px,calc(100vw-2rem))]"
-                : "w-[calc(100vw-2rem)] max-w-4xl"
-            }`}
-          >
-            <AppRenderBoundary
-              fallback={(
-                <div className="flex min-h-[280px] items-center justify-center p-8 text-center text-sm text-slate-600">
-                  Nao foi possivel abrir o chat de ajuste agora. Feche e tente novamente.
-                </div>
-              )}
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
+          <div className="fixed inset-x-4 bottom-4 top-4 z-[90] flex items-center justify-center md:inset-8">
+            <div
+              className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl ${
+                maximized
+                  ? "h-full w-full"
+                  : "h-full w-full max-w-4xl"
+              }`}
             >
+              <AppRenderBoundary
+                fallback={(
+                  <div className="flex min-h-[280px] items-center justify-center p-8 text-center text-sm text-slate-600">
+                    Nao foi possivel abrir o chat de ajuste agora. Feche e tente novamente.
+                  </div>
+                )}
+              >
           <div className="grid max-h-[82vh] md:grid-cols-[320px_1fr]">
             <div className="border-b border-slate-200 bg-slate-50/80 p-5 md:border-b-0 md:border-r">
-              <DialogHeader className="space-y-2 text-left">
+              <div className="space-y-2 text-left">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 text-white">
                     <Bot className="h-5 w-5" />
                   </div>
                   <div>
-                    <DialogTitle className="text-xl">{title}</DialogTitle>
-                    <DialogDescription>
+                    <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
+                    <p className="text-sm text-muted-foreground">
                       Ajustes finos, leitura de conversas e aprendizado operacional do seu Agent IA.
-                    </DialogDescription>
+                    </p>
                   </div>
                 </div>
-              </DialogHeader>
+              </div>
 
               <div className="mt-5 space-y-4">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -308,7 +309,7 @@ export function AiAgentAssistantWidget() {
 
             <div className="flex min-h-[68vh] flex-col bg-white">
               <div className="border-b border-slate-200 px-5 py-4">
-                <div className="mb-3 flex items-center justify-end gap-2 pr-10">
+                <div className="mb-3 flex items-center justify-end gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -339,6 +340,15 @@ export function AiAgentAssistantWidget() {
                   >
                     <Minimize2 className="h-4 w-4" />
                     Minimizar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setOpen(false)}
+                    className="rounded-full"
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
                 <p className="text-sm font-medium text-slate-900">
@@ -504,10 +514,11 @@ export function AiAgentAssistantWidget() {
               </div>
             </div>
           </div>
-            </AppRenderBoundary>
-          </DialogContent>
-        ) : null}
-      </Dialog>
+              </AppRenderBoundary>
+            </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
