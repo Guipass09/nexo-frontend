@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAiAgentAssistantChat, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
 import { useToast } from "@/hooks/use-toast";
+import { getStoredAuthUser, hasPermission } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
 
 function scoreLabel(score: number | null) {
@@ -22,8 +23,12 @@ export function AiAgentAssistantWidget() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const { data: profileData } = useAiAgentProfile();
-  const profiles = profileData?.profiles ?? (profileData ? [profileData] : []);
+  const authUser = getStoredAuthUser();
+  const canUseAssistant = hasPermission(authUser, "ai_agent");
+  const { data: profileData } = useAiAgentProfile(canUseAssistant);
+  const profiles = Array.isArray((profileData as { profiles?: unknown } | undefined)?.profiles)
+    ? ((profileData as { profiles: Array<{ id?: string | number | null }> }).profiles ?? [])
+    : (profileData ? [profileData] : []);
   const [selectedProfileId, setSelectedProfileId] = useState<string | number | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
@@ -47,13 +52,16 @@ export function AiAgentAssistantWidget() {
   }, [selectedProfileId]);
 
   const workspace = assistantWorkspaceQuery.data;
+  const trainingSnapshot = workspace?.trainingSnapshot ?? null;
+  const recentConversations = Array.isArray(workspace?.recentConversations) ? workspace.recentConversations : [];
+  const suggestions = Array.isArray(workspace?.suggestions) ? workspace.suggestions : [];
   const selectedConversation = useMemo(() => {
-    if (!workspace || !selectedConversationId) {
+    if (!selectedConversationId) {
       return null;
     }
 
-    return workspace.recentConversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null;
-  }, [workspace, selectedConversationId]);
+    return recentConversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null;
+  }, [recentConversations, selectedConversationId]);
 
   useEffect(() => {
     if (!selectedConversation) {
@@ -73,10 +81,16 @@ export function AiAgentAssistantWidget() {
       return "Nexo bot";
     }
 
-    const businessName = workspace.profileSummary.businessName.trim();
+    const businessName = typeof workspace.profileSummary?.businessName === "string"
+      ? workspace.profileSummary.businessName.trim()
+      : "";
 
     return businessName !== "" ? `Nexo bot • ${businessName}` : workspace.assistantName;
   }, [workspace]);
+
+  if (!canUseAssistant) {
+    return null;
+  }
 
   const submit = () => {
     const message = input.trim();
@@ -140,14 +154,14 @@ export function AiAgentAssistantWidget() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Treino atual</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="secondary">{scoreLabel(workspace?.trainingSnapshot.averageScore ?? null)}</Badge>
-                    {workspace?.trainingSnapshot.passedScenarios !== null && workspace?.trainingSnapshot.scenarioCount !== null ? (
+                    {trainingSnapshot?.passedScenarios !== null && trainingSnapshot?.scenarioCount !== null ? (
                       <Badge variant="outline">
-                        {workspace.trainingSnapshot.passedScenarios}/{workspace.trainingSnapshot.scenarioCount} cenários
+                        {trainingSnapshot.passedScenarios}/{trainingSnapshot.scenarioCount} cenários
                       </Badge>
                     ) : null}
                   </div>
-                  {workspace?.trainingSnapshot.criticSummary ? (
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{workspace.trainingSnapshot.criticSummary}</p>
+                  {trainingSnapshot?.criticSummary ? (
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{trainingSnapshot.criticSummary}</p>
                   ) : (
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       O Nexo bot usa o perfil, o treino e as conversas recentes para transformar seu feedback em regras reais do Agent.
@@ -158,7 +172,7 @@ export function AiAgentAssistantWidget() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Sugestões úteis</p>
                   <div className="mt-3 space-y-2">
-                    {(workspace?.suggestions ?? []).slice(0, 4).map((suggestion) => (
+                    {suggestions.slice(0, 4).map((suggestion) => (
                       <button
                         key={suggestion}
                         type="button"
@@ -171,14 +185,14 @@ export function AiAgentAssistantWidget() {
                   </div>
                 </div>
 
-                {workspace?.recentConversations.length ? (
+                {recentConversations.length ? (
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conversas recentes</p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       Você pode anexar uma conversa real para eu diagnosticar o erro na origem e transformar isso em regra geral do Agent.
                     </p>
                     <div className="mt-3 space-y-3">
-                      {workspace.recentConversations.slice(0, 3).map((conversation) => (
+                      {recentConversations.slice(0, 3).map((conversation) => (
                         <button
                           key={conversation.conversationId}
                           type="button"
@@ -235,7 +249,7 @@ export function AiAgentAssistantWidget() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Sem conversa anexada</SelectItem>
-                        {(workspace?.recentConversations ?? []).map((conversation) => (
+                        {recentConversations.map((conversation) => (
                           <SelectItem key={conversation.conversationId} value={conversation.conversationId}>
                             {conversation.contactName}
                           </SelectItem>

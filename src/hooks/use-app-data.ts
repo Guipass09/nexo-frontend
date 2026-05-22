@@ -958,11 +958,12 @@ export function useAiVocabularyChat() {
   });
 }
 
-export function useAiAgentProfile() {
+export function useAiAgentProfile(enabled = true) {
   return useQuery({
     queryKey: queryKeys.aiAgent,
     queryFn: getAiAgentProfile,
     retry: false,
+    enabled,
   });
 }
 
