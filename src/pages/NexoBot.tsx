@@ -34,6 +34,24 @@ type NormalizedConversation = {
   recentMessages: NormalizedRecentMessage[];
 };
 
+type NormalizedFlowBlock = {
+  id: string;
+  type: string;
+  label: string;
+  description: string;
+  position: number;
+};
+
+type NormalizedFlow = {
+  flowId: string;
+  name: string;
+  status: string;
+  trigger: string;
+  stepsCount: number;
+  summary: string | null;
+  blocks: NormalizedFlowBlock[];
+};
+
 type NormalizedWorkspace = {
   assistantName: string;
   introMessage: string;
@@ -45,6 +63,7 @@ type NormalizedWorkspace = {
   suggestions: string[];
   messages: NormalizedAssistantMessage[];
   recentConversations: NormalizedConversation[];
+  flows: NormalizedFlow[];
 };
 
 const examplePhrases = [
@@ -135,6 +154,26 @@ function normalizeWorkspace(data: unknown): NormalizedWorkspace {
     }))
     : [];
 
+  const flows = Array.isArray(workspace.flows)
+    ? workspace.flows.filter(isRecord).map((flow, flowIndex) => ({
+      flowId: toText(flow.flowId, `flow-${flowIndex}`),
+      name: toText(flow.name, "Fluxo"),
+      status: toText(flow.status, "ativo"),
+      trigger: toText(flow.trigger, ""),
+      stepsCount: toNumberOrNull(flow.stepsCount) ?? 0,
+      summary: toText(flow.summary, "") || null,
+      blocks: Array.isArray(flow.blocks)
+        ? flow.blocks.filter(isRecord).map((block, blockIndex) => ({
+          id: toText(block.id, `block-${flowIndex}-${blockIndex}`),
+          type: toText(block.type, "message"),
+          label: toText(block.label, "Bloco"),
+          description: toText(block.description, ""),
+          position: toNumberOrNull(block.position) ?? blockIndex + 1,
+        }))
+        : [],
+    }))
+    : [];
+
   return {
     assistantName: toText(workspace.assistantName, "Nexo bot"),
     introMessage: toText(
@@ -149,6 +188,7 @@ function normalizeWorkspace(data: unknown): NormalizedWorkspace {
     suggestions,
     messages,
     recentConversations,
+    flows,
   };
 }
 
@@ -376,6 +416,45 @@ export default function NexoBot() {
                 Vou usar essa conversa como exemplo, mas o ajuste sera geral para o Agent inteiro.
               </p>
             ) : null}
+          </Card>
+
+          <Card className="border-border/60 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Fluxos do contexto</p>
+            {workspace.flows.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Nenhum fluxo salvo ainda. Quando existirem fluxos da empresa, o Nexo bot passa a considerar esses caminhos no diagnóstico e nos ajustes.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {workspace.flows.slice(0, 6).map((flow) => (
+                  <div key={flow.flowId} className="rounded-2xl border border-border/60 bg-background px-3 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{flow.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {flow.trigger ? `Trigger: ${flow.trigger}` : "Sem trigger definido"} • {flow.stepsCount} etapas
+                        </p>
+                      </div>
+                      <Badge variant="outline">{flow.status}</Badge>
+                    </div>
+
+                    {flow.summary ? (
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{flow.summary}</p>
+                    ) : null}
+
+                    {flow.blocks.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {flow.blocks.slice(0, 4).map((block) => (
+                          <Badge key={block.id} variant="secondary">
+                            {block.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 

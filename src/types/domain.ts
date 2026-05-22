@@ -346,6 +346,25 @@ export interface AiAgentAssistantConversationInsight {
   }>;
 }
 
+export interface AiAgentAssistantFlowBlockInsight {
+  id: string;
+  type: string;
+  label: string;
+  description: string;
+  position: number;
+}
+
+export interface AiAgentAssistantFlowInsight {
+  flowId: string;
+  name: string;
+  status: string;
+  trigger: string;
+  stepsCount: number;
+  aiCompanyPrompt?: string | null;
+  summary?: string | null;
+  blocks: AiAgentAssistantFlowBlockInsight[];
+}
+
 export interface AiAgentAssistantWorkspace {
   profileId: string;
   assistantName: string;
@@ -371,6 +390,7 @@ export interface AiAgentAssistantWorkspace {
   };
   recentConversations: AiAgentAssistantConversationInsight[];
   selectedConversation?: AiAgentAssistantConversationInsight | null;
+  flows?: AiAgentAssistantFlowInsight[];
   suggestions: string[];
 }
 
