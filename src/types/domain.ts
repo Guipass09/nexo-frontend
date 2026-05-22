@@ -223,6 +223,54 @@ export interface AiAgentVirtualAgent {
   extraKnowledge: string;
 }
 
+export interface AiAgentTrainingScenario {
+  key: string;
+  title: string;
+  score: number;
+  passed: boolean;
+  issues: string[];
+  turnCount: number;
+  lastReply?: string | null;
+}
+
+export interface AiAgentTrainingProgression {
+  runCount: number;
+  level: number;
+  levelLabel: string;
+  previousAverageScore: number;
+  bestAverageScore: number;
+  firstAverageScore: number;
+  improvementFromLastRun: number;
+  improvementFromFirstRun: number;
+  streakAbove95: number;
+  nextFocus: string[];
+  adaptiveScenarioCount: number;
+  lastRoundAverageScore?: number;
+}
+
+export interface AiAgentTrainingHistoryEntry {
+  runNumber: number;
+  level: number;
+  levelLabel: string;
+  averageScore: number;
+  passedScenarios: number;
+  scenarioCount: number;
+  issues: string[];
+  lastRunAt: string;
+}
+
+export interface AiAgentTrainingReport {
+  lastRunAt: string;
+  averageScore: number;
+  scenarioCount: number;
+  passedScenarios: number;
+  issues: string[];
+  appliedAdjustments: string[];
+  scenarios: AiAgentTrainingScenario[];
+  progression?: AiAgentTrainingProgression | null;
+  history?: AiAgentTrainingHistoryEntry[];
+}
+
 export type AiAgentTriggerType = "all_contacts" | "unsaved_contacts" | "saved_contacts" | "keyword";
 
 export interface AiAgentProfile {
@@ -237,6 +285,7 @@ export interface AiAgentProfile {
   combinedPromptPreview?: string;
   prompts: AiAgentPrompt[];
   virtualAgent?: AiAgentVirtualAgent;
+  trainingReport?: AiAgentTrainingReport | null;
   profiles?: AiAgentProfile[];
 }
 

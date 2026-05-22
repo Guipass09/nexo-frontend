@@ -4,8 +4,10 @@ import {
   createAiAgentProfile,
   deleteAiAgentProfile,
   getAiAgentProfile,
+  trainAiAgent,
   updateAiAgentProfile,
   type CreateAiAgentProfilePayload,
+  type TrainAiAgentPayload,
   type UpdateAiAgentProfilePayload,
 } from "@/services/ai-agent";
 import {
@@ -986,6 +988,17 @@ export function useDeleteAiAgentProfile() {
 
   return useMutation({
     mutationFn: (profileId: string | number) => deleteAiAgentProfile(profileId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+    },
+  });
+}
+
+export function useTrainAiAgent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: TrainAiAgentPayload) => trainAiAgent(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
     },

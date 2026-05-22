@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Handshake,
   KeyRound,
+  LoaderCircle,
   Plus,
   Save,
   Sparkles,
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { BrandMark } from "@/components/nexo/BrandMark";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 import {
@@ -52,9 +54,10 @@ import {
   useAiAgentProfile,
   useCreateAiAgentProfile,
   useDeleteAiAgentProfile,
+  useTrainAiAgent,
   useUpdateAiAgentProfile,
 } from "@/hooks/use-app-data";
-import type { AiAgentProfile, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
+import type { AiAgentProfile, AiAgentTrainingReport, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
 
 const emptyVirtualAgent: AiAgentVirtualAgent = {
   agentName: "",
@@ -124,12 +127,57 @@ function triggerLabel(triggerType?: AiAgentTriggerType) {
   }
 }
 
+const trainingPhrases = [
+  "Lendo o contexto da empresa e organizando os fatos mais importantes.",
+  "Simulando cumprimentos, perguntas diretas e respostas curtas como 'sim'.",
+  "Validando se o Agent responde sem vazar comandos internos nem labels roboticos.",
+  "Testando cadastro, agendamento, plataforma e duvidas de pagamento.",
+  "Aplicando calibracoes internas para conduzir com mais naturalidade e clareza.",
+  "Reforcando o que ja melhorou para o Agent subir mais um nivel.",
+];
+
+function formatTrainingDate(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(parsed);
+}
+
+function formatDelta(value?: number | null) {
+  if (value == null || Number.isNaN(value)) {
+    return "0";
+  }
+
+  const rounded = Math.round(value * 10) / 10;
+
+  if (rounded > 0) {
+    return `+${rounded.toFixed(1)}`;
+  }
+
+  if (rounded < 0) {
+    return rounded.toFixed(1);
+  }
+
+  return "0.0";
+}
+
 export default function AgentIa() {
   const { toast } = useToast();
   const { data, isLoading, error, isError } = useAiAgentProfile();
   const updateMutation = useUpdateAiAgentProfile();
   const createProfileMutation = useCreateAiAgentProfile();
   const deleteProfileMutation = useDeleteAiAgentProfile();
+  const trainMutation = useTrainAiAgent();
   const [profiles, setProfiles] = useState<AiAgentProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("Assistente principal");
@@ -141,6 +189,7 @@ export default function AgentIa() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStepIndex, setWizardStepIndex] = useState(0);
   const [wizardAnswers, setWizardAnswers] = useState<WizardAnswerMap>(wizardInitialAnswers);
+  const [trainingPhraseIndex, setTrainingPhraseIndex] = useState(0);
 
   const applyProfileToForm = (profile: AiAgentProfile) => {
     setActiveProfileId(normalizeProfileId(profile.id));
@@ -170,9 +219,32 @@ export default function AgentIa() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
+  useEffect(() => {
+    if (!trainMutation.isPending) {
+      setTrainingPhraseIndex(0);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setTrainingPhraseIndex((current) => (current + 1) % trainingPhrases.length);
+    }, 1700);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [trainMutation.isPending]);
+
   const filledFieldsCount = useMemo(() => {
     return Object.values(virtualAgent).filter((value) => value.trim() !== "").length;
   }, [virtualAgent]);
+
+  const activeProfile = useMemo(() => {
+    return profiles.find((profile) => normalizeProfileId(profile.id) === activeProfileId) ?? null;
+  }, [activeProfileId, profiles]);
+
+  const activeTrainingReport = useMemo<AiAgentTrainingReport | null>(() => {
+    return activeProfile?.trainingReport ?? null;
+  }, [activeProfile]);
 
   const contextPreview = useMemo(() => {
     const lines = [
@@ -283,6 +355,42 @@ export default function AgentIa() {
     });
   };
 
+  const handleTrain = () => {
+    trainMutation.mutate({
+      profileId: activeProfileId,
+    }, {
+      onSuccess: (result) => {
+        const nextProfiles = profilesFromResponse(result.profile);
+        const active =
+          nextProfiles.find((profile) => normalizeProfileId(profile.id) === activeProfileId) ??
+          nextProfiles[0];
+
+        setProfiles(nextProfiles);
+
+        if (active) {
+          applyProfileToForm(active);
+        }
+
+        const progression = result.report.progression;
+        const improvementLabel = progression ? formatDelta(progression.improvementFromLastRun) : null;
+
+        toast({
+          title: "Treino do Agent IA concluído",
+          description: progression
+            ? `Nível ${progression.levelLabel}. ${result.report.scenarioCount} cenários validados. Nota média ${result.report.averageScore.toFixed(0)} (${improvementLabel} vs último treino).`
+            : `Foram validados ${result.report.scenarioCount} cenários. Nota média ${result.report.averageScore.toFixed(0)}.`,
+        });
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha ao treinar o Agent IA",
+          description: getApiErrorMessage(mutationError),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
   const handleSelectProfile = (profile: AiAgentProfile) => {
     applyProfileToForm(profile);
   };
@@ -366,6 +474,16 @@ export default function AgentIa() {
               <Wand2 className="h-4 w-4" />
               Criar automaticamente
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              onClick={handleTrain}
+              disabled={trainMutation.isPending || isLoading}
+            >
+              {trainMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+              Treinar Agente
+            </Button>
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-950">Atendimento automatico</p>
@@ -411,6 +529,103 @@ export default function AgentIa() {
       {isError && (
         <Card className="border-destructive/40 p-4 text-sm text-destructive">
           Erro ao carregar Agent IA: {getApiErrorMessage(error)}
+        </Card>
+      )}
+
+      {activeTrainingReport && (
+        <Card className="border-border/60 bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
+                <Bot className="h-3.5 w-3.5" />
+                Ultimo treino do Agent IA
+              </div>
+              <h2 className="mt-3 text-xl font-semibold text-slate-950">
+                Nota média {activeTrainingReport.averageScore.toFixed(0)} em {activeTrainingReport.scenarioCount} cenários
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {activeTrainingReport.passedScenarios} cenários passaram sem issues. Última execução em {formatTrainingDate(activeTrainingReport.lastRunAt)}.
+              </p>
+              {activeTrainingReport.progression && (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Progressão ativa: nível <strong>{activeTrainingReport.progression.levelLabel}</strong>, treino{" "}
+                  {activeTrainingReport.progression.runCount} e melhora de{" "}
+                  <strong>{formatDelta(activeTrainingReport.progression.improvementFromLastRun)}</strong> ponto(s) vs o treino anterior.
+                </p>
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 lg:w-[420px]">
+              <PreviewPill label="Cenarios ok" value={`${activeTrainingReport.passedScenarios}/${activeTrainingReport.scenarioCount}`} />
+              <PreviewPill
+                label="Nível"
+                value={activeTrainingReport.progression?.levelLabel ?? "Base"}
+              />
+              <PreviewPill
+                label="Melhor nota"
+                value={activeTrainingReport.progression ? activeTrainingReport.progression.bestAverageScore.toFixed(0) : activeTrainingReport.averageScore.toFixed(0)}
+              />
+            </div>
+          </div>
+
+          {(activeTrainingReport.appliedAdjustments.length > 0 || activeTrainingReport.issues.length > 0 || (activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0) && (
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              {activeTrainingReport.appliedAdjustments.length > 0 && (
+                <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-emerald-950">Calibracoes aplicadas</p>
+                  <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
+                    {activeTrainingReport.appliedAdjustments.slice(0, 4).map((item) => (
+                      <p key={item}>• {item}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-sky-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-sky-950">Próximo foco do treino</p>
+                  <div className="mt-3 space-y-2 text-sm text-sky-900/90">
+                    {activeTrainingReport.progression?.nextFocus.slice(0, 3).map((item) => (
+                      <p key={item}>• {item}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTrainingReport.issues.length > 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-amber-950">Pontos ainda observados no treino</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {activeTrainingReport.issues.map((item) => (
+                      <Badge key={item} variant="secondary" className="bg-amber-100 text-amber-900">
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(activeTrainingReport.history?.length ?? 0) > 1 && (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white/80 p-4">
+              <p className="text-sm font-semibold text-slate-950">Evolução recente</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                {activeTrainingReport.history?.slice(-3).reverse().map((entry) => (
+                  <div key={`${entry.runNumber}-${entry.lastRunAt}`} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Treino {entry.runNumber}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      {entry.averageScore.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Nível {entry.levelLabel} • {entry.passedScenarios}/{entry.scenarioCount} ok
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
@@ -667,6 +882,29 @@ export default function AgentIa() {
                 </Button>
               )}
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trainMutation.isPending}>
+        <DialogContent className="max-w-lg overflow-hidden rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.16),_transparent_38%),linear-gradient(160deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-0">
+          <div className="px-8 py-10 text-center">
+            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[2rem] border border-white/80 bg-white/90 shadow-lg">
+              <BrandMark className="h-20 w-20 animate-pulse rounded-[1.5rem]" letterClassName="text-2xl" />
+            </div>
+            <h3 className="mt-6 text-2xl font-semibold text-slate-950">Treinando o Agent IA</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              O Nexo está simulando conversas, procurando vazamentos, afinando a condução e reforçando respostas mais naturais.
+            </p>
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white/80 p-4">
+              <p className="text-sm font-medium leading-6 text-slate-900">
+                {trainingPhrases[trainingPhraseIndex]}
+              </p>
+            </div>
+            <Progress value={((trainingPhraseIndex + 1) / trainingPhrases.length) * 100} className="mt-6 h-2" />
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Simulando, avaliando e calibrando
+            </p>
           </div>
         </DialogContent>
       </Dialog>
