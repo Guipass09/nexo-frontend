@@ -4,7 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getStoredAuthUser, subscribeToAuthUserChanges } from "@/lib/auth";
 import { resolveMediaUrl } from "@/lib/media-url";
 
@@ -21,10 +21,12 @@ const titles: Record<string, { title: string; subtitle: string }> = {
   "/auditoria": { title: "Auditoria operacional", subtitle: "Rastreamento das ações manuais do painel" },
   "/configuracoes": { title: "Configurações", subtitle: "Ajustes gerais do sistema" },
   "/perfil": { title: "Meu perfil", subtitle: "Suas preferências e dados" },
+  "/nexo-bot": { title: "Nexo bot", subtitle: "Ajustes finos e aprendizado do Agent IA" },
 };
 
 export function AppHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
   const meta = titles[location.pathname] || { title: "Nexo", subtitle: "" };
   const [user, setUser] = useState(() => getStoredAuthUser());
 
@@ -39,7 +41,7 @@ export function AppHeader() {
   const roleLabel = user?.role === "admin" ? "Admin" : "Usuario";
 
   const openAiAssistant = () => {
-    window.dispatchEvent(new Event("nexo-ai-assistant-open"));
+    navigate("/nexo-bot");
   };
 
   return (

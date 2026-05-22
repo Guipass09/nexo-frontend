@@ -25,6 +25,7 @@ import Usuarios from "./pages/Usuarios";
 import NotFound from "./pages/NotFound.tsx";
 import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import TermosUso from "./pages/TermosUso";
+import NexoBot from "./pages/NexoBot";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PermissionGate from "./components/auth/PermissionGate";
 
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/auditoria" element={<PermissionGate permission="audit"><Auditoria /></PermissionGate>} />
               <Route path="/configuracoes" element={<PermissionGate permission="settings"><Configuracoes /></PermissionGate>} />
               <Route path="/perfil" element={<Perfil />} />
+              <Route path="/nexo-bot" element={<NexoBot />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
