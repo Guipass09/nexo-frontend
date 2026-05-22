@@ -210,17 +210,27 @@ export interface AiAgentVirtualAgent {
   roleTitle: string;
   businessName: string;
   segment: string;
+  businessModel: string;
   primaryGoal: string;
+  desiredOutcome: string;
   tone: string;
+  conversationApproach: string;
+  responseLength: string;
   businessDescription: string;
+  audienceDescription: string;
   services: string;
   faq: string;
+  progressionRules: string;
+  successSignals: string;
   operatingHours: string;
   pricingPolicy: string;
   schedulingInstructions: string;
+  linksAndResources: string;
   handoffRules: string;
   boundaries: string;
   extraKnowledge: string;
+  requiredSteps: string[];
+  allowedActions: string[];
 }
 
 export interface AiAgentTrainingScenario {

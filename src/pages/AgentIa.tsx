@@ -4,29 +4,25 @@ import {
   Bot,
   Building2,
   Clock,
-  ChevronLeft,
-  ChevronRight,
-  Handshake,
-  KeyRound,
   LoaderCircle,
   Plus,
   Save,
+  ShieldCheck,
   Sparkles,
+  Target,
   Trash2,
   UserRound,
-  Wand2,
+  Waypoints,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,13 +40,6 @@ import { BrandMark } from "@/components/nexo/BrandMark";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 import {
-  composeVirtualAgentFromWizard,
-  wizardInitialAnswers,
-  wizardSteps,
-  type WizardAnswerKey,
-  type WizardAnswerMap,
-} from "@/lib/ai-agent-persona";
-import {
   useAiAgentProfile,
   useCreateAiAgentProfile,
   useDeleteAiAgentProfile,
@@ -59,30 +48,116 @@ import {
 } from "@/hooks/use-app-data";
 import type { AiAgentProfile, AiAgentTrainingReport, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
 
+type FieldKey = keyof AiAgentVirtualAgent;
+
+const BUSINESS_MODEL_OPTIONS = [
+  { value: "service_business", label: "Serviço / consultoria" },
+  { value: "clinic_or_health", label: "Clínica / saúde" },
+  { value: "education", label: "Educação / treinamento" },
+  { value: "saas_or_platform", label: "SaaS / plataforma" },
+  { value: "commerce", label: "Comércio / produto" },
+  { value: "real_estate", label: "Imobiliário" },
+  { value: "legal_or_specialist", label: "Especialista / jurídico" },
+  { value: "support_only", label: "Suporte / pós-venda" },
+  { value: "other", label: "Outro" },
+];
+
+const PRIMARY_OBJECTIVE_OPTIONS = [
+  { value: "guide_and_answer", label: "Responder e orientar" },
+  { value: "qualify_lead", label: "Qualificar lead" },
+  { value: "schedule", label: "Agendar" },
+  { value: "convert", label: "Converter / vender" },
+  { value: "support", label: "Resolver suporte" },
+  { value: "onboarding", label: "Fazer onboarding" },
+  { value: "handoff", label: "Triar e levar para humano" },
+];
+
+const CONVERSATION_APPROACH_OPTIONS = [
+  { value: "guided", label: "Guiado e humano" },
+  { value: "consultative", label: "Consultivo" },
+  { value: "hybrid", label: "Híbrido" },
+  { value: "direct", label: "Direto ao ponto" },
+];
+
+const RESPONSE_LENGTH_OPTIONS = [
+  { value: "concise", label: "Curta" },
+  { value: "balanced", label: "Equilibrada" },
+  { value: "detailed", label: "Mais detalhada" },
+];
+
+const TONE_OPTIONS = [
+  "acolhedor, claro e profissional",
+  "calmo, seguro e educativo",
+  "direto, leve e objetivo",
+  "consultivo, humano e elegante",
+];
+
+const REQUIRED_STEP_OPTIONS = [
+  { value: "none", label: "Nenhum requisito antes de avançar" },
+  { value: "qualification", label: "Qualificação mínima" },
+  { value: "registration", label: "Cadastro" },
+  { value: "document_submission", label: "Envio de documentos" },
+  { value: "payment", label: "Pagamento" },
+  { value: "choose_plan", label: "Escolha de plano" },
+  { value: "choose_unit", label: "Escolha de unidade" },
+  { value: "human_review", label: "Validação humana" },
+  { value: "contract_signature", label: "Assinatura / aceite" },
+];
+
+const ALLOWED_ACTION_OPTIONS = [
+  { value: "answer_question", label: "Responder dúvidas" },
+  { value: "explain_next_step", label: "Explicar próximo passo" },
+  { value: "send_link", label: "Enviar link" },
+  { value: "collect_contact_data", label: "Coletar dados" },
+  { value: "collect_schedule_preference", label: "Coletar disponibilidade" },
+  { value: "ask_permission", label: "Pedir confirmação antes de avançar" },
+  { value: "invite_progress", label: "Conduzir para avanço" },
+  { value: "handoff_human", label: "Encaminhar para humano" },
+];
+
+const trainingPhrases = [
+  "Estruturando a empresa em fatos, objetivos, requisitos e ações permitidas.",
+  "Simulando saudações, perguntas diretas, objeções e confirmações curtas.",
+  "Validando se o Agent responde com educação, sem repetir e sem vazar bastidores.",
+  "Testando se o próximo passo faz sentido para esse contexto, sem forçar um funil fixo.",
+  "Calibrando a estratégia invisível e a linguagem para ficar mais natural.",
+  "Comparando cenários para preservar o que melhorou e reduzir regressões.",
+];
+
 const emptyVirtualAgent: AiAgentVirtualAgent = {
   agentName: "",
-  roleTitle: "Atendente virtual",
+  roleTitle: "Especialista de atendimento",
   businessName: "",
   segment: "",
+  businessModel: "",
   primaryGoal: "",
-  tone: "acolhedor, claro, profissional e natural no WhatsApp",
+  desiredOutcome: "",
+  tone: "acolhedor, claro e profissional",
+  conversationApproach: "guided",
+  responseLength: "balanced",
   businessDescription: "",
+  audienceDescription: "",
   services: "",
   faq: "",
+  progressionRules: "",
+  successSignals: "",
   operatingHours: "",
   pricingPolicy: "",
   schedulingInstructions: "",
+  linksAndResources: "",
   handoffRules: "",
   boundaries: "",
   extraKnowledge: "",
+  requiredSteps: [],
+  allowedActions: [],
 };
-
-type FieldKey = keyof AiAgentVirtualAgent;
 
 function mergeVirtualAgent(value?: Partial<AiAgentVirtualAgent> | null): AiAgentVirtualAgent {
   return {
     ...emptyVirtualAgent,
     ...(value ?? {}),
+    requiredSteps: Array.isArray(value?.requiredSteps) ? value?.requiredSteps.filter(Boolean) : [],
+    allowedActions: Array.isArray(value?.allowedActions) ? value?.allowedActions.filter(Boolean) : [],
   };
 }
 
@@ -127,15 +202,6 @@ function triggerLabel(triggerType?: AiAgentTriggerType) {
   }
 }
 
-const trainingPhrases = [
-  "Lendo o contexto da empresa e organizando os fatos mais importantes.",
-  "Simulando cumprimentos, perguntas diretas e respostas curtas como 'sim'.",
-  "Validando se o Agent responde sem vazar comandos internos nem labels roboticos.",
-  "Testando cadastro, agendamento, plataforma e duvidas de pagamento.",
-  "Aplicando calibracoes internas para conduzir com mais naturalidade e clareza.",
-  "Reforcando o que ja melhorou para o Agent subir mais um nivel.",
-];
-
 function formatTrainingDate(value?: string | null) {
   if (!value) {
     return "";
@@ -171,6 +237,10 @@ function formatDelta(value?: number | null) {
   return "0.0";
 }
 
+function optionLabel(options: Array<{ value: string; label: string }>, value: string) {
+  return options.find((item) => item.value === value)?.label ?? value;
+}
+
 export default function AgentIa() {
   const { toast } = useToast();
   const { data, isLoading, error, isError } = useAiAgentProfile();
@@ -178,6 +248,7 @@ export default function AgentIa() {
   const createProfileMutation = useCreateAiAgentProfile();
   const deleteProfileMutation = useDeleteAiAgentProfile();
   const trainMutation = useTrainAiAgent();
+
   const [profiles, setProfiles] = useState<AiAgentProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [profileName, setProfileName] = useState("Assistente principal");
@@ -186,9 +257,6 @@ export default function AgentIa() {
   const [enabled, setEnabled] = useState(false);
   const [allowSavedContacts, setAllowSavedContacts] = useState(true);
   const [virtualAgent, setVirtualAgent] = useState<AiAgentVirtualAgent>(emptyVirtualAgent);
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [wizardStepIndex, setWizardStepIndex] = useState(0);
-  const [wizardAnswers, setWizardAnswers] = useState<WizardAnswerMap>(wizardInitialAnswers);
   const [trainingPhraseIndex, setTrainingPhraseIndex] = useState(0);
 
   const applyProfileToForm = (profile: AiAgentProfile) => {
@@ -234,10 +302,6 @@ export default function AgentIa() {
     };
   }, [trainMutation.isPending]);
 
-  const filledFieldsCount = useMemo(() => {
-    return Object.values(virtualAgent).filter((value) => value.trim() !== "").length;
-  }, [virtualAgent]);
-
   const activeProfile = useMemo(() => {
     return profiles.find((profile) => normalizeProfileId(profile.id) === activeProfileId) ?? null;
   }, [activeProfileId, profiles]);
@@ -246,21 +310,36 @@ export default function AgentIa() {
     return activeProfile?.trainingReport ?? null;
   }, [activeProfile]);
 
+  const filledFieldsCount = useMemo(() => {
+    const stringCount = Object.entries(virtualAgent)
+      .filter(([key, value]) => !["requiredSteps", "allowedActions"].includes(key) && typeof value === "string" && value.trim() !== "")
+      .length;
+    const arrayCount = virtualAgent.requiredSteps.length + virtualAgent.allowedActions.length;
+
+    return stringCount + arrayCount;
+  }, [virtualAgent]);
+
   const contextPreview = useMemo(() => {
     const lines = [
-      virtualAgent.agentName && `Nome da pessoa virtual: ${virtualAgent.agentName}`,
+      virtualAgent.agentName && `Pessoa virtual: ${virtualAgent.agentName}`,
       virtualAgent.roleTitle && `Papel: ${virtualAgent.roleTitle}`,
-      virtualAgent.businessName && `Empresa/profissional: ${virtualAgent.businessName}`,
+      virtualAgent.businessName && `Empresa: ${virtualAgent.businessName}`,
       virtualAgent.segment && `Segmento: ${virtualAgent.segment}`,
-      virtualAgent.primaryGoal && `Objetivo principal: ${virtualAgent.primaryGoal}`,
-      virtualAgent.tone && `Tom: ${virtualAgent.tone}`,
-      virtualAgent.businessDescription && `Sobre o negocio:\n${virtualAgent.businessDescription}`,
-      virtualAgent.services && `Servicos/produtos:\n${virtualAgent.services}`,
-      virtualAgent.operatingHours && `Horario:\n${virtualAgent.operatingHours}`,
-      virtualAgent.pricingPolicy && `Valores:\n${virtualAgent.pricingPolicy}`,
-      virtualAgent.schedulingInstructions && `Agendamento:\n${virtualAgent.schedulingInstructions}`,
-      virtualAgent.faq && `Duvidas frequentes:\n${virtualAgent.faq}`,
-      virtualAgent.handoffRules && `Quando chamar humano:\n${virtualAgent.handoffRules}`,
+      virtualAgent.businessModel && `Modelo do negócio: ${optionLabel(BUSINESS_MODEL_OPTIONS, virtualAgent.businessModel)}`,
+      virtualAgent.primaryGoal && `Objetivo principal: ${optionLabel(PRIMARY_OBJECTIVE_OPTIONS, virtualAgent.primaryGoal)}`,
+      virtualAgent.desiredOutcome && `Resultado esperado: ${virtualAgent.desiredOutcome}`,
+      virtualAgent.conversationApproach && `Abordagem: ${optionLabel(CONVERSATION_APPROACH_OPTIONS, virtualAgent.conversationApproach)}`,
+      virtualAgent.responseLength && `Tamanho ideal: ${optionLabel(RESPONSE_LENGTH_OPTIONS, virtualAgent.responseLength)}`,
+      virtualAgent.requiredSteps.length > 0 && `Requisitos antes de avançar: ${virtualAgent.requiredSteps.map((item) => optionLabel(REQUIRED_STEP_OPTIONS, item)).join(", ")}`,
+      virtualAgent.allowedActions.length > 0 && `Ações permitidas: ${virtualAgent.allowedActions.map((item) => optionLabel(ALLOWED_ACTION_OPTIONS, item)).join(", ")}`,
+      virtualAgent.businessDescription && `Sobre a empresa:\n${virtualAgent.businessDescription}`,
+      virtualAgent.audienceDescription && `Quem atende:\n${virtualAgent.audienceDescription}`,
+      virtualAgent.services && `Ofertas e soluções:\n${virtualAgent.services}`,
+      virtualAgent.progressionRules && `Como avançar a conversa:\n${virtualAgent.progressionRules}`,
+      virtualAgent.faq && `Dúvidas frequentes:\n${virtualAgent.faq}`,
+      virtualAgent.pricingPolicy && `Preço e políticas:\n${virtualAgent.pricingPolicy}`,
+      virtualAgent.linksAndResources && `Links e recursos:\n${virtualAgent.linksAndResources}`,
+      virtualAgent.handoffRules && `Escalonamento humano:\n${virtualAgent.handoffRules}`,
       virtualAgent.boundaries && `Limites:\n${virtualAgent.boundaries}`,
       virtualAgent.extraKnowledge && `Conhecimento extra:\n${virtualAgent.extraKnowledge}`,
     ].filter(Boolean);
@@ -268,55 +347,41 @@ export default function AgentIa() {
     return lines.join("\n\n");
   }, [virtualAgent]);
 
-  const updateField = (field: FieldKey, value: string) => {
+  const updateField = (field: FieldKey, value: AiAgentVirtualAgent[FieldKey]) => {
     setVirtualAgent((current) => ({
       ...current,
       [field]: value,
     }));
   };
 
-  const wizardProgress = ((wizardStepIndex + 1) / (wizardSteps.length + 1)) * 100;
-  const isWizardReviewStep = wizardStepIndex >= wizardSteps.length;
-  const currentWizardStep = wizardSteps[Math.min(wizardStepIndex, wizardSteps.length - 1)];
-  const generatedVirtualAgent = useMemo(() => {
-    return composeVirtualAgentFromWizard(wizardAnswers);
-  }, [wizardAnswers]);
+  const toggleListField = (field: "requiredSteps" | "allowedActions", value: string) => {
+    setVirtualAgent((current) => {
+      const currentValues = current[field];
+      const exists = currentValues.includes(value);
+      let nextValues = exists
+        ? currentValues.filter((item) => item !== value)
+        : [...currentValues, value];
 
-  const openWizard = () => {
-    setWizardAnswers({
-      agentName: virtualAgent.agentName,
-      businessName: virtualAgent.businessName,
-      segment: virtualAgent.segment,
-      audience: "",
-      mainGoal: virtualAgent.primaryGoal,
-      businessSummary: virtualAgent.businessDescription,
-      services: virtualAgent.services,
-      process: "",
-      faq: virtualAgent.faq,
-      hours: virtualAgent.operatingHours,
-      pricing: virtualAgent.pricingPolicy,
-      scheduling: virtualAgent.schedulingInstructions,
-      handoff: virtualAgent.handoffRules,
-      limits: virtualAgent.boundaries,
-      tone: virtualAgent.tone,
+      if (field === "requiredSteps" && value === "none" && !exists) {
+        nextValues = ["none"];
+      }
+
+      if (field === "requiredSteps" && value !== "none") {
+        nextValues = nextValues.filter((item) => item !== "none");
+      }
+
+      return {
+        ...current,
+        [field]: nextValues,
+      };
     });
-    setWizardStepIndex(0);
-    setWizardOpen(true);
   };
 
-  const updateWizardAnswer = (key: WizardAnswerKey, value: string) => {
-    setWizardAnswers((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  };
-
-  const applyWizardResult = () => {
-    setVirtualAgent(generatedVirtualAgent);
-    setWizardOpen(false);
+  const clearStructure = () => {
+    setVirtualAgent(emptyVirtualAgent);
     toast({
-      title: "Ficha do Agent IA preenchida",
-      description: "Revise os campos e clique em Salvar Agent IA para publicar no atendimento.",
+      title: "Ficha reiniciada",
+      description: "A estrutura do Agent IA foi limpa para você preencher do zero.",
     });
   };
 
@@ -341,8 +406,8 @@ export default function AgentIa() {
         toast({
           title: "Agent IA atualizado",
           description: enabled
-            ? "A pessoa virtual esta ligada e vai responder usando contexto, memoria e historico."
-            : "A pessoa virtual foi salva e esta desligada no momento.",
+            ? "A estrutura universal do agente foi salva e já pode responder com mais coerência."
+            : "A estrutura foi salva. Quando ligar, o Agent IA usará essa estratégia.",
         });
       },
       onError: (mutationError) => {
@@ -377,7 +442,7 @@ export default function AgentIa() {
         toast({
           title: "Treino do Agent IA concluído",
           description: progression
-            ? `Nível ${progression.levelLabel}. ${result.report.scenarioCount} cenários validados. Nota média ${result.report.averageScore.toFixed(0)} (${improvementLabel} vs último treino).`
+            ? `Nível ${progression.levelLabel}. ${result.report.scenarioCount} cenários validados. Nota média ${result.report.averageScore.toFixed(0)} (${improvementLabel} vs o último treino).`
             : `Foram validados ${result.report.scenarioCount} cenários. Nota média ${result.report.averageScore.toFixed(0)}.`,
         });
       },
@@ -411,7 +476,7 @@ export default function AgentIa() {
 
         toast({
           title: "Novo assistente criado",
-          description: "Configure um gatilho diferente antes de ligar.",
+          description: "A nova ficha já nasceu no formato universal do Agent IA.",
         });
       },
       onError: (mutationError) => {
@@ -440,7 +505,7 @@ export default function AgentIa() {
 
         toast({
           title: "Assistente removido",
-          description: "As proximas conversas vao usar os assistentes restantes.",
+          description: "As próximas conversas vão usar os assistentes restantes.",
         });
       },
       onError: (mutationError) => {
@@ -460,34 +525,20 @@ export default function AgentIa() {
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Pessoa virtual do atendimento
+              Agent IA universal
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              Agent IA que entende contexto, memoria e conversa.
+              Estruture o agente por objetivo, regras, ações e contexto.
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Preencha fatos sobre o negocio. O Nexo ja entra com a personalidade humana, e a OpenAI decide a melhor resposta sem depender de frases prontas.
+              Em vez de ensinar frases prontas, você define como a empresa funciona, o que o cliente busca no final e quais passos podem existir antes do avanço. O Nexo transforma isso em estratégia invisível.
             </p>
           </div>
-          <div className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm min-w-[260px]">
-            <Button type="button" variant="outline" className="gap-2" onClick={openWizard}>
-              <Wand2 className="h-4 w-4" />
-              Criar automaticamente
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="gap-2"
-              onClick={handleTrain}
-              disabled={trainMutation.isPending || isLoading}
-            >
-              {trainMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
-              Treinar Agente
-            </Button>
+          <div className="flex min-w-[280px] flex-col gap-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-slate-950">Atendimento automatico</p>
-                <p className="text-xs text-slate-500">Prioridade sobre fluxos</p>
+                <p className="text-sm font-semibold text-slate-950">Atendimento automático</p>
+                <p className="text-xs text-slate-500">Quando ligado, o Agent IA assume antes dos fluxos.</p>
               </div>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
             </div>
@@ -496,7 +547,7 @@ export default function AgentIa() {
                 <div>
                   <p className="text-sm font-semibold text-slate-950">Responder contatos salvos</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Desligue para atender apenas numeros novos no WhatsApp conectado.
+                    Desligue para atender apenas números novos no WhatsApp conectado.
                   </p>
                 </div>
                 <Switch
@@ -518,6 +569,27 @@ export default function AgentIa() {
             <Badge variant={enabled ? "default" : "secondary"} className="w-fit">
               {enabled ? "Ligado" : "Desligado"}
             </Badge>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={clearStructure}
+              >
+                <Trash2 className="h-4 w-4" />
+                Limpar ficha
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={handleTrain}
+                disabled={trainMutation.isPending || isLoading}
+              >
+                {trainMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                Treinar IA
+              </Button>
+            </div>
             <Button className="gap-2" onClick={handleSave} disabled={updateMutation.isPending || isLoading}>
               <Save className="h-4 w-4" />
               Salvar Agent IA
@@ -538,7 +610,7 @@ export default function AgentIa() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
                 <Bot className="h-3.5 w-3.5" />
-                Ultimo treino do Agent IA
+                Último treino do Agent IA
               </div>
               <h2 className="mt-3 text-xl font-semibold text-slate-950">
                 Nota média {activeTrainingReport.averageScore.toFixed(0)} em {activeTrainingReport.scenarioCount} cenários
@@ -555,11 +627,8 @@ export default function AgentIa() {
               )}
             </div>
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[420px]">
-              <PreviewPill label="Cenarios ok" value={`${activeTrainingReport.passedScenarios}/${activeTrainingReport.scenarioCount}`} />
-              <PreviewPill
-                label="Nível"
-                value={activeTrainingReport.progression?.levelLabel ?? "Base"}
-              />
+              <PreviewPill label="Cenários ok" value={`${activeTrainingReport.passedScenarios}/${activeTrainingReport.scenarioCount}`} />
+              <PreviewPill label="Nível" value={activeTrainingReport.progression?.levelLabel ?? "Base"} />
               <PreviewPill
                 label="Melhor nota"
                 value={activeTrainingReport.progression ? activeTrainingReport.progression.bestAverageScore.toFixed(0) : activeTrainingReport.averageScore.toFixed(0)}
@@ -571,7 +640,7 @@ export default function AgentIa() {
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
               {activeTrainingReport.appliedAdjustments.length > 0 && (
                 <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-emerald-950">Calibracoes aplicadas</p>
+                  <p className="text-sm font-semibold text-emerald-950">Ajustes aplicados</p>
                   <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
                     {activeTrainingReport.appliedAdjustments.slice(0, 4).map((item) => (
                       <p key={item}>• {item}</p>
@@ -593,7 +662,7 @@ export default function AgentIa() {
 
               {activeTrainingReport.issues.length > 0 && (
                 <div className="rounded-2xl border border-amber-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-amber-950">Pontos ainda observados no treino</p>
+                  <p className="text-sm font-semibold text-amber-950">Pontos ainda observados</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {activeTrainingReport.issues.map((item) => (
                       <Badge key={item} variant="secondary" className="bg-amber-100 text-amber-900">
@@ -603,27 +672,6 @@ export default function AgentIa() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {(activeTrainingReport.history?.length ?? 0) > 1 && (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white/80 p-4">
-              <p className="text-sm font-semibold text-slate-950">Evolução recente</p>
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                {activeTrainingReport.history?.slice(-3).reverse().map((entry) => (
-                  <div key={`${entry.runNumber}-${entry.lastRunAt}`} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Treino {entry.runNumber}
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-slate-950">
-                      {entry.averageScore.toFixed(0)}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Nível {entry.levelLabel} • {entry.passedScenarios}/{entry.scenarioCount} ok
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </Card>
@@ -636,7 +684,7 @@ export default function AgentIa() {
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">Assistentes e gatilhos</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Use mais de um assistente ligado, desde que cada um tenha um gatilho diferente.
+                  Você pode ter mais de um assistente ligado, desde que cada um tenha um gatilho diferente.
                 </p>
               </div>
               <Button
@@ -663,7 +711,7 @@ export default function AgentIa() {
                     type="button"
                     onClick={() => handleSelectProfile(profile)}
                     className={[
-                      "min-w-[190px] rounded-2xl border px-4 py-3 text-left transition",
+                      "min-w-[210px] rounded-2xl border px-4 py-3 text-left transition",
                       isActive
                         ? "border-primary bg-primary/10 shadow-sm"
                         : "border-border bg-background hover:border-primary/40 hover:bg-muted/30",
@@ -697,7 +745,7 @@ export default function AgentIa() {
                 <Input
                   value={profileName}
                   onChange={(event) => setProfileName(event.target.value)}
-                  placeholder="Ex.: Captação de novos contatos"
+                  placeholder="Ex.: Pré-venda, suporte, agenda"
                 />
               </Field>
               <Field label="Gatilho de ativação">
@@ -734,18 +782,17 @@ export default function AgentIa() {
                   rows={3}
                   value={triggerKeywordsText}
                   onChange={(event) => setTriggerKeywordsText(event.target.value)}
-                  placeholder={"Ex.: avaliacao\norcamento\nquero agendar"}
+                  placeholder={"Ex.: orçamento\nquero contratar\nagendar"}
                 />
               </Field>
             )}
 
             <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-950">
               <div className="mb-1 flex items-center gap-2 font-semibold">
-                <KeyRound className="h-3.5 w-3.5" />
+                <Workflow className="h-3.5 w-3.5" />
                 Trava de conversa ativa
               </div>
-              Quando um assistente assumir uma conversa, esse gatilho fica seguro ate o atendimento terminar.
-              Palavra-chave enviada no meio nao troca o assistente.
+              Quando um assistente assumir uma conversa, esse gatilho fica seguro até o atendimento terminar. Palavra-chave enviada no meio não troca o assistente.
             </div>
 
             <Button
@@ -762,202 +809,206 @@ export default function AgentIa() {
         </div>
       </Card>
 
-      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-        <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto rounded-3xl p-0">
-          <div className="overflow-hidden rounded-3xl bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_35%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_100%)]">
-            <DialogHeader className="border-b border-border/60 px-6 py-5 text-left">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                Assistente de criacao
-              </div>
-              <DialogTitle className="text-2xl">Criar Agent IA automaticamente</DialogTitle>
-              <DialogDescription>
-                Responda uma pergunta por vez. No final, o Nexo monta a ficha no formato mais claro para a IA entender o negocio.
-              </DialogDescription>
-              <div className="pt-2">
-                <Progress value={wizardProgress} className="h-2" />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {isWizardReviewStep
-                    ? "Revisao final"
-                    : `Pergunta ${wizardStepIndex + 1} de ${wizardSteps.length}`}
-                </p>
-              </div>
-            </DialogHeader>
-
-            <div className="px-6 py-6">
-              {!isWizardReviewStep ? (
-                <div className="space-y-5">
-                  <div className="rounded-2xl border border-border/70 bg-white/85 p-5 shadow-sm">
-                    <Badge variant="secondary" className="mb-3">
-                      {currentWizardStep.title}
-                    </Badge>
-                    <h3 className="text-xl font-semibold text-slate-950">
-                      {currentWizardStep.question}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {currentWizardStep.helper}
-                    </p>
-                  </div>
-
-                  <Field label="Resposta">
-                    {currentWizardStep.compact ? (
-                      <Input
-                        autoFocus
-                        value={wizardAnswers[currentWizardStep.key]}
-                        onChange={(event) => updateWizardAnswer(currentWizardStep.key, event.target.value)}
-                        placeholder={currentWizardStep.placeholder}
-                      />
-                    ) : (
-                      <Textarea
-                        autoFocus
-                        rows={7}
-                        value={wizardAnswers[currentWizardStep.key]}
-                        onChange={(event) => updateWizardAnswer(currentWizardStep.key, event.target.value)}
-                        placeholder={currentWizardStep.placeholder}
-                      />
-                    )}
-                  </Field>
-
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm leading-6 text-emerald-950">
-                    <strong>Como isso sera usado:</strong> essa resposta vira conhecimento estruturado.
-                    A IA nao copia como texto fixo; ela usa para entender perguntas e responder naturalmente.
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5">
-                    <h3 className="text-xl font-semibold text-emerald-950">
-                      Ficha pronta para preencher o Agent IA
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-emerald-900/80">
-                      O conteudo abaixo sera aplicado nos campos da tela. Depois voce ainda pode editar manualmente antes de salvar.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <PreviewPill label="Nome" value={generatedVirtualAgent.agentName || "Nao informado"} />
-                    <PreviewPill label="Empresa" value={generatedVirtualAgent.businessName || "Nao informado"} />
-                    <PreviewPill label="Segmento" value={generatedVirtualAgent.segment || "Nao informado"} />
-                    <PreviewPill label="Tom" value={generatedVirtualAgent.tone || "Nao informado"} />
-                  </div>
-                  <div className="rounded-2xl border border-dashed border-border/70 bg-white/85 p-4">
-                    <pre className="max-h-[360px] whitespace-pre-wrap break-words text-xs leading-6 text-slate-800">
-                      {[
-                        generatedVirtualAgent.businessDescription && `Resumo:\n${generatedVirtualAgent.businessDescription}`,
-                        generatedVirtualAgent.services && `Servicos e funcionamento:\n${generatedVirtualAgent.services}`,
-                        generatedVirtualAgent.faq && `Duvidas importantes:\n${generatedVirtualAgent.faq}`,
-                        generatedVirtualAgent.operatingHours && `Horario:\n${generatedVirtualAgent.operatingHours}`,
-                        generatedVirtualAgent.pricingPolicy && `Valores:\n${generatedVirtualAgent.pricingPolicy}`,
-                        generatedVirtualAgent.schedulingInstructions && `Agendamento:\n${generatedVirtualAgent.schedulingInstructions}`,
-                      ].filter(Boolean).join("\n\n")}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <DialogFooter className="border-t border-border/60 bg-white/80 px-6 py-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setWizardStepIndex((current) => Math.max(0, current - 1))}
-                disabled={wizardStepIndex === 0}
-                className="gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-              {!isWizardReviewStep ? (
-                <Button
-                  type="button"
-                  onClick={() => setWizardStepIndex((current) => Math.min(wizardSteps.length, current + 1))}
-                  className="gap-2"
-                >
-                  Confirmar e continuar
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button type="button" onClick={applyWizardResult} className="gap-2">
-                  <Wand2 className="h-4 w-4" />
-                  Aplicar na ficha
-                </Button>
-              )}
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={trainMutation.isPending}>
-        <DialogContent className="max-w-lg overflow-hidden rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.16),_transparent_38%),linear-gradient(160deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-0">
-          <div className="px-8 py-10 text-center">
-            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[2rem] border border-white/80 bg-white/90 shadow-lg">
-              <BrandMark className="h-20 w-20 animate-pulse rounded-[1.5rem]" letterClassName="text-2xl" />
-            </div>
-            <h3 className="mt-6 text-2xl font-semibold text-slate-950">Treinando o Agent IA</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              O Nexo está simulando conversas, procurando vazamentos, afinando a condução e reforçando respostas mais naturais.
-            </p>
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white/80 p-4">
-              <p className="text-sm font-medium leading-6 text-slate-900">
-                {trainingPhrases[trainingPhraseIndex]}
-              </p>
-            </div>
-            <Progress value={((trainingPhraseIndex + 1) / trainingPhrases.length) * 100} className="mt-6 h-2" />
-            <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Simulando, avaliando e calibrando
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <div className="space-y-6">
           <Card className="border-border/60 p-5 md:p-6">
             <SectionHeader
               icon={UserRound}
-              title="Identidade da pessoa virtual"
-              description="Defina quem ela representa. Isso nao vira texto fixo, vira contexto para a IA agir com naturalidade."
+              title="Identidade e posicionamento"
+              description="Quem é essa pessoa virtual, o tipo de negócio e como ela deve soar no WhatsApp."
             />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <Field label="Nome da pessoa virtual">
                 <Input
                   value={virtualAgent.agentName}
                   onChange={(event) => updateField("agentName", event.target.value)}
-                  placeholder="Ex.: Sofia, Nexo IA, Atendimento Sementes"
+                  placeholder="Ex.: Iris, Nexo IA, Time de atendimento"
                 />
               </Field>
               <Field label="Papel no atendimento">
                 <Input
                   value={virtualAgent.roleTitle}
                   onChange={(event) => updateField("roleTitle", event.target.value)}
-                  placeholder="Ex.: Atendente virtual, consultora inicial"
+                  placeholder="Ex.: Especialista de atendimento"
                 />
               </Field>
-              <Field label="Nome da empresa ou profissional">
+              <Field label="Empresa ou profissional">
                 <Input
                   value={virtualAgent.businessName}
                   onChange={(event) => updateField("businessName", event.target.value)}
-                  placeholder="Ex.: Sementes da Fala"
+                  placeholder="Ex.: Nome da empresa"
                 />
               </Field>
               <Field label="Segmento">
                 <Input
                   value={virtualAgent.segment}
                   onChange={(event) => updateField("segment", event.target.value)}
-                  placeholder="Ex.: Fonoaudiologia online infantil"
+                  placeholder="Ex.: Clínica, SaaS, consultoria, comércio"
                 />
               </Field>
-              <Field label="Objetivo principal" className="md:col-span-2">
+              <Field label="Modelo do negócio">
+                <Select value={virtualAgent.businessModel || undefined} onValueChange={(value) => updateField("businessModel", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUSINESS_MODEL_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Tom predominante">
+                <Select value={virtualAgent.tone || undefined} onValueChange={(value) => updateField("tone", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TONE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+          </Card>
+
+          <Card className="border-border/60 p-5 md:p-6">
+            <SectionHeader
+              icon={Target}
+              title="Objetivo e resultado"
+              description="O Agent precisa entender o que o cliente quer no final, não decorar um passo a passo fixo."
+            />
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <Field label="Objetivo principal do atendimento">
+                <Select value={virtualAgent.primaryGoal || undefined} onValueChange={(value) => updateField("primaryGoal", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIMARY_OBJECTIVE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Abordagem da conversa">
+                <Select value={virtualAgent.conversationApproach || undefined} onValueChange={(value) => updateField("conversationApproach", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONVERSATION_APPROACH_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Tamanho ideal da resposta">
+                <Select value={virtualAgent.responseLength || undefined} onValueChange={(value) => updateField("responseLength", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RESPONSE_LENGTH_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Resultado esperado pelo cliente" className="md:col-span-2">
                 <Input
-                  value={virtualAgent.primaryGoal}
-                  onChange={(event) => updateField("primaryGoal", event.target.value)}
-                  placeholder="Ex.: Acolher familias, tirar duvidas e conduzir para agendamento da avaliacao gratuita."
+                  value={virtualAgent.desiredOutcome}
+                  onChange={(event) => updateField("desiredOutcome", event.target.value)}
+                  placeholder="Ex.: sair com agenda marcada, proposta enviada, suporte resolvido, onboarding iniciado"
                 />
               </Field>
-              <Field label="Tom de voz" className="md:col-span-2">
-                <Input
-                  value={virtualAgent.tone}
-                  onChange={(event) => updateField("tone", event.target.value)}
-                  placeholder="Ex.: acolhedor, simples, profissional, leve e seguro"
+              <Field label="O que a empresa faz" className="md:col-span-2">
+                <Textarea
+                  rows={5}
+                  value={virtualAgent.businessDescription}
+                  onChange={(event) => updateField("businessDescription", event.target.value)}
+                  placeholder="Explique o negócio de forma objetiva: o que oferece, para quem e como costuma funcionar."
+                />
+              </Field>
+              <Field label="Quem é o cliente ideal" className="md:col-span-2">
+                <Textarea
+                  rows={4}
+                  value={virtualAgent.audienceDescription}
+                  onChange={(event) => updateField("audienceDescription", event.target.value)}
+                  placeholder="Quais perfis chegam mais aqui, o que costumam buscar e como chegam."
+                />
+              </Field>
+              <Field label="Ofertas, serviços ou soluções" className="md:col-span-2">
+                <Textarea
+                  rows={6}
+                  value={virtualAgent.services}
+                  onChange={(event) => updateField("services", event.target.value)}
+                  placeholder="Liste o que a empresa entrega, quais opções existem e o que pode ser explicado ao cliente."
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <Card className="border-border/60 p-5 md:p-6">
+            <SectionHeader
+              icon={Waypoints}
+              title="Requisitos e ações do agente"
+              description="Aqui nasce o fluxo invisível: o que pode existir antes de avançar e o que o Agent está autorizado a fazer."
+            />
+            <div className="mt-5 grid gap-6 lg:grid-cols-2">
+              <div className="space-y-3">
+                <Label>Requisitos antes de avançar</Label>
+                <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
+                  {REQUIRED_STEP_OPTIONS.map((option) => (
+                    <ChecklistOption
+                      key={option.value}
+                      checked={virtualAgent.requiredSteps.includes(option.value)}
+                      label={option.label}
+                      onCheckedChange={() => toggleListField("requiredSteps", option.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Ações permitidas ao Agent</Label>
+                <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
+                  {ALLOWED_ACTION_OPTIONS.map((option) => (
+                    <ChecklistOption
+                      key={option.value}
+                      checked={virtualAgent.allowedActions.includes(option.value)}
+                      label={option.label}
+                      onCheckedChange={() => toggleListField("allowedActions", option.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <Field label="Como a conversa deve progredir" className="lg:col-span-2">
+                <Textarea
+                  rows={5}
+                  value={virtualAgent.progressionRules}
+                  onChange={(event) => updateField("progressionRules", event.target.value)}
+                  placeholder="Explique a lógica da conversa sem escrever frases prontas. Ex.: primeiro entender a necessidade, depois validar fit, depois enviar proposta."
+                />
+              </Field>
+              <Field label="Como saber que a conversa foi bem sucedida" className="lg:col-span-2">
+                <Textarea
+                  rows={4}
+                  value={virtualAgent.successSignals}
+                  onChange={(event) => updateField("successSignals", event.target.value)}
+                  placeholder="Ex.: cliente com horário marcado, lead qualificado, proposta aceita, suporte resolvido."
                 />
               </Field>
             </div>
@@ -966,66 +1017,40 @@ export default function AgentIa() {
           <Card className="border-border/60 p-5 md:p-6">
             <SectionHeader
               icon={Building2}
-              title="Negocio e conhecimento"
-              description="Coloque fatos objetivos. A IA interpreta a pergunta do cliente e escolhe o que usar."
+              title="Conhecimento operacional"
+              description="Tudo o que o Agent precisa dominar sobre funcionamento, preços, dúvidas e materiais disponíveis."
             />
-            <div className="mt-5 space-y-4">
-              <Field label="Resumo do negocio">
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.businessDescription}
-                  onChange={(event) => updateField("businessDescription", event.target.value)}
-                  placeholder="O que a empresa faz, para quem atende, como funciona o atendimento e quais pontos nao podem ser esquecidos."
-                />
-              </Field>
-              <Field label="Servicos, produtos ou etapas do atendimento">
-                <Textarea
-                  rows={6}
-                  value={virtualAgent.services}
-                  onChange={(event) => updateField("services", event.target.value)}
-                  placeholder="Liste servicos, processo, criterios, etapas, diferenciais e o que a IA pode explicar quando perguntarem."
-                />
-              </Field>
-              <Field label="Perguntas frequentes e respostas importantes">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <Field label="Perguntas frequentes" className="md:col-span-2">
                 <Textarea
                   rows={7}
                   value={virtualAgent.faq}
                   onChange={(event) => updateField("faq", event.target.value)}
-                  placeholder="Ex.: Se perguntar valores, explique que sao orientados na avaliacao. Se perguntar idade minima, informar a regra correta."
+                  placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
                 />
               </Field>
-            </div>
-          </Card>
-
-          <Card className="border-border/60 p-5 md:p-6">
-            <SectionHeader
-              icon={Clock}
-              title="Operacao e condução"
-              description="Essas regras ajudam a IA a tomar decisoes praticas sem virar menu fechado."
-            />
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Horario de atendimento">
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.operatingHours}
-                  onChange={(event) => updateField("operatingHours", event.target.value)}
-                  placeholder="Dias, horarios, excecoes e como responder fora do horario."
-                />
-              </Field>
-              <Field label="Politica de valores">
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.pricingPolicy}
-                  onChange={(event) => updateField("pricingPolicy", event.target.value)}
-                  placeholder="O que pode ou nao falar sobre preco, planos, consulta gratuita, orcamento etc."
-                />
-              </Field>
-              <Field label="Como conduzir agendamento" className="md:col-span-2">
+              <Field label="Preço, planos e políticas">
                 <Textarea
                   rows={5}
-                  value={virtualAgent.schedulingInstructions}
-                  onChange={(event) => updateField("schedulingInstructions", event.target.value)}
-                  placeholder="Quais dados coletar, ordem ideal, como confirmar interesse e quando encaminhar para humano."
+                  value={virtualAgent.pricingPolicy}
+                  onChange={(event) => updateField("pricingPolicy", event.target.value)}
+                  placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
+                />
+              </Field>
+              <Field label="Horário e disponibilidade">
+                <Textarea
+                  rows={5}
+                  value={virtualAgent.operatingHours}
+                  onChange={(event) => updateField("operatingHours", event.target.value)}
+                  placeholder="Dias, horários, exceções e como agir fora do horário."
+                />
+              </Field>
+              <Field label="Links e recursos liberados" className="md:col-span-2">
+                <Textarea
+                  rows={5}
+                  value={virtualAgent.linksAndResources}
+                  onChange={(event) => updateField("linksAndResources", event.target.value)}
+                  placeholder="Links oficiais, páginas, formulários, catálogos, PDFs, materiais e orientações que o Agent pode compartilhar."
                 />
               </Field>
               <Field label="Quando chamar humano">
@@ -1033,15 +1058,15 @@ export default function AgentIa() {
                   rows={4}
                   value={virtualAgent.handoffRules}
                   onChange={(event) => updateField("handoffRules", event.target.value)}
-                  placeholder="Casos sensiveis, reclamacoes, pedidos especificos, duvidas que precisam de especialista."
+                  placeholder="Quais casos exigem atendimento humano ou especialista."
                 />
               </Field>
-              <Field label="Limites e proibicoes">
+              <Field label="Limites e proibições">
                 <Textarea
                   rows={4}
                   value={virtualAgent.boundaries}
                   onChange={(event) => updateField("boundaries", event.target.value)}
-                  placeholder="O que a IA nao pode prometer, diagnosticar, inventar, garantir ou responder."
+                  placeholder="O que a IA não pode prometer, afirmar, decidir ou inventar."
                 />
               </Field>
               <Field label="Conhecimento extra" className="md:col-span-2">
@@ -1049,7 +1074,7 @@ export default function AgentIa() {
                   rows={6}
                   value={virtualAgent.extraKnowledge}
                   onChange={(event) => updateField("extraKnowledge", event.target.value)}
-                  placeholder="Informacoes extras da plataforma, links, observacoes comerciais, exemplos de linguagem e excecoes."
+                  placeholder="Exceções, observações estratégicas, detalhes importantes que não couberam nos outros blocos."
                 />
               </Field>
             </div>
@@ -1059,40 +1084,63 @@ export default function AgentIa() {
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <Card className="border-border/60 p-5 md:p-6">
             <SectionHeader
-              icon={Wand2}
-              title="Como a IA vai pensar"
-              description="A OpenAI recebe personalidade global, memoria, historico e esta ficha para criar uma resposta nova a cada mensagem."
+              icon={ShieldCheck}
+              title="Como o Agent vai pensar"
+              description="Essa ficha vira dados estruturados. O motor do Agent interpreta objetivo, requisitos, ações e regras antes de escrever a resposta."
             />
             <div className="mt-5 space-y-3 text-sm">
-              <InfoBlock title="Sem resposta pronta">
-                O texto salvo aqui e conhecimento. A IA deve formular a frase conforme a pergunta, a etapa e o historico.
+              <InfoBlock title="Sem texto pronto">
+                O Agent não deve decorar frases. Ele usa essa estrutura para decidir o melhor próximo passo e redigir na hora.
               </InfoBlock>
-              <InfoBlock title="Memoria antes de repeticao">
-                Ela usa o que ja foi dito para nao reiniciar, nao repetir abertura e nao perguntar o que o cliente ja respondeu.
+              <InfoBlock title="Universal por projeto">
+                Em vez de assumir funis iguais, o sistema usa o que você marcar como objetivo, requisito e ação permitida.
               </InfoBlock>
-              <InfoBlock title="Fluxos em segundo plano">
-                Quando ligado, o Agent IA responde primeiro. Quando desligado, seus fluxos voltam a assumir normalmente.
+              <InfoBlock title="Treino com regressão">
+                O botão Treinar IA valida se o Agent ficou educado, coeso, útil e sem repetição, e tenta preservar o que já melhorou.
               </InfoBlock>
-              <InfoBlock title="Base humana do Nexo">
-                Mesmo com pouco contexto, o Nexo ja orienta a IA a acolher, responder a pergunta e manter continuidade sem parecer robo.
+              <InfoBlock title="Fluxos continuam existentes">
+                A aba Fluxo segue disponível. Aqui o objetivo é criar uma estratégia invisível para o atendimento conversacional.
               </InfoBlock>
             </div>
           </Card>
 
           <Card className="border-border/60 p-5 md:p-6">
             <SectionHeader
-              icon={Handshake}
-              title="Qualidade do contexto"
-              description={`${filledFieldsCount} campos preenchidos`}
+              icon={Workflow}
+              title="Prévia da estrutura"
+              description={`${filledFieldsCount} itens preenchidos`}
             />
             <div className="mt-5 rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4">
-              <pre className="max-h-[520px] whitespace-pre-wrap break-words text-xs leading-6 text-foreground/90">
-                {contextPreview || "Preencha a ficha da pessoa virtual para formar o contexto do atendimento."}
+              <pre className="max-h-[560px] whitespace-pre-wrap break-words text-xs leading-6 text-foreground/90">
+                {contextPreview || "Preencha a ficha para ver como o Agent IA vai estruturar esse negócio internamente."}
               </pre>
             </div>
           </Card>
         </aside>
       </div>
+
+      <Dialog open={trainMutation.isPending}>
+        <DialogContent className="max-w-lg overflow-hidden rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.16),_transparent_38%),linear-gradient(160deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-0">
+          <div className="px-8 py-10 text-center">
+            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[2rem] border border-white/80 bg-white/90 shadow-lg">
+              <BrandMark className="h-20 w-20 animate-pulse rounded-[1.5rem]" letterClassName="text-2xl" />
+            </div>
+            <h3 className="mt-6 text-2xl font-semibold text-slate-950">Treinando o Agent IA</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              O Nexo está organizando o contexto da empresa, simulando cenários reais e ajustando a estratégia invisível do agente.
+            </p>
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white/80 p-4">
+              <p className="text-sm font-medium leading-6 text-slate-900">
+                {trainingPhrases[trainingPhraseIndex]}
+              </p>
+            </div>
+            <Progress value={((trainingPhraseIndex + 1) / trainingPhrases.length) * 100} className="mt-6 h-2" />
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Simulando, avaliando e refinando
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1163,5 +1211,22 @@ function PreviewPill({
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-slate-950">{value}</p>
     </div>
+  );
+}
+
+function ChecklistOption({
+  checked,
+  label,
+  onCheckedChange,
+}: {
+  checked: boolean;
+  label: string;
+  onCheckedChange: () => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-transparent px-2 py-1 transition hover:border-border/60 hover:bg-background/70">
+      <Checkbox checked={checked} onCheckedChange={onCheckedChange} />
+      <span className="text-sm leading-6 text-slate-700">{label}</span>
+    </label>
   );
 }
