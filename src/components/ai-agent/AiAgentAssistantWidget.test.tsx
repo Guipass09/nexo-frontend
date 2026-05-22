@@ -78,8 +78,8 @@ describe("AiAgentAssistantWidget", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /nexo bot/i }));
 
-    expect(screen.getByText(/ajustes finos, leitura de conversas/i)).toBeInTheDocument();
-    expect(screen.getByText(/frases que eu entendo bem/i)).toBeInTheDocument();
+    expect(screen.getByText(/ajustes finos e leitura de erros reais/i)).toBeInTheDocument();
+    expect(screen.getByText(/exemplo real opcional/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /minimizar/i })).toBeInTheDocument();
   });
 });

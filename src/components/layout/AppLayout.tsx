@@ -31,9 +31,7 @@ export default function AppLayout() {
             </AppRenderBoundary>
           </main>
         </div>
-        <AppRenderBoundary fallback={null}>
-          <AiAgentAssistantWidget />
-        </AppRenderBoundary>
+        <AiAgentAssistantWidget />
       </div>
     </SidebarProvider>
   );
