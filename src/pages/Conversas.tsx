@@ -89,6 +89,16 @@ const emptyContactDraft: ContactDraft = {
   responsible: "",
 };
 
+function fallbackContactName(phone: string) {
+  const digits = phone.replace(/\D+/g, "");
+
+  if (!digits) {
+    return "Novo contato";
+  }
+
+  return `Contato ${digits.slice(-4)}`;
+}
+
 function messageTypeLabel(type: ConversationMessage["type"]) {
   switch (type) {
     case "audio":
@@ -1063,12 +1073,14 @@ export default function Conversas() {
       return conversationDraft.contactId;
     }
 
-    if (!contactDraft.name.trim() || !contactDraft.phone.trim()) {
-      throw new Error("Informe nome e telefone do contato.");
+    if (!contactDraft.phone.trim()) {
+      throw new Error("Informe o telefone do contato.");
     }
 
+    const resolvedName = contactDraft.name.trim() || fallbackContactName(contactDraft.phone);
+
     const contact = await createContactMutation.mutateAsync({
-      name: contactDraft.name.trim(),
+      name: resolvedName,
       phone: contactDraft.phone.trim(),
       origin: contactDraft.origin.trim() || "Manual",
       status: contactDraft.status.trim() || "ativo",
