@@ -3,9 +3,13 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClie
 import {
   createAiAgentProfile,
   deleteAiAgentProfile,
+  getAiAgentAssistantWorkspace,
   getAiAgentProfile,
+  sendAiAgentAssistantChat,
   trainAiAgent,
   updateAiAgentProfile,
+  type AiAgentAssistantChatPayload,
+  type AiAgentAssistantPayload,
   type CreateAiAgentProfilePayload,
   type TrainAiAgentPayload,
   type UpdateAiAgentProfilePayload,
@@ -608,6 +612,7 @@ export const queryKeys = {
   whatsAppSettings: ["settings", "whatsapp"] as const,
   aiVocabularyMappings: ["settings", "ai-vocabulary", "mappings"] as const,
   aiAgent: ["automation", "ai-agent"] as const,
+  aiAgentAssistant: (profileId?: string | number | null) => ["automation", "ai-agent", "assistant", profileId ?? "primary"] as const,
 };
 
 export function useDashboardOverview() {
@@ -1001,6 +1006,28 @@ export function useTrainAiAgent() {
     mutationFn: (payload: TrainAiAgentPayload) => trainAiAgent(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+    },
+  });
+}
+
+export function useAiAgentAssistantWorkspace(payload: AiAgentAssistantPayload = {}, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.aiAgentAssistant(payload.profileId),
+    queryFn: () => getAiAgentAssistantWorkspace(payload),
+    enabled,
+    retry: false,
+  });
+}
+
+export function useAiAgentAssistantChat() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AiAgentAssistantChatPayload) => sendAiAgentAssistantChat(payload),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(queryKeys.aiAgentAssistant(variables.profileId), result.workspace);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgentAssistant(variables.profileId) });
     },
   });
 }

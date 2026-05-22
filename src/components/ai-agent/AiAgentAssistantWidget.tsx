@@ -1,0 +1,247 @@
+import { useEffect, useMemo, useState } from "react";
+import { Bot, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { useAiAgentAssistantChat, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
+import { useToast } from "@/hooks/use-toast";
+import { getApiErrorMessage } from "@/lib/api/client";
+
+function scoreLabel(score: number | null) {
+  if (score === null) {
+    return "Sem treino";
+  }
+
+  return `${score.toFixed(1)} / 100`;
+}
+
+export function AiAgentAssistantWidget() {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const { data: profileData } = useAiAgentProfile();
+  const profiles = profileData?.profiles ?? (profileData ? [profileData] : []);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | number | null>(null);
+  const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
+    { profileId: selectedProfileId },
+    open,
+  );
+  const assistantChatMutation = useAiAgentAssistantChat();
+
+  useEffect(() => {
+    if (selectedProfileId !== null || profiles.length === 0) {
+      return;
+    }
+
+    setSelectedProfileId(profiles[0]?.id ?? null);
+  }, [profiles, selectedProfileId]);
+
+  const workspace = assistantWorkspaceQuery.data;
+
+  const title = useMemo(() => {
+    if (!workspace) {
+      return "Nexo bot";
+    }
+
+    const businessName = workspace.profileSummary.businessName.trim();
+
+    return businessName !== "" ? `Nexo bot • ${businessName}` : workspace.assistantName;
+  }, [workspace]);
+
+  const submit = () => {
+    const message = input.trim();
+
+    if (message === "") {
+      return;
+    }
+
+    assistantChatMutation.mutate(
+      {
+        profileId: selectedProfileId,
+        message,
+      },
+      {
+        onSuccess: () => {
+          setInput("");
+        },
+        onError: (error) => {
+          toast({
+            title: "Falha no Nexo bot",
+            description: getApiErrorMessage(error, "Não foi possível processar o ajuste do Agent IA."),
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="fixed bottom-5 right-5 z-50">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 text-white shadow-2xl shadow-cyan-500/25"
+          >
+            <Sparkles className="h-6 w-6" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl overflow-hidden rounded-3xl border-slate-200 p-0">
+          <div className="grid max-h-[82vh] md:grid-cols-[320px_1fr]">
+            <div className="border-b border-slate-200 bg-slate-50/80 p-5 md:border-b-0 md:border-r">
+              <DialogHeader className="space-y-2 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 text-white">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl">{title}</DialogTitle>
+                    <DialogDescription>
+                      Ajustes finos, leitura de conversas e aprendizado operacional do seu Agent IA.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="mt-5 space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Treino atual</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="secondary">{scoreLabel(workspace?.trainingSnapshot.averageScore ?? null)}</Badge>
+                    {workspace?.trainingSnapshot.passedScenarios !== null && workspace?.trainingSnapshot.scenarioCount !== null ? (
+                      <Badge variant="outline">
+                        {workspace.trainingSnapshot.passedScenarios}/{workspace.trainingSnapshot.scenarioCount} cenários
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {workspace?.trainingSnapshot.criticSummary ? (
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{workspace.trainingSnapshot.criticSummary}</p>
+                  ) : (
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      O Nexo bot usa o perfil, o treino e as conversas recentes para transformar seu feedback em regras reais do Agent.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Sugestões úteis</p>
+                  <div className="mt-3 space-y-2">
+                    {(workspace?.suggestions ?? []).slice(0, 4).map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => setInput(suggestion)}
+                        className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-left text-sm leading-6 text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {workspace?.recentConversations.length ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conversas recentes</p>
+                    <div className="mt-3 space-y-3">
+                      {workspace.recentConversations.slice(0, 3).map((conversation) => (
+                        <div key={conversation.conversationId} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-slate-900">{conversation.contactName}</p>
+                            <Badge variant="outline">{conversation.status}</Badge>
+                          </div>
+                          {conversation.issueHint ? (
+                            <p className="mt-2 text-sm leading-6 text-rose-700">{conversation.issueHint}</p>
+                          ) : null}
+                          {conversation.lastCustomerMessage ? (
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                              Cliente: {conversation.lastCustomerMessage}
+                            </p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex min-h-[68vh] flex-col bg-white">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <p className="text-sm font-medium text-slate-900">
+                  {workspace?.introMessage ?? "Olá, tudo bem? Sou a Nexo bot, responsável pelos ajustes finos do seu Agent IA."}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Me diga o erro percebido, a frase que deve evitar ou como o Agent deve interpretar uma situação.
+                </p>
+              </div>
+
+              <ScrollArea className="flex-1 px-5 py-5">
+                <div className="space-y-4">
+                  {assistantWorkspaceQuery.isLoading && !workspace ? (
+                    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Carregando o contexto completo do Agent IA...
+                    </div>
+                  ) : null}
+
+                  {(workspace?.messages ?? []).map((message) => (
+                    <div
+                      key={message.id}
+                      className={message.role === "assistant" ? "mr-10" : "ml-10"}
+                    >
+                      <div
+                        className={
+                          message.role === "assistant"
+                            ? "rounded-[24px] rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-700"
+                            : "rounded-[24px] rounded-br-md bg-gradient-to-br from-blue-600 to-cyan-500 px-4 py-3 text-sm leading-7 text-white"
+                        }
+                      >
+                        {message.text}
+                      </div>
+                    </div>
+                  ))}
+
+                  {assistantChatMutation.isPending ? (
+                    <div className="mr-10">
+                      <div className="flex items-center gap-2 rounded-[24px] rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Ajustando o Agent com base no seu feedback...
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </ScrollArea>
+
+              <div className="border-t border-slate-200 px-5 py-4">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                  <Textarea
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder='Ex.: "Quando o cliente disser fechou, isso significa sim" ou "não repita a frase me fala como prefere seguir agora".'
+                    className="min-h-[110px] resize-none border-0 bg-transparent p-0 text-sm leading-7 shadow-none focus-visible:ring-0"
+                  />
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <MessageCircle className="h-4 w-4" />
+                      Esse chat conhece o perfil, o treino e as conversas recentes da empresa.
+                    </div>
+                    <Button
+                      onClick={submit}
+                      disabled={assistantChatMutation.isPending || input.trim() === ""}
+                      className="rounded-full px-5"
+                    >
+                      {assistantChatMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      Aplicar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

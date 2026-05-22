@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
+import { AiAgentAssistantWidget } from "@/components/ai-agent/AiAgentAssistantWidget";
 
 export default function AppLayout() {
   return (
@@ -14,6 +15,7 @@ export default function AppLayout() {
             <Outlet />
           </main>
         </div>
+        <AiAgentAssistantWidget />
       </div>
     </SidebarProvider>
   );

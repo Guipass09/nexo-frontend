@@ -300,6 +300,85 @@ export interface AiAgentTrainingReport {
   history?: AiAgentTrainingHistoryEntry[];
 }
 
+export interface AiAgentAssistantMessage {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+  createdAt: string;
+}
+
+export interface AiAgentAssistantTopicGuidance {
+  topic: string;
+  customerSignal: string;
+  guidance: string;
+}
+
+export interface AiAgentAssistantResourceRule {
+  resource: string;
+  confirmations: string[];
+  nextAction: string;
+}
+
+export interface AiAgentAssistantRules {
+  affirmationAliases: string[];
+  negationAliases: string[];
+  completionAliases: string[];
+  forbiddenReplyFragments: string[];
+  globalNotes: string[];
+  topicGuidance: AiAgentAssistantTopicGuidance[];
+  resourceConfirmationRules: AiAgentAssistantResourceRule[];
+}
+
+export interface AiAgentAssistantConversationInsight {
+  conversationId: string;
+  contactName: string;
+  phone?: string | null;
+  status: string;
+  lastMessageAt?: string | null;
+  lastCustomerMessage?: string | null;
+  lastAgentReply?: string | null;
+  issueHint?: string | null;
+  recentMessages: Array<{
+    from: string;
+    text: string;
+    sentAt?: string | null;
+  }>;
+}
+
+export interface AiAgentAssistantWorkspace {
+  profileId: string;
+  assistantName: string;
+  introMessage: string;
+  messages: AiAgentAssistantMessage[];
+  rules: AiAgentAssistantRules;
+  profileSummary: {
+    agentName: string;
+    businessName: string;
+    segment: string;
+    primaryGoal: string;
+    desiredOutcome: string;
+    conversationApproach: string;
+    responseLength: string;
+  };
+  trainingSnapshot: {
+    averageScore: number | null;
+    passedScenarios: number | null;
+    scenarioCount: number | null;
+    issues: string[];
+    nextFocus: string[];
+    criticSummary?: string | null;
+  };
+  recentConversations: AiAgentAssistantConversationInsight[];
+  suggestions: string[];
+}
+
+export interface AiAgentAssistantChatResult {
+  workspace: AiAgentAssistantWorkspace;
+  appliedChanges: string[];
+  autoRuleChanges: Record<string, unknown>;
+  diagnosis: string;
+}
+
 export type AiAgentTriggerType = "all_contacts" | "unsaved_contacts" | "saved_contacts" | "keyword";
 
 export interface AiAgentProfile {

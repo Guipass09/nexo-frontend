@@ -1,6 +1,13 @@
 import { apiClient } from "@/lib/api/client";
 import { normalizeResourceResponse } from "@/lib/api/normalizers";
-import type { AiAgentProfile, AiAgentTrainingReport, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
+import type {
+  AiAgentAssistantChatResult,
+  AiAgentAssistantWorkspace,
+  AiAgentProfile,
+  AiAgentTrainingReport,
+  AiAgentTriggerType,
+  AiAgentVirtualAgent,
+} from "@/types/domain";
 
 export type AiAgentPromptPayload = {
   title?: string;
@@ -32,6 +39,15 @@ export type TrainAiAgentResult = {
   profile: AiAgentProfile;
   report: AiAgentTrainingReport;
   message?: string;
+};
+
+export type AiAgentAssistantPayload = {
+  profileId?: string | number | null;
+};
+
+export type AiAgentAssistantChatPayload = {
+  profileId?: string | number | null;
+  message: string;
 };
 
 export async function getAiAgentProfile() {
@@ -69,6 +85,24 @@ export async function deleteAiAgentProfile(profileId: string | number) {
 export async function trainAiAgent(payload: TrainAiAgentPayload = {}) {
   const response = normalizeResourceResponse<TrainAiAgentResult>(
     await apiClient.post<unknown>("/ai-agent/train", payload),
+  );
+
+  return response.data;
+}
+
+export async function getAiAgentAssistantWorkspace(payload: AiAgentAssistantPayload = {}) {
+  const response = normalizeResourceResponse<AiAgentAssistantWorkspace>(
+    await apiClient.get<unknown>("/ai-agent/assistant", {
+      query: payload.profileId ? { profileId: payload.profileId } : undefined,
+    }),
+  );
+
+  return response.data;
+}
+
+export async function sendAiAgentAssistantChat(payload: AiAgentAssistantChatPayload) {
+  const response = normalizeResourceResponse<AiAgentAssistantChatResult>(
+    await apiClient.post<unknown>("/ai-agent/assistant/chat", payload),
   );
 
   return response.data;
