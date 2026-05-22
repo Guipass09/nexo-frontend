@@ -46,7 +46,13 @@ import {
   useTrainAiAgent,
   useUpdateAiAgentProfile,
 } from "@/hooks/use-app-data";
-import type { AiAgentProfile, AiAgentTrainingReport, AiAgentTriggerType, AiAgentVirtualAgent } from "@/types/domain";
+import type {
+  AiAgentProfile,
+  AiAgentTrainingCriticPriority,
+  AiAgentTrainingReport,
+  AiAgentTriggerType,
+  AiAgentVirtualAgent,
+} from "@/types/domain";
 
 type FieldKey = keyof AiAgentVirtualAgent;
 
@@ -239,6 +245,28 @@ function formatDelta(value?: number | null) {
 
 function optionLabel(options: Array<{ value: string; label: string }>, value: string) {
   return options.find((item) => item.value === value)?.label ?? value;
+}
+
+function criticSeverityLabel(severity: AiAgentTrainingCriticPriority["severity"]) {
+  switch (severity) {
+    case "high":
+      return "Alta";
+    case "medium":
+      return "Média";
+    default:
+      return "Baixa";
+  }
+}
+
+function criticSeverityClass(severity: AiAgentTrainingCriticPriority["severity"]) {
+  switch (severity) {
+    case "high":
+      return "border-rose-200 bg-rose-50 text-rose-900";
+    case "medium":
+      return "border-amber-200 bg-amber-50 text-amber-900";
+    default:
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  }
 }
 
 export default function AgentIa() {
@@ -438,10 +466,13 @@ export default function AgentIa() {
 
         const progression = result.report.progression;
         const improvementLabel = progression ? formatDelta(progression.improvementFromLastRun) : null;
+        const criticSummary = result.report.critic?.summary;
 
         toast({
           title: "Treino do Agent IA concluído",
-          description: progression
+          description: criticSummary
+            ? criticSummary
+            : progression
             ? `Nível ${progression.levelLabel}. ${result.report.scenarioCount} cenários validados. Nota média ${result.report.averageScore.toFixed(0)} (${improvementLabel} vs o último treino).`
             : `Foram validados ${result.report.scenarioCount} cenários. Nota média ${result.report.averageScore.toFixed(0)}.`,
         });
@@ -618,6 +649,11 @@ export default function AgentIa() {
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {activeTrainingReport.passedScenarios} cenários passaram sem issues. Última execução em {formatTrainingDate(activeTrainingReport.lastRunAt)}.
               </p>
+              {activeTrainingReport.critic?.summary && (
+                <p className="mt-3 rounded-2xl border border-primary/10 bg-white/75 px-4 py-3 text-sm leading-6 text-slate-700">
+                  {activeTrainingReport.critic.summary}
+                </p>
+              )}
               {activeTrainingReport.progression && (
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Progressão ativa: nível <strong>{activeTrainingReport.progression.levelLabel}</strong>, treino{" "}
@@ -636,13 +672,60 @@ export default function AgentIa() {
             </div>
           </div>
 
-          {(activeTrainingReport.appliedAdjustments.length > 0 || activeTrainingReport.issues.length > 0 || (activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0) && (
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          {(activeTrainingReport.critic?.strengths?.length || activeTrainingReport.critic?.priorities?.length || activeTrainingReport.appliedAdjustments.length > 0 || activeTrainingReport.issues.length > 0 || (activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0) && (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+              {(activeTrainingReport.critic?.strengths?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-emerald-950">Pontos fortes</p>
+                  <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
+                    {activeTrainingReport.critic?.strengths.slice(0, 4).map((item) => (
+                      <p key={item}>• {item}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(activeTrainingReport.critic?.priorities?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-violet-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-violet-950">Prioridades do crítico</p>
+                  <div className="mt-3 space-y-3">
+                    {activeTrainingReport.critic?.priorities.slice(0, 3).map((item) => (
+                      <div key={`${item.scenarioKey}-${item.severity}`} className="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-violet-950">{item.scenarioTitle}</p>
+                            <p className="mt-1 text-xs leading-5 text-violet-900/80">{item.reason}</p>
+                          </div>
+                          <Badge variant="outline" className={criticSeverityClass(item.severity)}>
+                            {criticSeverityLabel(item.severity)}
+                          </Badge>
+                        </div>
+                        <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-violet-700/80">
+                          Ação positiva
+                        </p>
+                        <p className="mt-1 text-sm leading-5 text-violet-950/90">{item.positiveAction}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {activeTrainingReport.appliedAdjustments.length > 0 && (
                 <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
                   <p className="text-sm font-semibold text-emerald-950">Ajustes aplicados</p>
                   <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
-                    {activeTrainingReport.appliedAdjustments.slice(0, 4).map((item) => (
+                    {activeTrainingReport.appliedAdjustments.slice(0, 5).map((item) => (
+                      <p key={item}>• {item}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(activeTrainingReport.critic?.safeActions?.length ?? 0) > 0 && (
+                <div className="rounded-2xl border border-cyan-200 bg-white/80 p-4">
+                  <p className="text-sm font-semibold text-cyan-950">Ações que fortalecem o Agent</p>
+                  <div className="mt-3 space-y-2 text-sm text-cyan-900/90">
+                    {activeTrainingReport.critic?.safeActions.slice(0, 5).map((item) => (
                       <p key={item}>• {item}</p>
                     ))}
                   </div>

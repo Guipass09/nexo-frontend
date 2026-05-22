@@ -269,6 +269,24 @@ export interface AiAgentTrainingHistoryEntry {
   lastRunAt: string;
 }
 
+export interface AiAgentTrainingCriticPriority {
+  scenarioKey: string;
+  scenarioTitle: string;
+  severity: "high" | "medium" | "low";
+  issues: string[];
+  reason: string;
+  positiveAction: string;
+}
+
+export interface AiAgentTrainingCritic {
+  summary: string;
+  strengths: string[];
+  priorities: AiAgentTrainingCriticPriority[];
+  safeActions: string[];
+  recommendedRuleChanges?: Record<string, unknown>;
+  issueCounts?: Record<string, number>;
+}
+
 export interface AiAgentTrainingReport {
   lastRunAt: string;
   averageScore: number;
@@ -277,6 +295,7 @@ export interface AiAgentTrainingReport {
   issues: string[];
   appliedAdjustments: string[];
   scenarios: AiAgentTrainingScenario[];
+  critic?: AiAgentTrainingCritic | null;
   progression?: AiAgentTrainingProgression | null;
   history?: AiAgentTrainingHistoryEntry[];
 }
