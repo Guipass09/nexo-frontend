@@ -24,12 +24,30 @@ type ConversationInsight = {
   }>;
 };
 
-function scoreLabel(score: number | null) {
-  if (score === null) {
+function toOptionalNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function scoreLabel(score: unknown) {
+  const normalized = toOptionalNumber(score);
+
+  if (normalized === null) {
     return "Sem treino";
   }
 
-  return `${score.toFixed(1)} / 100`;
+  return `${normalized.toFixed(1)} / 100`;
 }
 
 export function AiAgentAssistantWidget() {
@@ -79,7 +97,12 @@ export function AiAgentAssistantWidget() {
 
   const workspace = workspaceQuery.data;
   const trainingSnapshot = typeof workspace?.trainingSnapshot === "object" && workspace?.trainingSnapshot !== null
-    ? workspace.trainingSnapshot
+    ? {
+      ...workspace.trainingSnapshot,
+      averageScore: toOptionalNumber(workspace.trainingSnapshot.averageScore),
+      passedScenarios: toOptionalNumber(workspace.trainingSnapshot.passedScenarios),
+      scenarioCount: toOptionalNumber(workspace.trainingSnapshot.scenarioCount),
+    }
     : null;
   const suggestions = Array.isArray(workspace?.suggestions) ? workspace.suggestions : [];
   const messages = Array.isArray(workspace?.messages) ? workspace.messages : [];
