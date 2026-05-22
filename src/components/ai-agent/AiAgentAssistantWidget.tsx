@@ -75,9 +75,17 @@ export function AiAgentAssistantWidget() {
   }, [selectedProfileId]);
 
   const workspace = assistantWorkspaceQuery.data;
-  const trainingSnapshot = workspace?.trainingSnapshot ?? null;
-  const recentConversations = Array.isArray(workspace?.recentConversations) ? workspace.recentConversations : [];
+  const trainingSnapshot = typeof workspace?.trainingSnapshot === "object" && workspace?.trainingSnapshot !== null
+    ? workspace.trainingSnapshot
+    : null;
+  const recentConversations = Array.isArray(workspace?.recentConversations)
+    ? workspace.recentConversations.map((conversation) => ({
+      ...conversation,
+      recentMessages: Array.isArray(conversation.recentMessages) ? conversation.recentMessages : [],
+    }))
+    : [];
   const suggestions = Array.isArray(workspace?.suggestions) ? workspace.suggestions : [];
+  const workspaceMessages = Array.isArray(workspace?.messages) ? workspace.messages : [];
   const selectedConversation = useMemo(() => {
     if (!selectedConversationId) {
       return null;
@@ -218,7 +226,7 @@ export function AiAgentAssistantWidget() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Treino atual</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant="secondary">{scoreLabel(workspace?.trainingSnapshot.averageScore ?? null)}</Badge>
+                    <Badge variant="secondary">{scoreLabel(trainingSnapshot?.averageScore ?? null)}</Badge>
                     {trainingSnapshot?.passedScenarios !== null && trainingSnapshot?.scenarioCount !== null ? (
                       <Badge variant="outline">
                         {trainingSnapshot.passedScenarios}/{trainingSnapshot.scenarioCount} cenários
@@ -427,7 +435,7 @@ export function AiAgentAssistantWidget() {
                     </div>
                   ) : null}
 
-                  {(workspace?.messages ?? []).map((message) => (
+                  {workspaceMessages.map((message) => (
                     <div
                       key={message.id}
                       className={message.role === "assistant" ? "mr-10" : "ml-10"}
