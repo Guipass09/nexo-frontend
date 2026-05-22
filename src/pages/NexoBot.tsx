@@ -1,52 +1,51 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Eraser, Expand, Loader2, Minimize2, Send } from "lucide-react";
+import { Bot, Eraser, Expand, Loader2, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useAiAgentAssistantChat, useAiAgentAssistantReset, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
+import {
+  useAiAgentAssistantChat,
+  useAiAgentAssistantReset,
+  useAiAgentAssistantWorkspace,
+  useAiAgentProfile,
+} from "@/hooks/use-app-data";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 
-type ConversationInsight = {
+type NormalizedAssistantMessage = {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+};
+
+type NormalizedRecentMessage = {
+  id: string;
+  from: string;
+  text: string;
+};
+
+type NormalizedConversation = {
   conversationId: string;
   contactName: string;
   status: string;
-  issueHint?: string | null;
-  lastCustomerMessage?: string | null;
-  recentMessages: Array<{
-    id: string;
-    from: string;
-    text: string;
-    sentAt?: string | null;
-  }>;
+  issueHint: string | null;
+  recentMessages: NormalizedRecentMessage[];
 };
 
-function toOptionalNumber(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
-function scoreLabel(score: unknown) {
-  const normalized = toOptionalNumber(score);
-
-  if (normalized === null) {
-    return "Sem treino";
-  }
-
-  return `${normalized.toFixed(1)} / 100`;
-}
+type NormalizedWorkspace = {
+  assistantName: string;
+  introMessage: string;
+  businessName: string;
+  criticSummary: string | null;
+  averageScore: number | null;
+  passedScenarios: number | null;
+  scenarioCount: number | null;
+  suggestions: string[];
+  messages: NormalizedAssistantMessage[];
+  recentConversations: NormalizedConversation[];
+};
 
 const examplePhrases = [
   'Quando o cliente disser "fechou", isso significa sim.',
@@ -56,25 +55,132 @@ const examplePhrases = [
   "Quarta a noite significa disponibilidade valida para agenda.",
 ];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function toText(value: unknown, fallback = "") {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return fallback;
+}
+
+function toNumberOrNull(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function normalizeProfiles(data: unknown) {
+  if (isRecord(data) && Array.isArray(data.profiles)) {
+    return data.profiles.filter(isRecord).map((profile) => ({
+      id: profile.id ?? null,
+      name: toText(profile.name, "Agent IA"),
+    }));
+  }
+
+  if (isRecord(data)) {
+    return [{
+      id: data.id ?? null,
+      name: toText(data.name, "Agent IA"),
+    }];
+  }
+
+  return [] as Array<{ id: string | number | null; name: string }>;
+}
+
+function normalizeWorkspace(data: unknown): NormalizedWorkspace {
+  const workspace = isRecord(data) ? data : {};
+  const profileSummary = isRecord(workspace.profileSummary) ? workspace.profileSummary : {};
+  const trainingSnapshot = isRecord(workspace.trainingSnapshot) ? workspace.trainingSnapshot : {};
+
+  const messages = Array.isArray(workspace.messages)
+    ? workspace.messages.filter(isRecord).map((message, index) => ({
+      id: toText(message.id, `message-${index}`),
+      role: message.role === "user" ? "user" : "assistant",
+      text: toText(message.text, ""),
+    }))
+    : [];
+
+  const suggestions = Array.isArray(workspace.suggestions)
+    ? workspace.suggestions.map((item) => toText(item, "")).filter(Boolean)
+    : [];
+
+  const recentConversations = Array.isArray(workspace.recentConversations)
+    ? workspace.recentConversations.filter(isRecord).map((conversation, conversationIndex) => ({
+      conversationId: toText(conversation.conversationId, `conversation-${conversationIndex}`),
+      contactName: toText(conversation.contactName, "Contato"),
+      status: toText(conversation.status, "ativo"),
+      issueHint: toText(conversation.issueHint, "") || null,
+      recentMessages: Array.isArray(conversation.recentMessages)
+        ? conversation.recentMessages.filter(isRecord).map((message, messageIndex) => ({
+          id: toText(message.id, `recent-${conversationIndex}-${messageIndex}`),
+          from: toText(message.from, "client"),
+          text: toText(message.text, ""),
+        }))
+        : [],
+    }))
+    : [];
+
+  return {
+    assistantName: toText(workspace.assistantName, "Nexo bot"),
+    introMessage: toText(
+      workspace.introMessage,
+      "Ola, tudo bem? Sou a Nexo bot. Me conte o erro que voce identificou no Agent IA.",
+    ),
+    businessName: toText(profileSummary.businessName, ""),
+    criticSummary: toText(trainingSnapshot.criticSummary, "") || null,
+    averageScore: toNumberOrNull(trainingSnapshot.averageScore),
+    passedScenarios: toNumberOrNull(trainingSnapshot.passedScenarios),
+    scenarioCount: toNumberOrNull(trainingSnapshot.scenarioCount),
+    suggestions,
+    messages,
+    recentConversations,
+  };
+}
+
+function scoreLabel(score: number | null) {
+  if (score === null) {
+    return "Sem treino";
+  }
+
+  return `${score.toFixed(1)} / 100`;
+}
+
 export default function NexoBot() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [input, setInput] = useState("");
   const [wideMode, setWideMode] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | number | null>(null);
-  const [selectedConversationId, setSelectedConversationId] = useState<string>("");
-  const [selectedMessageId, setSelectedMessageId] = useState<string>("");
+  const [selectedConversationId, setSelectedConversationId] = useState("");
+  const [selectedMessageId, setSelectedMessageId] = useState("");
 
-  const { data: profileData } = useAiAgentProfile(true);
-  const profiles = Array.isArray((profileData as { profiles?: unknown } | undefined)?.profiles)
-    ? ((profileData as { profiles: Array<{ id?: string | number | null }> }).profiles ?? [])
-    : (profileData ? [profileData] : []);
+  const profileQuery = useAiAgentProfile(true);
+  const profiles = useMemo(() => normalizeProfiles(profileQuery.data), [profileQuery.data]);
 
   useEffect(() => {
-    if (selectedProfileId !== null || profiles.length === 0) {
+    if (selectedProfileId !== null) {
       return;
     }
 
-    setSelectedProfileId(profiles[0]?.id ?? null);
+    const firstProfileId = profiles[0]?.id ?? null;
+    if (firstProfileId !== null) {
+      setSelectedProfileId(firstProfileId);
+    }
   }, [profiles, selectedProfileId]);
 
   useEffect(() => {
@@ -85,77 +191,47 @@ export default function NexoBot() {
   const workspaceQuery = useAiAgentAssistantWorkspace(
     {
       profileId: selectedProfileId,
-      conversationId: selectedConversationId !== "" ? selectedConversationId : null,
+      conversationId: selectedConversationId || null,
     },
     Boolean(selectedProfileId),
   );
+  const workspace = useMemo(() => normalizeWorkspace(workspaceQuery.data), [workspaceQuery.data]);
   const chatMutation = useAiAgentAssistantChat();
   const resetMutation = useAiAgentAssistantReset();
 
-  const workspace = workspaceQuery.data;
-  const trainingSnapshot = typeof workspace?.trainingSnapshot === "object" && workspace?.trainingSnapshot !== null
-    ? {
-      ...workspace.trainingSnapshot,
-      averageScore: toOptionalNumber(workspace.trainingSnapshot.averageScore),
-      passedScenarios: toOptionalNumber(workspace.trainingSnapshot.passedScenarios),
-      scenarioCount: toOptionalNumber(workspace.trainingSnapshot.scenarioCount),
-    }
-    : null;
-  const suggestions = Array.isArray(workspace?.suggestions) ? workspace.suggestions : [];
-  const messages = Array.isArray(workspace?.messages) ? workspace.messages : [];
-  const recentConversations: ConversationInsight[] = Array.isArray(workspace?.recentConversations)
-    ? workspace.recentConversations.map((conversation) => ({
-      conversationId: String(conversation.conversationId ?? ""),
-      contactName: String(conversation.contactName ?? "Contato"),
-      status: String(conversation.status ?? "ativo"),
-      issueHint: typeof conversation.issueHint === "string" ? conversation.issueHint : null,
-      lastCustomerMessage: typeof conversation.lastCustomerMessage === "string" ? conversation.lastCustomerMessage : null,
-      recentMessages: Array.isArray(conversation.recentMessages)
-        ? conversation.recentMessages.map((message) => ({
-          id: String(message.id ?? ""),
-          from: String(message.from ?? ""),
-          text: String(message.text ?? ""),
-          sentAt: typeof message.sentAt === "string" ? message.sentAt : null,
-        }))
-        : [],
-    }))
-    : [];
-
-  const selectedConversation = useMemo(() => {
-    if (selectedConversationId === "") {
-      return null;
-    }
-
-    return recentConversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null;
-  }, [recentConversations, selectedConversationId]);
+  const selectedConversation = useMemo(
+    () => workspace.recentConversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null,
+    [workspace.recentConversations, selectedConversationId],
+  );
 
   useEffect(() => {
     if (!selectedConversation) {
-      setSelectedMessageId("");
+      if (selectedMessageId !== "") {
+        setSelectedMessageId("");
+      }
       return;
     }
 
-    if (!selectedConversation.recentMessages.some((message) => message.id === selectedMessageId)) {
+    const exists = selectedConversation.recentMessages.some((message) => message.id === selectedMessageId);
+    if (!exists && selectedMessageId !== "") {
       setSelectedMessageId("");
     }
   }, [selectedConversation, selectedMessageId]);
 
-  const title = typeof workspace?.profileSummary?.businessName === "string" && workspace.profileSummary.businessName.trim() !== ""
-    ? `Nexo bot • ${workspace.profileSummary.businessName.trim()}`
-    : "Nexo bot";
+  const pageTitle = workspace.businessName ? `Nexo bot • ${workspace.businessName}` : workspace.assistantName;
 
   const submit = () => {
     const message = input.trim();
 
-    if (message === "" || !selectedProfileId) {
+    if (!message || !selectedProfileId) {
       return;
     }
 
     chatMutation.mutate(
       {
         profileId: selectedProfileId,
-        conversationId: selectedConversationId !== "" ? selectedConversationId : null,
-        messageId: selectedMessageId !== "" ? selectedMessageId : null,
+        conversationId: selectedConversationId || null,
+        messageId: selectedMessageId || null,
         message,
       },
       {
@@ -205,7 +281,7 @@ export default function NexoBot() {
               <Bot className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+              <h2 className="text-2xl font-semibold tracking-tight">{pageTitle}</h2>
               <p className="text-sm text-muted-foreground">
                 Ajustes finos, leitura de erros reais e aprendizado operacional do seu Agent IA.
               </p>
@@ -213,7 +289,7 @@ export default function NexoBot() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={clearConversation} disabled={resetMutation.isPending}>
+            <Button type="button" variant="outline" size="sm" onClick={clearConversation} disabled={resetMutation.isPending || !selectedProfileId}>
               {resetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />}
               Limpar
             </Button>
@@ -221,8 +297,7 @@ export default function NexoBot() {
               <Expand className="h-4 w-4" />
               {wideMode ? "Largura normal" : "Expandir area"}
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => window.history.back()}>
-              <Minimize2 className="h-4 w-4" />
+            <Button type="button" variant="outline" size="sm" onClick={() => navigate(-1)}>
               Voltar
             </Button>
           </div>
@@ -234,22 +309,22 @@ export default function NexoBot() {
           <Card className="border-border/60 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Treino atual</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Badge variant="secondary">{scoreLabel(trainingSnapshot?.averageScore ?? null)}</Badge>
-              {trainingSnapshot?.passedScenarios !== null && trainingSnapshot?.scenarioCount !== null ? (
+              <Badge variant="secondary">{scoreLabel(workspace.averageScore)}</Badge>
+              {workspace.passedScenarios !== null && workspace.scenarioCount !== null ? (
                 <Badge variant="outline">
-                  {trainingSnapshot.passedScenarios}/{trainingSnapshot.scenarioCount} cenarios
+                  {workspace.passedScenarios}/{workspace.scenarioCount} cenarios
                 </Badge>
               ) : null}
             </div>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {trainingSnapshot?.criticSummary ?? "Use este chat para ensinar o Agent sem mexer em prompt manual."}
+              {workspace.criticSummary ?? "Use este chat para ensinar o Agent sem mexer em prompt manual."}
             </p>
           </Card>
 
           <Card className="border-border/60 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Sugestoes</p>
             <div className="mt-3 space-y-2">
-              {(suggestions.length ? suggestions : examplePhrases).slice(0, 5).map((suggestion) => (
+              {(workspace.suggestions.length ? workspace.suggestions : examplePhrases).slice(0, 5).map((suggestion) => (
                 <button
                   key={suggestion}
                   type="button"
@@ -273,7 +348,7 @@ export default function NexoBot() {
               className="mt-3 h-11 w-full rounded-2xl border border-border/60 bg-background px-3 text-sm text-foreground"
             >
               <option value="">Sem conversa anexada</option>
-              {recentConversations.map((conversation) => (
+              {workspace.recentConversations.map((conversation) => (
                 <option key={conversation.conversationId} value={conversation.conversationId}>
                   {conversation.contactName}
                 </option>
@@ -306,19 +381,23 @@ export default function NexoBot() {
 
         <Card className="flex min-h-[70vh] flex-col border-border/60 p-0">
           <div className="border-b border-border/60 px-5 py-4">
-            <p className="text-sm font-medium text-foreground">
-              {workspace?.introMessage ?? "Ola, tudo bem? Sou a Nexo bot. Me conte o erro que voce identificou no Agent IA."}
-            </p>
+            <p className="text-sm font-medium text-foreground">{workspace.introMessage}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Exemplos: "isso significa sim", "nao repita essa frase", "quando enviar o link espere confirmacao", "neste caso deveria seguir para agenda".
+              Exemplos: &quot;isso significa sim&quot;, &quot;nao repita essa frase&quot;, &quot;quando enviar o link espere confirmacao&quot;.
             </p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-            {workspaceQuery.isLoading ? (
+            {profileQuery.isLoading || workspaceQuery.isLoading ? (
               <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted px-4 py-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Carregando o contexto do Agent IA...
+              </div>
+            ) : null}
+
+            {profileQuery.isError ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-6 text-rose-700">
+                {getApiErrorMessage(profileQuery.error, "Nao foi possivel carregar os perfis do Agent IA.")}
               </div>
             ) : null}
 
@@ -328,8 +407,14 @@ export default function NexoBot() {
               </div>
             ) : null}
 
+            {!profileQuery.isLoading && profiles.length === 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
+                Nenhum Agent IA foi encontrado ainda. Crie ou salve um perfil na aba Agent IA para começar os ajustes finos.
+              </div>
+            ) : null}
+
             <div className="space-y-4">
-              {messages.map((message) => (
+              {workspace.messages.map((message) => (
                 <div key={message.id} className={message.role === "assistant" ? "mr-10" : "ml-10"}>
                   <div
                     className={
