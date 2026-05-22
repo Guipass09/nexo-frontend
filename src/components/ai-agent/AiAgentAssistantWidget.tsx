@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAiAgentAssistantChat, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -24,8 +25,10 @@ export function AiAgentAssistantWidget() {
   const { data: profileData } = useAiAgentProfile();
   const profiles = profileData?.profiles ?? (profileData ? [profileData] : []);
   const [selectedProfileId, setSelectedProfileId] = useState<string | number | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
-    { profileId: selectedProfileId },
+    { profileId: selectedProfileId, conversationId: selectedConversationId },
     open,
   );
   const assistantChatMutation = useAiAgentAssistantChat();
@@ -38,7 +41,32 @@ export function AiAgentAssistantWidget() {
     setSelectedProfileId(profiles[0]?.id ?? null);
   }, [profiles, selectedProfileId]);
 
+  useEffect(() => {
+    setSelectedConversationId(null);
+    setSelectedMessageId(null);
+  }, [selectedProfileId]);
+
   const workspace = assistantWorkspaceQuery.data;
+  const selectedConversation = useMemo(() => {
+    if (!workspace || !selectedConversationId) {
+      return null;
+    }
+
+    return workspace.recentConversations.find((conversation) => conversation.conversationId === selectedConversationId) ?? null;
+  }, [workspace, selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversation) {
+      setSelectedMessageId(null);
+      return;
+    }
+
+    const stillExists = selectedConversation.recentMessages.some((message) => message.id === selectedMessageId);
+
+    if (!stillExists) {
+      setSelectedMessageId(null);
+    }
+  }, [selectedConversation, selectedMessageId]);
 
   const title = useMemo(() => {
     if (!workspace) {
@@ -60,6 +88,8 @@ export function AiAgentAssistantWidget() {
     assistantChatMutation.mutate(
       {
         profileId: selectedProfileId,
+        conversationId: selectedConversationId,
+        messageId: selectedMessageId,
         message,
       },
       {
@@ -144,9 +174,24 @@ export function AiAgentAssistantWidget() {
                 {workspace?.recentConversations.length ? (
                   <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conversas recentes</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Você pode anexar uma conversa real para eu diagnosticar o erro na origem e transformar isso em regra geral do Agent.
+                    </p>
                     <div className="mt-3 space-y-3">
                       {workspace.recentConversations.slice(0, 3).map((conversation) => (
-                        <div key={conversation.conversationId} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3">
+                        <button
+                          key={conversation.conversationId}
+                          type="button"
+                          onClick={() => {
+                            setSelectedConversationId(conversation.conversationId);
+                            setSelectedMessageId(null);
+                          }}
+                          className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
+                            selectedConversationId === conversation.conversationId
+                              ? "border-cyan-300 bg-cyan-50"
+                              : "border-slate-100 bg-slate-50 hover:border-cyan-200"
+                          }`}
+                        >
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-sm font-semibold text-slate-900">{conversation.contactName}</p>
                             <Badge variant="outline">{conversation.status}</Badge>
@@ -159,7 +204,7 @@ export function AiAgentAssistantWidget() {
                               Cliente: {conversation.lastCustomerMessage}
                             </p>
                           ) : null}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -175,6 +220,65 @@ export function AiAgentAssistantWidget() {
                 <p className="mt-1 text-sm text-slate-500">
                   Me diga o erro percebido, a frase que deve evitar ou como o Agent deve interpretar uma situação.
                 </p>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Exemplo real opcional</p>
+                    <Select
+                      value={selectedConversationId ?? "none"}
+                      onValueChange={(value) => {
+                        setSelectedConversationId(value === "none" ? null : value);
+                        setSelectedMessageId(null);
+                      }}
+                    >
+                      <SelectTrigger className="rounded-2xl">
+                        <SelectValue placeholder="Selecionar conversa com erro" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem conversa anexada</SelectItem>
+                        {(workspace?.recentConversations ?? []).map((conversation) => (
+                          <SelectItem key={conversation.conversationId} value={conversation.conversationId}>
+                            {conversation.contactName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Mensagem problemática</p>
+                    <Select
+                      value={selectedMessageId ?? "none"}
+                      onValueChange={(value) => setSelectedMessageId(value === "none" ? null : value)}
+                      disabled={!selectedConversation}
+                    >
+                      <SelectTrigger className="rounded-2xl">
+                        <SelectValue placeholder={selectedConversation ? "Selecionar resposta com erro" : "Escolha uma conversa primeiro"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Usar a conversa inteira</SelectItem>
+                        {(selectedConversation?.recentMessages ?? [])
+                          .filter((message) => message.from === "bot" || message.from === "agent")
+                          .map((message) => (
+                            <SelectItem key={message.id} value={message.id}>
+                              {message.text.slice(0, 72)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {selectedConversation ? (
+                  <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Exemplo anexado: {selectedConversation.contactName}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Vou usar essa conversa para ir direto ao erro, mas a correção será aplicada como regra geral do Agent para não se repetir em outros atendimentos.
+                    </p>
+                    {selectedConversation.issueHint ? (
+                      <p className="mt-2 text-sm leading-6 text-rose-700">{selectedConversation.issueHint}</p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               <ScrollArea className="flex-1 px-5 py-5">
@@ -203,6 +307,39 @@ export function AiAgentAssistantWidget() {
                     </div>
                   ))}
 
+                  {selectedConversation ? (
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Trecho anexado para diagnóstico</p>
+                      <div className="mt-3 space-y-3">
+                        {selectedConversation.recentMessages.map((message) => {
+                          const isSelected = selectedMessageId === message.id;
+                          const isAgent = message.from === "bot" || message.from === "agent";
+
+                          return (
+                            <button
+                              key={message.id}
+                              type="button"
+                              onClick={() => setSelectedMessageId(isSelected ? null : message.id)}
+                              className={`block w-full rounded-2xl border px-3 py-3 text-left text-sm leading-6 transition ${
+                                isSelected
+                                  ? "border-cyan-300 bg-cyan-50"
+                                  : "border-slate-200 bg-white hover:border-cyan-200"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="font-semibold text-slate-900">
+                                  {isAgent ? "Agent" : "Cliente"}
+                                </span>
+                                {isAgent ? <Badge variant="outline">Pode marcar</Badge> : null}
+                              </div>
+                              <p className="mt-2 text-slate-700">{message.text}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
                   {assistantChatMutation.isPending ? (
                     <div className="mr-10">
                       <div className="flex items-center gap-2 rounded-[24px] rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -225,7 +362,7 @@ export function AiAgentAssistantWidget() {
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                       <MessageCircle className="h-4 w-4" />
-                      Esse chat conhece o perfil, o treino e as conversas recentes da empresa.
+                      Esse chat conhece o perfil, o treino e as conversas recentes da empresa para corrigir o Agent de forma geral.
                     </div>
                     <Button
                       onClick={submit}

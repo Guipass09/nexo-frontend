@@ -339,6 +339,7 @@ export interface AiAgentAssistantConversationInsight {
   lastAgentReply?: string | null;
   issueHint?: string | null;
   recentMessages: Array<{
+    id: string;
     from: string;
     text: string;
     sentAt?: string | null;
@@ -369,6 +370,7 @@ export interface AiAgentAssistantWorkspace {
     criticSummary?: string | null;
   };
   recentConversations: AiAgentAssistantConversationInsight[];
+  selectedConversation?: AiAgentAssistantConversationInsight | null;
   suggestions: string[];
 }
 

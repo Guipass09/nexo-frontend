@@ -43,10 +43,13 @@ export type TrainAiAgentResult = {
 
 export type AiAgentAssistantPayload = {
   profileId?: string | number | null;
+  conversationId?: string | number | null;
 };
 
 export type AiAgentAssistantChatPayload = {
   profileId?: string | number | null;
+  conversationId?: string | number | null;
+  messageId?: string | number | null;
   message: string;
 };
 
@@ -93,7 +96,10 @@ export async function trainAiAgent(payload: TrainAiAgentPayload = {}) {
 export async function getAiAgentAssistantWorkspace(payload: AiAgentAssistantPayload = {}) {
   const response = normalizeResourceResponse<AiAgentAssistantWorkspace>(
     await apiClient.get<unknown>("/ai-agent/assistant", {
-      query: payload.profileId ? { profileId: payload.profileId } : undefined,
+      query: {
+        ...(payload.profileId ? { profileId: payload.profileId } : {}),
+        ...(payload.conversationId ? { conversationId: payload.conversationId } : {}),
+      },
     }),
   );
 
