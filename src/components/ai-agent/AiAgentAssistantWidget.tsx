@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
+import { Bot, Eraser, Expand, Loader2, MessageCircle, Minimize2, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAiAgentAssistantChat, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
+import { useAiAgentAssistantChat, useAiAgentAssistantReset, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
 import { useToast } from "@/hooks/use-toast";
 import { getStoredAuthUser, hasPermission } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -22,6 +22,7 @@ function scoreLabel(score: number | null) {
 export function AiAgentAssistantWidget() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [maximized, setMaximized] = useState(false);
   const [input, setInput] = useState("");
   const authUser = getStoredAuthUser();
   const canUseAssistant = hasPermission(authUser, "ai_agent");
@@ -37,6 +38,14 @@ export function AiAgentAssistantWidget() {
     open,
   );
   const assistantChatMutation = useAiAgentAssistantChat();
+  const assistantResetMutation = useAiAgentAssistantReset();
+  const examplePhrases = [
+    'Quando o cliente disser "fechou", isso significa sim.',
+    'Nao repita a frase "me fala como prefere seguir agora".',
+    "Quando enviar este link, espere confirmacao como pronto ou feito.",
+    "Se perguntarem preco, responda primeiro a pergunta e so depois conduza o proximo passo.",
+    "Neste caso, quarta a noite significa disponibilidade valida para agenda.",
+  ];
 
   useEffect(() => {
     if (selectedProfileId !== null || profiles.length === 0) {
@@ -121,18 +130,49 @@ export function AiAgentAssistantWidget() {
     );
   };
 
+  const clearConversation = () => {
+    if (!selectedProfileId) {
+      return;
+    }
+
+    assistantResetMutation.mutate(
+      { profileId: selectedProfileId },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Nexo bot limpo",
+            description: "O historico do chat foi limpo. As regras aprendidas do Agent continuam salvas.",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Falha ao limpar o Nexo bot",
+            description: getApiErrorMessage(error, "Nao foi possivel limpar o historico agora."),
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
   return (
     <div className="fixed bottom-5 right-5 z-50">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button
-            size="icon"
-            className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 via-cyan-500 to-blue-600 text-white shadow-2xl shadow-cyan-500/25"
+            className="h-14 rounded-full border-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 px-4 text-white shadow-2xl shadow-cyan-500/25 hover:opacity-95"
           >
-            <Sparkles className="h-6 w-6" />
+            <Sparkles className="h-5 w-5" />
+            <span className="text-sm font-semibold">Nexo bot</span>
           </Button>
         </DialogTrigger>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl overflow-hidden rounded-3xl border-slate-200 p-0">
+        <DialogContent
+          className={`overflow-hidden rounded-3xl border-slate-200 p-0 ${
+            maximized
+              ? "h-[92vh] w-[calc(100vw-2rem)] max-w-[min(1400px,calc(100vw-2rem))]"
+              : "w-[calc(100vw-2rem)] max-w-4xl"
+          }`}
+        >
           <div className="grid max-h-[82vh] md:grid-cols-[320px_1fr]">
             <div className="border-b border-slate-200 bg-slate-50/80 p-5 md:border-b-0 md:border-r">
               <DialogHeader className="space-y-2 text-left">
@@ -223,16 +263,65 @@ export function AiAgentAssistantWidget() {
                     </div>
                   </div>
                 ) : null}
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Frases que eu entendo bem</p>
+                  <div className="mt-3 space-y-2">
+                    {examplePhrases.map((phrase) => (
+                      <button
+                        key={phrase}
+                        type="button"
+                        onClick={() => setInput(phrase)}
+                        className="w-full rounded-2xl border border-dashed border-slate-200 px-3 py-2 text-left text-sm leading-6 text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50"
+                      >
+                        {phrase}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="flex min-h-[68vh] flex-col bg-white">
               <div className="border-b border-slate-200 px-5 py-4">
+                <div className="mb-3 flex items-center justify-end gap-2 pr-10">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearConversation}
+                    disabled={assistantResetMutation.isPending}
+                    className="rounded-full"
+                  >
+                    {assistantResetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />}
+                    Limpar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMaximized((current) => !current)}
+                    className="rounded-full"
+                  >
+                    <Expand className="h-4 w-4" />
+                    {maximized ? "Tela normal" : "Maximizar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOpen(false)}
+                    className="rounded-full"
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                    Minimizar
+                  </Button>
+                </div>
                 <p className="text-sm font-medium text-slate-900">
                   {workspace?.introMessage ?? "Olá, tudo bem? Sou a Nexo bot, responsável pelos ajustes finos do seu Agent IA."}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Me diga o erro percebido, a frase que deve evitar ou como o Agent deve interpretar uma situação.
+                  Me diga o erro percebido, a frase que deve evitar, como interpretar um sinal do cliente ou qual deve ser o proximo passo correto.
                 </p>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div>
@@ -370,7 +459,7 @@ export function AiAgentAssistantWidget() {
                   <Textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    placeholder='Ex.: "Quando o cliente disser fechou, isso significa sim" ou "não repita a frase me fala como prefere seguir agora".'
+                    placeholder='Ex.: "Quando o cliente disser fechou, isso significa sim", "nao repita a frase me fala como prefere seguir agora" ou "quando enviar o link, espere confirmacao como pronto ou feito".'
                     className="min-h-[110px] resize-none border-0 bg-transparent p-0 text-sm leading-7 shadow-none focus-visible:ring-0"
                   />
                   <div className="mt-3 flex items-center justify-between gap-3">

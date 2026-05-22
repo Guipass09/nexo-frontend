@@ -5,11 +5,13 @@ import {
   deleteAiAgentProfile,
   getAiAgentAssistantWorkspace,
   getAiAgentProfile,
+  resetAiAgentAssistantWorkspace,
   sendAiAgentAssistantChat,
   trainAiAgent,
   updateAiAgentProfile,
   type AiAgentAssistantChatPayload,
   type AiAgentAssistantPayload,
+  type AiAgentAssistantResetPayload,
   type CreateAiAgentProfilePayload,
   type TrainAiAgentPayload,
   type UpdateAiAgentProfilePayload,
@@ -1028,6 +1030,18 @@ export function useAiAgentAssistantChat() {
     onSuccess: (result, variables) => {
       queryClient.setQueryData(queryKeys.aiAgentAssistant(variables.profileId), result.workspace);
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgentAssistant(variables.profileId) });
+    },
+  });
+}
+
+export function useAiAgentAssistantReset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AiAgentAssistantResetPayload) => resetAiAgentAssistantWorkspace(payload),
+    onSuccess: (workspace, variables) => {
+      queryClient.setQueryData(queryKeys.aiAgentAssistant(variables.profileId), workspace);
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgentAssistant(variables.profileId) });
     },
   });

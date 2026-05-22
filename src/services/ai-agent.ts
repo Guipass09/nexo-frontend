@@ -53,6 +53,10 @@ export type AiAgentAssistantChatPayload = {
   message: string;
 };
 
+export type AiAgentAssistantResetPayload = {
+  profileId?: string | number | null;
+};
+
 export async function getAiAgentProfile() {
   const response = normalizeResourceResponse<AiAgentProfile>(
     await apiClient.get<unknown>("/ai-agent"),
@@ -109,6 +113,14 @@ export async function getAiAgentAssistantWorkspace(payload: AiAgentAssistantPayl
 export async function sendAiAgentAssistantChat(payload: AiAgentAssistantChatPayload) {
   const response = normalizeResourceResponse<AiAgentAssistantChatResult>(
     await apiClient.post<unknown>("/ai-agent/assistant/chat", payload),
+  );
+
+  return response.data;
+}
+
+export async function resetAiAgentAssistantWorkspace(payload: AiAgentAssistantResetPayload = {}) {
+  const response = normalizeResourceResponse<AiAgentAssistantWorkspace>(
+    await apiClient.post<unknown>("/ai-agent/assistant/reset", payload),
   );
 
   return response.data;
