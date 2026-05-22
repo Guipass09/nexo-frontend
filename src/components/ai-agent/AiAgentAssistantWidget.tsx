@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAiAgentAssistantChat, useAiAgentAssistantReset, useAiAgentAssistantWorkspace, useAiAgentProfile } from "@/hooks/use-app-data";
 import { useToast } from "@/hooks/use-toast";
-import { getStoredAuthUser, hasPermission } from "@/lib/auth";
+import { getStoredAuthUser } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
+
+const NEXO_AI_ASSISTANT_OPEN_EVENT = "nexo-ai-assistant-open";
 
 function scoreLabel(score: number | null) {
   if (score === null) {
@@ -25,8 +27,8 @@ export function AiAgentAssistantWidget() {
   const [maximized, setMaximized] = useState(false);
   const [input, setInput] = useState("");
   const authUser = getStoredAuthUser();
-  const canUseAssistant = hasPermission(authUser, "ai_agent");
-  const { data: profileData } = useAiAgentProfile(canUseAssistant);
+  const canRenderAssistant = Boolean(authUser);
+  const { data: profileData } = useAiAgentProfile(canRenderAssistant);
   const profiles = Array.isArray((profileData as { profiles?: unknown } | undefined)?.profiles)
     ? ((profileData as { profiles: Array<{ id?: string | number | null }> }).profiles ?? [])
     : (profileData ? [profileData] : []);
@@ -54,6 +56,18 @@ export function AiAgentAssistantWidget() {
 
     setSelectedProfileId(profiles[0]?.id ?? null);
   }, [profiles, selectedProfileId]);
+
+  useEffect(() => {
+    const handleOpen = () => {
+      setOpen(true);
+    };
+
+    window.addEventListener(NEXO_AI_ASSISTANT_OPEN_EVENT, handleOpen);
+
+    return () => {
+      window.removeEventListener(NEXO_AI_ASSISTANT_OPEN_EVENT, handleOpen);
+    };
+  }, []);
 
   useEffect(() => {
     setSelectedConversationId(null);
@@ -97,7 +111,7 @@ export function AiAgentAssistantWidget() {
     return businessName !== "" ? `Nexo bot • ${businessName}` : workspace.assistantName;
   }, [workspace]);
 
-  if (!canUseAssistant) {
+  if (!canRenderAssistant) {
     return null;
   }
 
@@ -156,7 +170,7 @@ export function AiAgentAssistantWidget() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50">
+    <div className="fixed bottom-5 right-5 z-[70]">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button

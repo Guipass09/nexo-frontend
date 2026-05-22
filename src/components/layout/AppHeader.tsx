@@ -38,6 +38,10 @@ export function AppHeader() {
     .join("") || "NX";
   const roleLabel = user?.role === "admin" ? "Admin" : "Usuario";
 
+  const openAiAssistant = () => {
+    window.dispatchEvent(new Event("nexo-ai-assistant-open"));
+  };
+
   return (
     <header className="sticky top-0 z-30 glass border-b border-border h-16 flex items-center gap-3 px-4 md:px-6">
       <SidebarTrigger className="shrink-0" />
@@ -57,7 +61,12 @@ export function AppHeader() {
           <Bell className="h-4 w-4" />
           <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-dot" />
         </Button>
-        <Button variant="outline" size="sm" className="hidden lg:inline-flex gap-1.5 border-accent/30 text-accent hover:bg-accent/10 hover:text-accent">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openAiAssistant}
+          className="hidden lg:inline-flex gap-1.5 border-accent/30 text-accent hover:bg-accent/10 hover:text-accent"
+        >
           <Sparkles className="h-3.5 w-3.5" />
           Nexo IA
         </Button>
