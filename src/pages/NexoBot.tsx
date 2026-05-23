@@ -231,6 +231,30 @@ export default function NexoBot() {
   const profiles = useMemo(() => normalizeProfiles(profileQuery.data), [profileQuery.data]);
 
   useEffect(() => {
+    const raw = window.localStorage.getItem("nexo-bot-prefill");
+
+    if (!raw) {
+      return;
+    }
+
+    window.localStorage.removeItem("nexo-bot-prefill");
+
+    try {
+      const parsed = JSON.parse(raw) as { profileId?: string | number | null; text?: string };
+
+      if (parsed.profileId != null) {
+        setSelectedProfileId(parsed.profileId);
+      }
+
+      if (typeof parsed.text === "string" && parsed.text.trim() !== "") {
+        setInput(parsed.text);
+      }
+    } catch {
+      setInput(raw);
+    }
+  }, []);
+
+  useEffect(() => {
     if (selectedProfileId !== null) {
       return;
     }

@@ -300,6 +300,68 @@ export interface AiAgentTrainingReport {
   history?: AiAgentTrainingHistoryEntry[];
 }
 
+export interface AiAgentSimulationSource {
+  topic: string;
+  sourceType: string;
+  sourceLabel: string;
+  content: string;
+}
+
+export interface AiAgentSimulationMediaSuggestion {
+  source: string;
+  topic: string;
+  assetId?: number | string | null;
+  assetName: string;
+  mediaType: string;
+  sendWhen: string;
+  guidance: string;
+  canSend: boolean;
+}
+
+export interface AiAgentSimulationCapturedMessage {
+  type: "text" | "media";
+  text: string;
+  media?: {
+    type: string;
+    name: string;
+    caption: string;
+  } | null;
+}
+
+export interface AiAgentSimulationTurn {
+  incoming: string;
+  responded: boolean;
+  reply?: string | null;
+  conversationStage: string;
+  intent?: string | null;
+  responseStrategy?: string | null;
+  score: number;
+  issues: string[];
+  sourcesUsed: AiAgentSimulationSource[];
+  mediaSuggestions: AiAgentSimulationMediaSuggestion[];
+  capturedMessages: AiAgentSimulationCapturedMessage[];
+}
+
+export interface AiAgentSimulationResult {
+  ok: boolean;
+  error?: string;
+  profile?: {
+    profileId: string | number;
+    name: string;
+    enabled: boolean;
+    triggerType?: string;
+    promptCount?: number;
+    simulatedCompanyName?: string;
+  };
+  turns: AiAgentSimulationTurn[];
+  summary: {
+    turnCount: number;
+    respondedTurns: number;
+    averageScore: number;
+    issues: string[];
+  };
+}
+
 export interface AiAgentAssistantMessage {
   id: string;
   role: "assistant" | "user";

@@ -1,21 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  ArrowRight,
+  BookOpenText,
   Bot,
   Building2,
   Clock,
+  Gauge,
   LoaderCircle,
+  MessageSquareText,
   Plus,
+  Radio,
   Save,
+  Send,
   ShieldCheck,
   Sparkles,
   Target,
+  TestTube2,
   Trash2,
   UserRound,
+  WandSparkles,
   Waypoints,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -43,11 +52,14 @@ import {
   useAiAgentProfile,
   useCreateAiAgentProfile,
   useDeleteAiAgentProfile,
+  useSimulateAiAgent,
   useTrainAiAgent,
   useUpdateAiAgentProfile,
 } from "@/hooks/use-app-data";
 import type {
   AiAgentProfile,
+  AiAgentSimulationResult,
+  AiAgentSimulationTurn,
   AiAgentTrainingCriticPriority,
   AiAgentTrainingReport,
   AiAgentTriggerType,
@@ -128,6 +140,14 @@ const trainingPhrases = [
   "Testando se o próximo passo faz sentido para esse contexto, sem forçar um funil fixo.",
   "Calibrando a estratégia invisível e a linguagem para ficar mais natural.",
   "Comparando cenários para preservar o que melhorou e reduzir regressões.",
+];
+
+const simulatorExamples = [
+  "quanto custa?",
+  "boa noite, como funciona?",
+  "já cadastrei",
+  "quarta à noite pode?",
+  "tem algum áudio explicando?",
 ];
 
 const emptyVirtualAgent: AiAgentVirtualAgent = {
@@ -269,13 +289,46 @@ function criticSeverityClass(severity: AiAgentTrainingCriticPriority["severity"]
   }
 }
 
+function stageLabel(stage?: string | null) {
+  if (!stage) {
+    return "Conversa";
+  }
+
+  const labels: Record<string, string> = {
+    conversation: "Conversa",
+    explaining: "Explicação",
+    registration_required: "Cadastro necessário",
+    awaiting_registration_confirmation: "Aguardando confirmação",
+    ready_to_schedule: "Pronto para agendar",
+    scheduling_in_progress: "Agendamento",
+    support: "Suporte",
+    handoff: "Humano",
+  };
+
+  return labels[stage] ?? stage.replaceAll("_", " ");
+}
+
+function scoreTone(score: number) {
+  if (score >= 90) {
+    return "text-emerald-700";
+  }
+
+  if (score >= 72) {
+    return "text-amber-700";
+  }
+
+  return "text-rose-700";
+}
+
 export default function AgentIa() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { data, isLoading, error, isError } = useAiAgentProfile();
   const updateMutation = useUpdateAiAgentProfile();
   const createProfileMutation = useCreateAiAgentProfile();
   const deleteProfileMutation = useDeleteAiAgentProfile();
   const trainMutation = useTrainAiAgent();
+  const simulateMutation = useSimulateAiAgent();
 
   const [profiles, setProfiles] = useState<AiAgentProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
@@ -286,6 +339,8 @@ export default function AgentIa() {
   const [allowSavedContacts, setAllowSavedContacts] = useState(true);
   const [virtualAgent, setVirtualAgent] = useState<AiAgentVirtualAgent>(emptyVirtualAgent);
   const [trainingPhraseIndex, setTrainingPhraseIndex] = useState(0);
+  const [simulatorMessage, setSimulatorMessage] = useState("boa noite, como funciona?");
+  const [simulatorResult, setSimulatorResult] = useState<AiAgentSimulationResult | null>(null);
 
   const applyProfileToForm = (profile: AiAgentProfile) => {
     setActiveProfileId(normalizeProfileId(profile.id));
@@ -549,6 +604,65 @@ export default function AgentIa() {
     });
   };
 
+  const handleSimulate = (message = simulatorMessage) => {
+    const nextMessage = message.trim();
+
+    if (!nextMessage) {
+      return;
+    }
+
+    setSimulatorMessage(nextMessage);
+
+    simulateMutation.mutate({
+      profileId: activeProfileId,
+      message: nextMessage,
+      savedContact: true,
+    }, {
+      onSuccess: (result) => {
+        setSimulatorResult(result);
+
+        if (!result.ok) {
+          toast({
+            title: "Simulação não concluída",
+            description: result.error ?? "Não foi possível testar essa mensagem agora.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Simulação concluída",
+          description: `Nota ${result.summary.averageScore.toFixed(0)}. ${result.summary.issues.length ? "Há pontos para calibrar." : "Resposta aprovada no laboratório."}`,
+        });
+      },
+      onError: (mutationError) => {
+        toast({
+          title: "Falha no simulador",
+          description: getApiErrorMessage(mutationError),
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handleCorrectWithNexoBot = (turn: AiAgentSimulationTurn) => {
+    const draft = [
+      "No simulador do Agent IA, identifiquei um ponto para corrigir de forma geral.",
+      `Mensagem do cliente: "${turn.incoming}"`,
+      `Resposta da IA: "${turn.reply ?? "sem resposta"}"`,
+      `Etapa detectada: ${stageLabel(turn.conversationStage)}.`,
+      "Ajuste o comportamento para melhorar esse tipo de caso em todas as conversas futuras.",
+    ].join("\n");
+
+    window.localStorage.setItem("nexo-bot-prefill", JSON.stringify({
+      profileId: activeProfileId,
+      text: draft,
+    }));
+    navigate("/nexo-bot");
+  };
+
+  const latestSimulationTurn = simulatorResult?.turns.at(-1) ?? null;
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_32%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-6 shadow-sm md:p-8">
@@ -759,6 +873,205 @@ export default function AgentIa() {
           )}
         </Card>
       )}
+
+      <Card className="overflow-hidden border-slate-200 bg-slate-950 p-0 text-white shadow-xl shadow-slate-900/10">
+        <div className="relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(20,184,166,0.34),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(37,99,235,0.36),transparent_26%),linear-gradient(135deg,#020617_0%,#0f172a_48%,#082f49_100%)]" />
+          <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.15)_1px,transparent_1px)] [background-size:34px_34px]" />
+          <div className="relative grid gap-6 p-5 md:p-7 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur">
+                <TestTube2 className="h-3.5 w-3.5" />
+                Laboratório RAG em tempo real
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                  Teste o Agent como se fosse um cliente no WhatsApp.
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+                  A simulação usa o perfil ativo, memória, RAG, boas maneiras, calendário, regras do Nexo bot e mídias disponíveis. Nada é enviado ao cliente real.
+                </p>
+              </div>
+
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
+                <Label className="text-slate-100">Mensagem do cliente</Label>
+                <Textarea
+                  value={simulatorMessage}
+                  onChange={(event) => setSimulatorMessage(event.target.value)}
+                  placeholder='Ex.: "boa noite, como funciona?"'
+                  className="mt-3 min-h-[118px] resize-none border-white/10 bg-slate-950/45 text-base leading-7 text-white placeholder:text-slate-500 focus-visible:ring-cyan-300"
+                />
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {simulatorExamples.map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => handleSimulate(example)}
+                      className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/10"
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs leading-5 text-slate-400">
+                    Dica: teste perguntas diretas, confirmações curtas, datas e pedidos de mídia.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => handleSimulate()}
+                    disabled={simulateMutation.isPending || !activeProfileId || simulatorMessage.trim() === ""}
+                    className="rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                  >
+                    {simulateMutation.isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Simular resposta
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[1.9rem] border border-white/10 bg-white/95 p-4 text-slate-950 shadow-2xl shadow-cyan-950/20 md:p-5">
+              {simulateMutation.isPending ? (
+                <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
+                    <WandSparkles className="h-8 w-8 animate-pulse" />
+                  </div>
+                  <p className="mt-4 text-lg font-semibold">Rodando diagnóstico do atendimento</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    Buscando fontes, avaliando etapa, mídia e qualidade da resposta antes de mostrar o resultado.
+                  </p>
+                </div>
+              ) : latestSimulationTurn ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Resposta da IA</p>
+                      <div className="mt-3 rounded-[1.35rem] rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-900">
+                        {latestSimulationTurn.reply || "A IA não respondeu neste cenário."}
+                      </div>
+                    </div>
+                    <div className="shrink-0 rounded-3xl border border-slate-200 bg-white px-5 py-4 text-center shadow-sm">
+                      <Gauge className={`mx-auto h-5 w-5 ${scoreTone(latestSimulationTurn.score)}`} />
+                      <p className={`mt-2 text-3xl font-semibold ${scoreTone(latestSimulationTurn.score)}`}>
+                        {latestSimulationTurn.score.toFixed(0)}
+                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">nota</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <SimulatorMetric icon={MessageSquareText} label="Etapa detectada" value={stageLabel(latestSimulationTurn.conversationStage)} />
+                    <SimulatorMetric icon={Radio} label="Intenção" value={latestSimulationTurn.intent || "Não identificada"} />
+                    <SimulatorMetric icon={ArrowRight} label="Estratégia" value={latestSimulationTurn.responseStrategy || "Resposta natural"} />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <BookOpenText className="h-4 w-4 text-blue-600" />
+                          Fontes usadas
+                        </p>
+                        <Badge variant="secondary">{latestSimulationTurn.sourcesUsed.length}</Badge>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {latestSimulationTurn.sourcesUsed.length > 0 ? latestSimulationTurn.sourcesUsed.map((source, index) => (
+                          <div key={`${source.sourceType}-${source.topic}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              {source.sourceLabel || source.sourceType} • {source.topic}
+                            </p>
+                            <p className="mt-1 line-clamp-3 text-sm leading-6 text-slate-700">{source.content}</p>
+                          </div>
+                        )) : (
+                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                            Nenhuma fonte específica foi necessária ou encontrada para esta mensagem.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <Radio className="h-4 w-4 text-emerald-600" />
+                          Mídia sugerida
+                        </p>
+                        <Badge variant="secondary">{latestSimulationTurn.mediaSuggestions.length}</Badge>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {latestSimulationTurn.mediaSuggestions.length > 0 ? latestSimulationTurn.mediaSuggestions.map((media, index) => (
+                          <div key={`${media.assetName}-${index}`} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm font-semibold text-emerald-950">{media.assetName || media.topic}</p>
+                              <Badge variant="outline" className="border-emerald-200 text-emerald-800">
+                                {media.canSend ? "Enviável" : "Referência"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-xs text-emerald-900/75">{media.sendWhen}</p>
+                            {media.guidance ? <p className="mt-2 text-sm leading-6 text-emerald-950/90">{media.guidance}</p> : null}
+                          </div>
+                        )) : (
+                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                            Nenhuma mídia foi sugerida para esta pergunta.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">Diagnóstico rápido</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {latestSimulationTurn.issues.length > 0 ? latestSimulationTurn.issues.map((issue) => (
+                          <Badge key={issue} variant="secondary" className="bg-amber-100 text-amber-900">
+                            {issue}
+                          </Badge>
+                        )) : (
+                          <Badge className="bg-emerald-600">Sem falhas críticas</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => handleCorrectWithNexoBot(latestSimulationTurn)}
+                    >
+                      <Bot className="mr-2 h-4 w-4" />
+                      Corrigir com Nexo bot
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-[420px] flex-col justify-between rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-5">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Sem simulação ainda</p>
+                    <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                      O resultado aparece aqui com nota, etapa, fontes e mídia.
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      Comece com uma das perguntas sugeridas ou escreva como o cliente falaria no WhatsApp. Se a resposta ficar ruim, já mandamos o contexto para o Nexo bot aprender.
+                    </p>
+                  </div>
+                  <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                    {simulatorExamples.slice(0, 4).map((example) => (
+                      <button
+                        key={example}
+                        type="button"
+                        onClick={() => handleSimulate(example)}
+                        className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700"
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="border-border/60 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -1293,6 +1606,26 @@ function PreviewPill({
     <div className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function SimulatorMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <Icon className="h-3.5 w-3.5 text-cyan-600" />
+        {label}
+      </div>
+      <p className="mt-2 line-clamp-2 text-sm font-semibold capitalize text-slate-950">{value}</p>
     </div>
   );
 }

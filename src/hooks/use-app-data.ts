@@ -7,12 +7,14 @@ import {
   getAiAgentProfile,
   resetAiAgentAssistantWorkspace,
   sendAiAgentAssistantChat,
+  simulateAiAgent,
   trainAiAgent,
   updateAiAgentProfile,
   type AiAgentAssistantChatPayload,
   type AiAgentAssistantPayload,
   type AiAgentAssistantResetPayload,
   type CreateAiAgentProfilePayload,
+  type SimulateAiAgentPayload,
   type TrainAiAgentPayload,
   type UpdateAiAgentProfilePayload,
 } from "@/services/ai-agent";
@@ -1010,6 +1012,12 @@ export function useTrainAiAgent() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.aiAgent });
     },
+  });
+}
+
+export function useSimulateAiAgent() {
+  return useMutation({
+    mutationFn: (payload: SimulateAiAgentPayload) => simulateAiAgent(payload),
   });
 }
 
