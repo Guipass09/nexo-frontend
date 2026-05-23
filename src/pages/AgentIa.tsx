@@ -881,7 +881,7 @@ export default function AgentIa() {
           <PanelAreaCard
             key={item.id}
             icon={item.icon}
-            href={`#${item.id}`}
+            targetId={item.id}
             title={item.title}
             description={item.description}
             status={panelAreaStats[item.id]}
@@ -1878,21 +1878,26 @@ function SectionHeader({
 
 function PanelAreaCard({
   icon: Icon,
-  href,
+  targetId,
   title,
   description,
   status,
 }: {
   icon: LucideIcon;
-  href: string;
+  targetId: string;
   title: string;
   description: string;
   status?: string;
 }) {
+  const handleClick = () => {
+    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <a
-      href={href}
-      className="group rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+    <button
+      type="button"
+      onClick={handleClick}
+      className="group rounded-[1.35rem] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
@@ -1906,7 +1911,7 @@ function PanelAreaCard({
       </div>
       <p className="mt-4 text-sm font-semibold text-slate-950">{title}</p>
       <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">{description}</p>
-    </a>
+    </button>
   );
 }
 
