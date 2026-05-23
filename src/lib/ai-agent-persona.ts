@@ -225,9 +225,9 @@ function buildFaqSection(answers: WizardAnswerMap) {
   }
 
   return joinSections([
-    answers.process && ensureSentence(`A plataforma e o atendimento funcionam assim: ${normalizeSingleLine(answers.process)}`),
-    answers.pricing && ensureSentence(`Sobre valores e pagamento: ${normalizeSingleLine(answers.pricing)}`),
-    answers.hours && ensureSentence(`O atendimento acontece em ${normalizeSingleLine(answers.hours)}`),
+    answers.process && ensureSentence(`Como funciona: ${normalizeSingleLine(answers.process)}`),
+    answers.pricing && ensureSentence(`Valores e pagamento: ${normalizeSingleLine(answers.pricing)}`),
+    answers.hours && ensureSentence(`Horários de atendimento: ${normalizeSingleLine(answers.hours)}`),
   ]);
 }
 
@@ -265,18 +265,18 @@ export function composeVirtualAgentFromWizard(answers: WizardAnswerMap): AiAgent
     tone: buildTone(answers.tone),
     businessDescription: joinPlainParagraphs([
       businessName && segment
-        ? ensureSentence(`${businessName} atua em ${segment}`)
+        ? ensureSentence(`Área de atuação: ${businessName} atua em ${segment}`)
         : businessName
-          ? ensureSentence(businessName)
+          ? ensureSentence(`Empresa: ${businessName}`)
           : segment
-            ? ensureSentence(`Atua em ${segment}`)
+            ? ensureSentence(`Área de atuação: ${segment}`)
             : "",
-      audience && ensureSentence(`Atende principalmente ${audience}`),
-      businessSummary && ensureSentence(businessSummary),
+      audience && ensureSentence(`Público atendido: ${audience}`),
+      businessSummary && ensureSentence(`Resumo da empresa: ${businessSummary}`),
     ]),
     services: joinPlainParagraphs([
-      services,
-      processSummary && ensureSentence(`O fluxo principal funciona assim: ${processSummary}`),
+      services && ensureSentence(`Serviços e entregas: ${services}`),
+      processSummary && ensureSentence(`Como o atendimento, a plataforma ou o processo funcionam: ${processSummary}`),
     ]),
     faq,
     operatingHours: hours,

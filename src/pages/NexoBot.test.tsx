@@ -67,8 +67,7 @@ describe("NexoBot", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/nexo bot/i)).toBeInTheDocument();
-    expect(screen.getByText(/empresa x/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /nexo bot .* empresa x/i })).toBeInTheDocument();
     expect(screen.getByText(/97.2 \/ 100/i)).toBeInTheDocument();
     expect(screen.getByText(/nao repita a mesma resposta/i)).toBeInTheDocument();
   });

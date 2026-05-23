@@ -510,6 +510,49 @@ function ConversationAudioContent({
   );
 }
 
+function ConversationDocumentContent({
+  message,
+  isClient,
+  onSaveToLibrary,
+  isSavingToLibrary,
+}: {
+  message: ConversationMessage;
+  isClient: boolean;
+  onSaveToLibrary?: (message: ConversationMessage) => void;
+  isSavingToLibrary?: boolean;
+}) {
+  const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
+  const mediaName = message.mediaAsset?.originalName ?? message.text;
+
+  return (
+    <div className="space-y-2" translate="no">
+      {mediaUrl ? (
+        <a
+          href={mediaUrl}
+          target="_blank"
+          rel="noreferrer"
+          className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors", isClient ? "border-white/20 bg-white/10 text-white hover:bg-white/15" : "border-border bg-secondary/50 text-foreground hover:bg-secondary")}
+        >
+          <FileText className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{mediaName || "Documento recebido"}</span>
+          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+        </a>
+      ) : (
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+          <FileText className="h-4 w-4" />
+          Documento recebido, mas o arquivo ainda nao esta disponivel.
+        </div>
+      )}
+      {!isMediaPlaceholder(message.rawText ?? message.text, "document") ? (
+        <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
+          {message.rawText ?? message.text}
+        </pre>
+      ) : null}
+      <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
+    </div>
+  );
+}
+
 function renderMessageBody(
   message: ConversationMessage,
   isClient: boolean,
@@ -526,35 +569,7 @@ function renderMessageBody(
   }
 
   if (message.type === "document") {
-    const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
-    const mediaName = message.mediaAsset?.originalName ?? message.text;
-    return (
-      <div className="space-y-2" translate="no">
-        {mediaUrl ? (
-          <a
-            href={mediaUrl}
-            target="_blank"
-            rel="noreferrer"
-            className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors", isClient ? "border-white/20 bg-white/10 text-white hover:bg-white/15" : "border-border bg-secondary/50 text-foreground hover:bg-secondary")}
-          >
-            <FileText className="h-4 w-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{mediaName || "Documento recebido"}</span>
-            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-          </a>
-        ) : (
-          <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
-            <FileText className="h-4 w-4" />
-            Documento recebido, mas o arquivo ainda nao esta disponivel.
-          </div>
-        )}
-        {!isMediaPlaceholder(message.rawText ?? message.text, "document") ? (
-          <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
-            {message.rawText ?? message.text}
-          </pre>
-        ) : null}
-        <ConversationMediaLibraryMenu message={message} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />
-      </div>
-    );
+    return <ConversationDocumentContent message={message} isClient={isClient} onSaveToLibrary={onSaveToLibrary} isSavingToLibrary={isSavingToLibrary} />;
   }
 
   if (message.type === "audio") {

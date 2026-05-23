@@ -39,6 +39,7 @@ export default function MidiaDetalhe() {
   const archiveMutation = useArchiveMediaAsset();
   const restoreMutation = useRestoreMediaAsset();
   const isAdmin = getStoredAuthUser()?.role === "admin";
+  const assetMediaUrl = useBrowserMediaUrl(asset?.downloadUrl ?? asset?.publicUrl);
 
   if (isLoading) {
     return <Card className="p-6 border-border/60 text-sm text-muted-foreground">Carregando midia...</Card>;
@@ -52,7 +53,6 @@ export default function MidiaDetalhe() {
     error instanceof ApiError && typeof error.responseBody === "object" && error.responseBody !== null && "message" in error.responseBody
       ? String(error.responseBody.message)
       : fallback;
-  const assetMediaUrl = useBrowserMediaUrl(asset.downloadUrl ?? asset.publicUrl);
   const handleArchive = () => archiveMutation.mutate(asset.id, {
     onSuccess: () => toast({ title: "Asset arquivado", description: "O asset foi preservado e removido do reuso operacional." }),
     onError: (error) => toast({ title: "Nao foi possivel arquivar", description: getErrorMessage(error, "Tente novamente ou verifique suas permissoes."), variant: "destructive" }),
