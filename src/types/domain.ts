@@ -241,6 +241,7 @@ export interface AiAgentTrainingScenario {
   issues: string[];
   turnCount: number;
   lastReply?: string | null;
+  qualityMetrics?: AiAgentQualityMetrics | null;
 }
 
 export interface AiAgentTrainingProgression {
@@ -298,6 +299,7 @@ export interface AiAgentTrainingReport {
   critic?: AiAgentTrainingCritic | null;
   progression?: AiAgentTrainingProgression | null;
   history?: AiAgentTrainingHistoryEntry[];
+  qualityMetrics?: AiAgentQualityMetrics | null;
 }
 
 export interface AiAgentSimulationSource {
@@ -328,6 +330,23 @@ export interface AiAgentSimulationCapturedMessage {
   } | null;
 }
 
+export interface AiAgentQualityIndicator {
+  key: string;
+  label: string;
+  score: number | null;
+  status: "excellent" | "good" | "attention" | "critical" | "not_applicable" | string;
+  applicable?: boolean;
+  evidence?: string;
+  improvement?: string;
+}
+
+export interface AiAgentQualityMetrics {
+  overallScore: number;
+  status: "excellent" | "good" | "attention" | "critical" | string;
+  indicators: AiAgentQualityIndicator[];
+  pointsToImprove: string[];
+}
+
 export interface AiAgentSimulationTurn {
   incoming: string;
   responded: boolean;
@@ -340,6 +359,7 @@ export interface AiAgentSimulationTurn {
   sourcesUsed: AiAgentSimulationSource[];
   mediaSuggestions: AiAgentSimulationMediaSuggestion[];
   capturedMessages: AiAgentSimulationCapturedMessage[];
+  qualityMetrics?: AiAgentQualityMetrics | null;
 }
 
 export interface AiAgentSimulationResult {
@@ -359,6 +379,7 @@ export interface AiAgentSimulationResult {
     respondedTurns: number;
     averageScore: number;
     issues: string[];
+    qualityMetrics?: AiAgentQualityMetrics | null;
   };
 }
 

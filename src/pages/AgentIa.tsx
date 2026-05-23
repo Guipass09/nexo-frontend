@@ -62,6 +62,7 @@ import {
 } from "@/hooks/use-app-data";
 import type {
   AiAgentProfile,
+  AiAgentQualityIndicator,
   AiAgentSimulationResult,
   AiAgentSimulationTurn,
   AiAgentTrainingCriticPriority,
@@ -361,6 +362,33 @@ function scoreTone(score: number) {
   }
 
   return "text-rose-700";
+}
+
+function qualityStatusLabel(status?: string | null) {
+  const labels: Record<string, string> = {
+    excellent: "Excelente",
+    good: "Bom",
+    attention: "Ajustar",
+    critical: "Crítico",
+    not_applicable: "Neutro",
+  };
+
+  return labels[status ?? ""] ?? "Ajustar";
+}
+
+function qualityStatusClass(status?: string | null) {
+  switch (status) {
+    case "excellent":
+      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+    case "good":
+      return "border-blue-200 bg-blue-50 text-blue-900";
+    case "critical":
+      return "border-rose-200 bg-rose-50 text-rose-900";
+    case "not_applicable":
+      return "border-slate-200 bg-slate-50 text-slate-500";
+    default:
+      return "border-amber-200 bg-amber-50 text-amber-900";
+  }
 }
 
 function sourceTypeLabel(sourceType?: string | null) {
@@ -1156,6 +1184,42 @@ export default function AgentIa() {
                     <SimulatorMetric icon={ArrowRight} label="Estratégia" value={latestSimulationTurn.responseStrategy || "Resposta natural"} />
                   </div>
 
+                  {latestSimulationTurn.qualityMetrics ? (
+                    <div className="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-emerald-50 p-4">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                            <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                            Métricas de qualidade
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Régua da resposta: fonte, memória, calendário, mídia, educação, etapa e confiança.
+                          </p>
+                        </div>
+                        <Badge className={qualityStatusClass(latestSimulationTurn.qualityMetrics.status)}>
+                          {qualityStatusLabel(latestSimulationTurn.qualityMetrics.status)} • {latestSimulationTurn.qualityMetrics.overallScore.toFixed(0)}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        {latestSimulationTurn.qualityMetrics.indicators.map((indicator) => (
+                          <QualityIndicatorCard key={indicator.key} indicator={indicator} />
+                        ))}
+                      </div>
+                      {latestSimulationTurn.qualityMetrics.pointsToImprove.length > 0 ? (
+                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">Pontos a melhorar</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {latestSimulationTurn.qualityMetrics.pointsToImprove.slice(0, 5).map((point) => (
+                              <Badge key={point} variant="secondary" className="bg-white text-amber-950">
+                                {point}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="rounded-3xl border border-slate-200 bg-white p-4">
                       <div className="flex items-center justify-between gap-3">
@@ -1934,6 +1998,25 @@ function SimulatorMetric({
         {label}
       </div>
       <p className="mt-2 line-clamp-2 text-sm font-semibold capitalize text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function QualityIndicatorCard({ indicator }: { indicator: AiAgentQualityIndicator }) {
+  return (
+    <div className={`rounded-2xl border px-3 py-3 ${qualityStatusClass(indicator.status)}`}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-wide">{indicator.label}</p>
+        <Badge variant="outline" className="shrink-0 border-current/25 bg-white/50 text-[10px]">
+          {qualityStatusLabel(indicator.status)}
+        </Badge>
+      </div>
+      <p className="mt-2 text-2xl font-semibold">
+        {indicator.score === null ? "N/A" : indicator.score.toFixed(0)}
+      </p>
+      {indicator.evidence ? (
+        <p className="mt-1 line-clamp-2 text-xs leading-5 opacity-80">{indicator.evidence}</p>
+      ) : null}
     </div>
   );
 }

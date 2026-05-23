@@ -4,6 +4,7 @@ import type {
   AiAgentAssistantChatResult,
   AiAgentAssistantWorkspace,
   AiAgentProfile,
+  AiAgentQualityMetrics,
   AiAgentSimulationCapturedMessage,
   AiAgentSimulationMediaSuggestion,
   AiAgentSimulationResult,
@@ -183,6 +184,35 @@ function normalizeCapturedMessage(value: unknown): AiAgentSimulationCapturedMess
   };
 }
 
+function normalizeQualityMetrics(value: unknown): AiAgentQualityMetrics | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    overallScore: toNumber(value.overall_score ?? value.overallScore),
+    status: toText(value.status, "attention"),
+    indicators: Array.isArray(value.indicators)
+      ? value.indicators.map((item) => {
+        const indicator = isRecord(item) ? item : {};
+
+        return {
+          key: toText(indicator.key),
+          label: toText(indicator.label),
+          score: indicator.score === null || indicator.score === undefined ? null : toNumber(indicator.score),
+          status: toText(indicator.status, "attention"),
+          applicable: indicator.applicable === undefined ? undefined : Boolean(indicator.applicable),
+          evidence: toText(indicator.evidence),
+          improvement: toText(indicator.improvement),
+        };
+      }).filter((item) => item.key !== "")
+      : [],
+    pointsToImprove: Array.isArray(value.points_to_improve ?? value.pointsToImprove)
+      ? toArray(value.points_to_improve ?? value.pointsToImprove).map((item) => toText(item)).filter(Boolean)
+      : [],
+  };
+}
+
 function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
   const turn = isRecord(value) ? value : {};
 
@@ -210,6 +240,7 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
     capturedMessages: Array.isArray(turn.captured_messages ?? turn.capturedMessages)
       ? toArray(turn.captured_messages ?? turn.capturedMessages).map(normalizeCapturedMessage)
       : [],
+    qualityMetrics: normalizeQualityMetrics(turn.quality_metrics ?? turn.qualityMetrics),
   };
 }
 
@@ -238,6 +269,7 @@ export async function simulateAiAgent(payload: SimulateAiAgentPayload) {
       respondedTurns: toNumber(summary.responded_turns ?? summary.respondedTurns),
       averageScore: toNumber(summary.average_score ?? summary.averageScore),
       issues: Array.isArray(summary.issues) ? summary.issues.map((item) => toText(item)).filter(Boolean) : [],
+      qualityMetrics: normalizeQualityMetrics(summary.quality_metrics ?? summary.qualityMetrics),
     },
   } satisfies AiAgentSimulationResult;
 }
