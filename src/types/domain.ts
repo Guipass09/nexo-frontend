@@ -427,6 +427,14 @@ export interface AiAgentAssistantFlowInsight {
   blocks: AiAgentAssistantFlowBlockInsight[];
 }
 
+export interface AiAgentAssistantMediaAssetInsight {
+  assetId: string;
+  name: string;
+  type: string;
+  mimeType?: string | null;
+  status?: string | null;
+}
+
 export interface AiAgentAssistantWorkspace {
   profileId: string;
   assistantName: string;
@@ -453,6 +461,7 @@ export interface AiAgentAssistantWorkspace {
   recentConversations: AiAgentAssistantConversationInsight[];
   selectedConversation?: AiAgentAssistantConversationInsight | null;
   flows?: AiAgentAssistantFlowInsight[];
+  mediaAssets?: AiAgentAssistantMediaAssetInsight[];
   suggestions: string[];
 }
 
@@ -464,6 +473,20 @@ export interface AiAgentAssistantChatResult {
 }
 
 export type AiAgentTriggerType = "all_contacts" | "unsaved_contacts" | "saved_contacts" | "keyword";
+
+export interface AiAgentKnowledgeItem {
+  id: string;
+  sourceType: string;
+  sourceLabel: string;
+  topic: string;
+  content: string;
+  priority: number;
+  status: string;
+  hasEmbedding: boolean;
+  indexedAt?: string | null;
+  updatedAt?: string | null;
+  metadata?: Record<string, unknown>;
+}
 
 export interface AiAgentProfile {
   id?: string | number;
@@ -478,6 +501,13 @@ export interface AiAgentProfile {
   prompts: AiAgentPrompt[];
   virtualAgent?: AiAgentVirtualAgent;
   trainingReport?: AiAgentTrainingReport | null;
+  knowledgeSummary?: {
+    activeBlocks: number;
+    embeddedBlocks: number;
+    sourceTypes: string[];
+    topics: string[];
+  };
+  knowledgeItems?: AiAgentKnowledgeItem[];
   profiles?: AiAgentProfile[];
 }
 

@@ -6,13 +6,16 @@ import {
   Bot,
   Building2,
   Clock,
+  Database,
   Gauge,
+  Image,
   LoaderCircle,
   MessageSquareText,
   Plus,
   Radio,
   Save,
   Send,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -49,6 +52,7 @@ import { BrandMark } from "@/components/nexo/BrandMark";
 import { useToast } from "@/hooks/use-toast";
 import { getApiErrorMessage } from "@/lib/api/client";
 import {
+  useAiAgentAssistantWorkspace,
   useAiAgentProfile,
   useCreateAiAgentProfile,
   useDeleteAiAgentProfile,
@@ -148,6 +152,45 @@ const simulatorExamples = [
   "já cadastrei",
   "quarta à noite pode?",
   "tem algum áudio explicando?",
+];
+
+const panelAreaItems = [
+  {
+    id: "agent-ficha",
+    icon: UserRound,
+    title: "Ficha",
+    description: "Persona, empresa, objetivo e regras operacionais.",
+  },
+  {
+    id: "agent-conhecimento",
+    icon: Database,
+    title: "Conhecimento",
+    description: "Blocos RAG indexados por assunto, fonte e prioridade.",
+  },
+  {
+    id: "agent-teste",
+    icon: TestTube2,
+    title: "Teste",
+    description: "Simulador para validar respostas antes do WhatsApp.",
+  },
+  {
+    id: "agent-treino",
+    icon: Gauge,
+    title: "Treino",
+    description: "Nota, progresso e próximos focos do Agent IA.",
+  },
+  {
+    id: "agent-midias",
+    icon: Image,
+    title: "Mídias",
+    description: "Recursos conectados para envio contextual.",
+  },
+  {
+    id: "agent-ajustes",
+    icon: Settings2,
+    title: "Ajustes",
+    description: "Aprendizados do Nexo bot aplicados ao cérebro.",
+  },
 ];
 
 const emptyVirtualAgent: AiAgentVirtualAgent = {
@@ -320,6 +363,47 @@ function scoreTone(score: number) {
   return "text-rose-700";
 }
 
+function sourceTypeLabel(sourceType?: string | null) {
+  const labels: Record<string, string> = {
+    virtual_agent: "Ficha",
+    prompt: "Prompt",
+    flow: "Fluxo",
+    media: "Mídia",
+    nexo_bot: "Nexo bot",
+    training: "Treino",
+    universal: "Universal",
+  };
+
+  return labels[sourceType ?? ""] ?? humanizeLabel(sourceType ?? "Fonte");
+}
+
+function humanizeLabel(value?: string | null) {
+  if (!value) {
+    return "Sem assunto";
+  }
+
+  return value
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (letter) => letter.toLocaleUpperCase("pt-BR"));
+}
+
+function countAssistantRules(rules?: { [key: string]: unknown } | null) {
+  if (!rules) {
+    return 0;
+  }
+
+  return Object.values(rules).reduce((total, value) => {
+    if (Array.isArray(value)) {
+      return total + value.length;
+    }
+
+    return total;
+  }, 0);
+}
+
 export default function AgentIa() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -341,6 +425,10 @@ export default function AgentIa() {
   const [trainingPhraseIndex, setTrainingPhraseIndex] = useState(0);
   const [simulatorMessage, setSimulatorMessage] = useState("boa noite, como funciona?");
   const [simulatorResult, setSimulatorResult] = useState<AiAgentSimulationResult | null>(null);
+  const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
+    { profileId: activeProfileId },
+    Boolean(activeProfileId),
+  );
 
   const applyProfileToForm = (profile: AiAgentProfile) => {
     setActiveProfileId(normalizeProfileId(profile.id));
@@ -392,6 +480,15 @@ export default function AgentIa() {
   const activeTrainingReport = useMemo<AiAgentTrainingReport | null>(() => {
     return activeProfile?.trainingReport ?? null;
   }, [activeProfile]);
+
+  const knowledgeItems = useMemo(() => {
+    return activeProfile?.knowledgeItems ?? [];
+  }, [activeProfile]);
+
+  const knowledgeSummary = activeProfile?.knowledgeSummary;
+  const assistantWorkspace = assistantWorkspaceQuery.data;
+  const mediaAssets = assistantWorkspace?.mediaAssets ?? [];
+  const nexoRuleCount = countAssistantRules(assistantWorkspace?.rules);
 
   const filledFieldsCount = useMemo(() => {
     const stringCount = Object.entries(virtualAgent)
@@ -662,6 +759,14 @@ export default function AgentIa() {
   };
 
   const latestSimulationTurn = simulatorResult?.turns.at(-1) ?? null;
+  const panelAreaStats: Record<string, string> = {
+    "agent-ficha": `${filledFieldsCount} itens`,
+    "agent-conhecimento": `${knowledgeSummary?.activeBlocks ?? knowledgeItems.length} blocos`,
+    "agent-teste": simulatorResult ? `Nota ${simulatorResult.summary.averageScore.toFixed(0)}` : "Simular",
+    "agent-treino": activeTrainingReport ? `Nota ${activeTrainingReport.averageScore.toFixed(0)}` : "Sem treino",
+    "agent-midias": `${mediaAssets.length} recursos`,
+    "agent-ajustes": `${nexoRuleCount} regras`,
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -743,14 +848,28 @@ export default function AgentIa() {
         </div>
       </section>
 
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        {panelAreaItems.map((item) => (
+          <PanelAreaCard
+            key={item.id}
+            icon={item.icon}
+            href={`#${item.id}`}
+            title={item.title}
+            description={item.description}
+            status={panelAreaStats[item.id]}
+          />
+        ))}
+      </section>
+
       {isError && (
         <Card className="border-destructive/40 p-4 text-sm text-destructive">
           Erro ao carregar Agent IA: {getApiErrorMessage(error)}
         </Card>
       )}
 
-      {activeTrainingReport && (
-        <Card className="border-border/60 bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
+      <section id="agent-treino" className="scroll-mt-24">
+        {activeTrainingReport ? (
+          <Card className="border-border/60 bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
@@ -871,10 +990,82 @@ export default function AgentIa() {
               )}
             </div>
           )}
-        </Card>
-      )}
+          </Card>
+        ) : (
+          <Card className="border-border/60 p-5 md:p-6">
+            <SectionHeader
+              icon={Gauge}
+              title="Treino e progresso"
+              description="Rode o Treinar IA para validar cenários, gerar nota e criar próximos focos."
+            />
+            <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+              Ainda não existe relatório de treino para este Agent. Quando você treinar, esta área mostra nota,
+              pontos fortes, prioridades e ações aplicadas.
+            </div>
+          </Card>
+        )}
+      </section>
 
-      <Card className="overflow-hidden border-slate-200 bg-slate-950 p-0 text-white shadow-xl shadow-slate-900/10">
+      <section id="agent-conhecimento" className="scroll-mt-24">
+        <Card className="border-border/60 p-5 md:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <SectionHeader
+              icon={Database}
+              title="Conhecimento RAG salvo"
+              description="Blocos que o Agent pode buscar antes de responder: ficha, fluxos, Nexo bot, mídias, treino e prompts."
+            />
+            <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[430px]">
+              <PreviewPill label="Blocos ativos" value={String(knowledgeSummary?.activeBlocks ?? knowledgeItems.length)} />
+              <PreviewPill label="Com embedding" value={String(knowledgeSummary?.embeddedBlocks ?? knowledgeItems.filter((item) => item.hasEmbedding).length)} />
+              <PreviewPill label="Fontes" value={String(knowledgeSummary?.sourceTypes?.length ?? 0)} />
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {(knowledgeSummary?.topics ?? []).slice(0, 12).map((topic) => (
+              <Badge key={topic} variant="secondary" className="bg-blue-50 text-blue-700">
+                {humanizeLabel(topic)}
+              </Badge>
+            ))}
+            {(knowledgeSummary?.sourceTypes ?? []).slice(0, 8).map((sourceType) => (
+              <Badge key={sourceType} variant="outline">
+                {sourceTypeLabel(sourceType)}
+              </Badge>
+            ))}
+          </div>
+
+          {knowledgeItems.length > 0 ? (
+            <div className="mt-5 grid gap-3 lg:grid-cols-2">
+              {knowledgeItems.slice(0, 8).map((item) => (
+                <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{humanizeLabel(item.topic)}</p>
+                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                        {sourceTypeLabel(item.sourceType)} {item.sourceLabel ? `• ${item.sourceLabel}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">P{item.priority}</Badge>
+                      <Badge variant={item.hasEmbedding ? "default" : "secondary"}>
+                        {item.hasEmbedding ? "Embedding" : "Texto"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-600">{item.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+              Nenhum bloco RAG ativo apareceu para este Agent ainda. Salve a ficha, rode o treino ou ensine pelo Nexo bot para alimentar esta base automaticamente.
+            </div>
+          )}
+        </Card>
+      </section>
+
+      <section id="agent-teste" className="scroll-mt-24">
+        <Card className="overflow-hidden border-slate-200 bg-slate-950 p-0 text-white shadow-xl shadow-slate-900/10">
         <div className="relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(20,184,166,0.34),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(37,99,235,0.36),transparent_26%),linear-gradient(135deg,#020617_0%,#0f172a_48%,#082f49_100%)]" />
           <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.15)_1px,transparent_1px)] [background-size:34px_34px]" />
@@ -1071,8 +1262,65 @@ export default function AgentIa() {
             </div>
           </div>
         </div>
-      </Card>
+        </Card>
+      </section>
 
+      <section id="agent-midias" className="scroll-mt-24 grid gap-6 lg:grid-cols-2">
+        <Card className="border-border/60 p-5 md:p-6">
+          <SectionHeader
+            icon={Image}
+            title="Mídias conectadas"
+            description="Biblioteca disponível para o Agent sugerir ou enviar quando o contexto pedir."
+          />
+          <div className="mt-5 space-y-3">
+            {mediaAssets.length > 0 ? mediaAssets.slice(0, 8).map((asset) => (
+              <div key={asset.assetId} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">{asset.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {humanizeLabel(asset.type)} {asset.mimeType ? `• ${asset.mimeType}` : ""}
+                  </p>
+                </div>
+                <Badge variant={asset.status === "active" ? "default" : "secondary"}>
+                  {asset.status ?? "ativo"}
+                </Badge>
+              </div>
+            )) : (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+                Nenhuma mídia foi conectada ao Agent ainda. Ao cadastrar áudios, PDFs, imagens ou catálogos na biblioteca, o RAG pode usá-los como recurso de atendimento.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card id="agent-ajustes" className="scroll-mt-24 border-border/60 p-5 md:p-6">
+          <SectionHeader
+            icon={Settings2}
+            title="Ajustes do Nexo bot"
+            description="Correções ensinadas pelo usuário que viram regra geral deste Agent."
+          />
+          <div className="mt-5 grid gap-3">
+            <AdjustmentGroup title="Etapas concluídas" items={assistantWorkspace?.rules?.completionAliases ?? []} />
+            <AdjustmentGroup title="Confirmações positivas" items={assistantWorkspace?.rules?.affirmationAliases ?? []} />
+            <AdjustmentGroup title="Frases proibidas" items={assistantWorkspace?.rules?.forbiddenReplyFragments ?? []} />
+            <AdjustmentGroup title="Notas gerais" items={assistantWorkspace?.rules?.globalNotes ?? []} />
+            {(assistantWorkspace?.rules?.topicGuidance?.length ?? 0) > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-950">Orientações por assunto</p>
+                <div className="mt-3 space-y-2">
+                  {assistantWorkspace?.rules?.topicGuidance.slice(0, 5).map((item) => (
+                    <p key={`${item.topic}-${item.guidance}`} className="text-sm leading-6 text-slate-600">
+                      <strong>{humanizeLabel(item.topic)}:</strong> {item.guidance}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      </section>
+
+      <section id="agent-ficha" className="scroll-mt-24 space-y-6">
       <Card className="border-border/60 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 flex-1">
@@ -1514,6 +1762,7 @@ export default function AgentIa() {
           </Card>
         </aside>
       </div>
+      </section>
 
       <Dialog open={trainMutation.isPending}>
         <DialogContent className="max-w-lg overflow-hidden rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.16),_transparent_38%),linear-gradient(160deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-0">
@@ -1558,6 +1807,65 @@ function SectionHeader({
       <div>
         <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function PanelAreaCard({
+  icon: Icon,
+  href,
+  title,
+  description,
+  status,
+}: {
+  icon: LucideIcon;
+  href: string;
+  title: string;
+  description: string;
+  status?: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="group rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
+          <Icon className="h-5 w-5" />
+        </div>
+        {status ? (
+          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+            {status}
+          </Badge>
+        ) : null}
+      </div>
+      <p className="mt-4 text-sm font-semibold text-slate-950">{title}</p>
+      <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">{description}</p>
+    </a>
+  );
+}
+
+function AdjustmentGroup({
+  title,
+  items,
+}: {
+  title: string;
+  items: string[];
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-sm font-semibold text-slate-950">{title}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {items.slice(0, 8).map((item) => (
+          <Badge key={item} variant="secondary" className="bg-white text-slate-700">
+            {item}
+          </Badge>
+        ))}
       </div>
     </div>
   );
