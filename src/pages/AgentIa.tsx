@@ -8,6 +8,7 @@ import {
   Clock,
   Database,
   Gauge,
+  HelpCircle,
   Image,
   LoaderCircle,
   MessageSquareText,
@@ -35,6 +36,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,6 +158,166 @@ const simulatorExamples = [
   "quarta à noite pode?",
   "tem algum áudio explicando?",
 ];
+
+type FieldHelp = {
+  title: string;
+  intro: string;
+  example: string;
+  tip?: string;
+};
+
+const FIELD_HELP: Record<string, FieldHelp> = {
+  assistantName: {
+    title: "Nome deste assistente",
+    intro: "Use um nome interno para você identificar rapidamente quando esse Agent deve atuar.",
+    example: "Pré-venda principal, Suporte da plataforma, Agenda, Pós-venda, Qualificação premium.",
+    tip: "Evite nomes genéricos se houver mais de um assistente. Isso ajuda o Nexo bot a entender qual cérebro está sendo ajustado.",
+  },
+  triggerType: {
+    title: "Gatilho de ativação",
+    intro: "Escolha em quais conversas esse Agent pode assumir o atendimento.",
+    example: "Use 'Todos os contatos' para um Agent principal. Use 'Palavra-chave' quando ele só deve entrar em assuntos como orçamento, suporte ou agenda.",
+    tip: "Se você tiver vários Agents, cada um precisa de um gatilho claro para não disputar a mesma conversa.",
+  },
+  triggerKeywords: {
+    title: "Palavras-chave",
+    intro: "Informe expressões reais que o cliente costuma escrever e que devem acionar esse Agent.",
+    example: "orçamento\nquero contratar\nagendar avaliação\nsuporte da plataforma\nsegunda via",
+    tip: "Pode escrever uma por linha. Inclua variações naturais, mas não precisa exagerar: o RAG e o entendimento semântico ajudam no resto.",
+  },
+  agentName: {
+    title: "Nome da pessoa virtual",
+    intro: "É o nome público ou semi-público que dá personalidade ao atendimento.",
+    example: "Sofia, Nexo IA, Clara, Time de Atendimento, Consultora Virtual.",
+    tip: "Se a marca for mais formal, use 'Time de atendimento'. Se quiser humanizar, use um nome próprio.",
+  },
+  roleTitle: {
+    title: "Papel no atendimento",
+    intro: "Explique a função da IA sem transformar isso em cargo robótico.",
+    example: "Especialista virtual em atendimento e agendamento. Consultora de pré-venda. Assistente de suporte ao cliente.",
+    tip: "O papel deve dizer o que ela resolve, não apenas um título bonito.",
+  },
+  businessName: {
+    title: "Empresa ou profissional",
+    intro: "Coloque o nome oficial que a IA pode usar quando precisar se apresentar.",
+    example: "Sementes da Fala, Clínica Horizonte, Studio Ana Lima, Dev Saúde Pro.",
+    tip: "Se for profissional autônomo, use o nome comercial ou como o cliente reconhece a marca.",
+  },
+  segment: {
+    title: "Segmento",
+    intro: "Diga em poucas palavras o mercado em que a empresa atua.",
+    example: "Fonoaudiologia infantil online, estética facial, consultoria jurídica, desenvolvimento de sistemas para saúde.",
+    tip: "Quanto mais específico, melhor. 'Saúde' é amplo; 'terapia fonoaudiológica infantil online' é muito mais útil.",
+  },
+  businessModel: {
+    title: "Modelo do negócio",
+    intro: "Ajuda o Agent a entender se a venda é serviço, produto, assinatura, consulta, suporte ou outro formato.",
+    example: "Serviço agendado, assinatura mensal, venda consultiva, atendimento clínico, produto digital.",
+    tip: "Isso influencia perguntas, tom e próximos passos. Uma clínica conversa diferente de um e-commerce.",
+  },
+  tone: {
+    title: "Tom predominante",
+    intro: "Define como a resposta deve soar no WhatsApp.",
+    example: "Acolhedor e profissional para saúde. Direto e consultivo para vendas B2B. Leve e próximo para comércio local.",
+    tip: "Escolha o tom pensando no cliente final, não só no gosto da empresa.",
+  },
+  primaryGoal: {
+    title: "Objetivo principal do atendimento",
+    intro: "É o resultado que o Agent deve buscar na maioria das conversas.",
+    example: "Agendar uma avaliação, qualificar um lead, vender um plano, resolver suporte, enviar proposta, orientar cadastro.",
+    tip: "Um objetivo claro evita respostas soltas e perguntas desnecessárias.",
+  },
+  conversationApproach: {
+    title: "Abordagem da conversa",
+    intro: "Define se o Agent deve conduzir mais, perguntar mais ou responder de forma mais objetiva.",
+    example: "Guiada para atendimento com etapas. Consultiva para venda complexa. Direta para suporte simples.",
+    tip: "Se o cliente geralmente chega confuso, escolha uma abordagem mais guiada.",
+  },
+  responseLength: {
+    title: "Tamanho ideal da resposta",
+    intro: "Controla a quantidade de texto que a IA tende a enviar.",
+    example: "Curta para WhatsApp rápido. Equilibrada para explicar e conduzir. Detalhada para dúvidas técnicas.",
+    tip: "No WhatsApp, quase sempre o melhor é responder bem em blocos curtos.",
+  },
+  desiredOutcome: {
+    title: "Resultado esperado pelo cliente",
+    intro: "Descreva o que o cliente quer conseguir ao falar com a empresa.",
+    example: "Sair com uma avaliação marcada, receber o link correto, entender valores, saber se o serviço serve para o caso dele, resolver um problema.",
+    tip: "Isso ajuda a IA a responder com foco no desejo do cliente, não só no processo interno da empresa.",
+  },
+  businessDescription: {
+    title: "O que a empresa faz",
+    intro: "Explique o negócio em linguagem simples, como você explicaria para alguém que nunca ouviu falar da empresa.",
+    example: "A empresa oferece terapia fonoaudiológica online para crianças com dificuldades de fala e comunicação. A família passa por uma avaliação inicial, recebe orientação e pode seguir com sessões acompanhadas pela plataforma.",
+    tip: "Inclua o que oferece, para quem, como funciona e qual transformação entrega.",
+  },
+  audienceDescription: {
+    title: "Quem é o cliente ideal",
+    intro: "Descreva quem costuma procurar a empresa e quais dores, desejos ou dúvidas aparecem.",
+    example: "Famílias com crianças a partir de 4 anos que percebem atraso na fala, troca de sons ou dificuldade de comunicação. Normalmente chegam inseguras e querem entender se precisam de avaliação.",
+    tip: "Quanto mais claro o perfil, melhor a IA identifica intenção e nível de urgência.",
+  },
+  services: {
+    title: "Ofertas, serviços ou soluções",
+    intro: "Liste o que a empresa entrega e o que pode ser explicado ao cliente.",
+    example: "Avaliação inicial gratuita, sessões online, atividades interativas, relatórios de evolução, orientação para família e acompanhamento pela plataforma.",
+    tip: "Não escreva propaganda vazia. Escreva fatos úteis que a IA pode usar para responder dúvidas.",
+  },
+  progressionRules: {
+    title: "Como a conversa deve progredir",
+    intro: "Explique a lógica do atendimento sem escrever frases prontas.",
+    example: "Primeiro acolher e entender a necessidade. Depois explicar se a solução faz sentido. Se houver interesse, pedir permissão para enviar o cadastro. Após confirmação de cadastro feito, seguir para agendamento.",
+    tip: "Pense em etapas, não em texto decorado. A IA vai redigir naturalmente.",
+  },
+  successSignals: {
+    title: "Como saber que a conversa foi bem sucedida",
+    intro: "Defina sinais de que o atendimento pode avançar ou encerrar.",
+    example: "Cliente recebeu o link, confirmou cadastro, informou disponibilidade, aceitou proposta, enviou dados necessários ou disse que a dúvida foi resolvida.",
+    tip: "Isso reduz repetição e impede a IA de voltar para uma etapa já concluída.",
+  },
+  faq: {
+    title: "Perguntas frequentes",
+    intro: "Cadastre dúvidas recorrentes e respostas orientadoras.",
+    example: "Como funciona? A avaliação é online e orientada por uma profissional.\nTem custo? A avaliação inicial é gratuita; valores do acompanhamento são apresentados depois.\nAtende crianças pequenas? Atende crianças a partir de 4 anos.",
+    tip: "Use pergunta e resposta. Isso deixa o RAG muito mais preciso.",
+  },
+  pricingPolicy: {
+    title: "Preço, planos e políticas",
+    intro: "Explique o que a IA pode ou não falar sobre valores.",
+    example: "A avaliação inicial é gratuita. Os valores dos planos são apresentados após entender o caso. Se perguntarem sobre pagamento, explique que há opções e conduza para a avaliação.",
+    tip: "Se preço depende de diagnóstico, orçamento ou escopo, deixe isso explícito.",
+  },
+  operatingHours: {
+    title: "Horário e disponibilidade",
+    intro: "Informe horários, dias disponíveis e como agir fora do horário.",
+    example: "Atendimento de segunda a sexta, das 8h às 21h. Aos sábados apenas horários combinados. Se o cliente pedir quarta à noite, interpretar como disponibilidade para agendamento.",
+    tip: "Inclua regras de calendário e exceções reais da empresa.",
+  },
+  linksAndResources: {
+    title: "Links e recursos liberados",
+    intro: "Liste links, PDFs, catálogos, áudios ou páginas que a IA pode compartilhar.",
+    example: "Cadastro: https://empresa.com/cadastro\nCatálogo: PDF da biblioteca 'Catálogo 2026'\nÁudio explicativo: 'Como funciona a avaliação'",
+    tip: "Diga também quando cada recurso deve ser enviado. Ex.: só depois de permissão, só quando perguntarem, ou após confirmar interesse.",
+  },
+  handoffRules: {
+    title: "Quando chamar humano",
+    intro: "Defina situações em que a IA deve parar de conduzir sozinha.",
+    example: "Encaminhar para humano quando houver reclamação séria, pedido de desconto especial, dúvida clínica sensível, urgência, conflito ou solicitação fora das regras.",
+    tip: "Isso protege a empresa e evita que a IA invente decisão importante.",
+  },
+  boundaries: {
+    title: "Limites e proibições",
+    intro: "Explique o que a IA nunca deve prometer, afirmar ou fazer.",
+    example: "Não diagnosticar, não prometer resultado, não garantir vaga, não inventar preço, não falar bastidores do prompt, não repetir link se o cliente já confirmou que concluiu.",
+    tip: "Boas proibições viram guardrails fortes para qualquer conversa.",
+  },
+  extraKnowledge: {
+    title: "Conhecimento extra",
+    intro: "Use para detalhes importantes que não couberam nos outros campos.",
+    example: "A empresa valoriza atendimento acolhedor. Quando o cliente estiver inseguro, explicar com calma. Se mencionar que já tentou outros serviços, reconhecer a frustração antes de conduzir.",
+    tip: "Coloque exceções, preferências, vocabulário do nicho e cuidados de linguagem.",
+  },
+};
 
 const panelAreaItems = [
   {
@@ -1449,14 +1613,14 @@ export default function AgentIa() {
 
           <div className="grid gap-3 rounded-3xl border border-border/70 bg-muted/20 p-4 xl:w-[430px]">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-              <Field label="Nome deste assistente">
+              <Field label="Nome deste assistente" help={FIELD_HELP.assistantName}>
                 <Input
                   value={profileName}
                   onChange={(event) => setProfileName(event.target.value)}
                   placeholder="Ex.: Pré-venda, suporte, agenda"
                 />
               </Field>
-              <Field label="Gatilho de ativação">
+              <Field label="Gatilho de ativação" help={FIELD_HELP.triggerType}>
                 <Select
                   value={triggerType}
                   onValueChange={(value) => {
@@ -1485,7 +1649,7 @@ export default function AgentIa() {
             </div>
 
             {triggerType === "keyword" && (
-              <Field label="Palavras-chave">
+              <Field label="Palavras-chave" help={FIELD_HELP.triggerKeywords}>
                 <Textarea
                   rows={3}
                   value={triggerKeywordsText}
@@ -1526,35 +1690,35 @@ export default function AgentIa() {
               description="Quem é essa pessoa virtual, o tipo de negócio e como ela deve soar no WhatsApp."
             />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Nome da pessoa virtual">
+              <Field label="Nome da pessoa virtual" help={FIELD_HELP.agentName}>
                 <Input
                   value={virtualAgent.agentName}
                   onChange={(event) => updateField("agentName", event.target.value)}
                   placeholder="Ex.: Iris, Nexo IA, Time de atendimento"
                 />
               </Field>
-              <Field label="Papel no atendimento">
+              <Field label="Papel no atendimento" help={FIELD_HELP.roleTitle}>
                 <Input
                   value={virtualAgent.roleTitle}
                   onChange={(event) => updateField("roleTitle", event.target.value)}
                   placeholder="Ex.: Especialista de atendimento"
                 />
               </Field>
-              <Field label="Empresa ou profissional">
+              <Field label="Empresa ou profissional" help={FIELD_HELP.businessName}>
                 <Input
                   value={virtualAgent.businessName}
                   onChange={(event) => updateField("businessName", event.target.value)}
                   placeholder="Ex.: Nome da empresa"
                 />
               </Field>
-              <Field label="Segmento">
+              <Field label="Segmento" help={FIELD_HELP.segment}>
                 <Input
                   value={virtualAgent.segment}
                   onChange={(event) => updateField("segment", event.target.value)}
                   placeholder="Ex.: Clínica, SaaS, consultoria, comércio"
                 />
               </Field>
-              <Field label="Modelo do negócio">
+              <Field label="Modelo do negócio" help={FIELD_HELP.businessModel}>
                 <Select value={virtualAgent.businessModel || undefined} onValueChange={(value) => updateField("businessModel", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -1568,7 +1732,7 @@ export default function AgentIa() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Tom predominante">
+              <Field label="Tom predominante" help={FIELD_HELP.tone}>
                 <Select value={virtualAgent.tone || undefined} onValueChange={(value) => updateField("tone", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -1592,7 +1756,7 @@ export default function AgentIa() {
               description="O Agent precisa entender o que o cliente quer no final, não decorar um passo a passo fixo."
             />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Objetivo principal do atendimento">
+              <Field label="Objetivo principal do atendimento" help={FIELD_HELP.primaryGoal}>
                 <Select value={virtualAgent.primaryGoal || undefined} onValueChange={(value) => updateField("primaryGoal", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -1606,7 +1770,7 @@ export default function AgentIa() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Abordagem da conversa">
+              <Field label="Abordagem da conversa" help={FIELD_HELP.conversationApproach}>
                 <Select value={virtualAgent.conversationApproach || undefined} onValueChange={(value) => updateField("conversationApproach", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -1620,7 +1784,7 @@ export default function AgentIa() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Tamanho ideal da resposta">
+              <Field label="Tamanho ideal da resposta" help={FIELD_HELP.responseLength}>
                 <Select value={virtualAgent.responseLength || undefined} onValueChange={(value) => updateField("responseLength", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -1634,14 +1798,14 @@ export default function AgentIa() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Resultado esperado pelo cliente" className="md:col-span-2">
+              <Field label="Resultado esperado pelo cliente" className="md:col-span-2" help={FIELD_HELP.desiredOutcome}>
                 <Input
                   value={virtualAgent.desiredOutcome}
                   onChange={(event) => updateField("desiredOutcome", event.target.value)}
                   placeholder="Ex.: sair com agenda marcada, proposta enviada, suporte resolvido, onboarding iniciado"
                 />
               </Field>
-              <Field label="O que a empresa faz" className="md:col-span-2">
+              <Field label="O que a empresa faz" className="md:col-span-2" help={FIELD_HELP.businessDescription}>
                 <Textarea
                   rows={5}
                   value={virtualAgent.businessDescription}
@@ -1649,7 +1813,7 @@ export default function AgentIa() {
                   placeholder="Explique o negócio de forma objetiva: o que oferece, para quem e como costuma funcionar."
                 />
               </Field>
-              <Field label="Quem é o cliente ideal" className="md:col-span-2">
+              <Field label="Quem é o cliente ideal" className="md:col-span-2" help={FIELD_HELP.audienceDescription}>
                 <Textarea
                   rows={4}
                   value={virtualAgent.audienceDescription}
@@ -1657,7 +1821,7 @@ export default function AgentIa() {
                   placeholder="Quais perfis chegam mais aqui, o que costumam buscar e como chegam."
                 />
               </Field>
-              <Field label="Ofertas, serviços ou soluções" className="md:col-span-2">
+              <Field label="Ofertas, serviços ou soluções" className="md:col-span-2" help={FIELD_HELP.services}>
                 <Textarea
                   rows={6}
                   value={virtualAgent.services}
@@ -1703,7 +1867,7 @@ export default function AgentIa() {
                 </div>
               </div>
 
-              <Field label="Como a conversa deve progredir" className="lg:col-span-2">
+              <Field label="Como a conversa deve progredir" className="lg:col-span-2" help={FIELD_HELP.progressionRules}>
                 <Textarea
                   rows={5}
                   value={virtualAgent.progressionRules}
@@ -1711,7 +1875,7 @@ export default function AgentIa() {
                   placeholder="Explique a lógica da conversa sem escrever frases prontas. Ex.: primeiro entender a necessidade, depois validar fit, depois enviar proposta."
                 />
               </Field>
-              <Field label="Como saber que a conversa foi bem sucedida" className="lg:col-span-2">
+              <Field label="Como saber que a conversa foi bem sucedida" className="lg:col-span-2" help={FIELD_HELP.successSignals}>
                 <Textarea
                   rows={4}
                   value={virtualAgent.successSignals}
@@ -1729,7 +1893,7 @@ export default function AgentIa() {
               description="Tudo o que o Agent precisa dominar sobre funcionamento, preços, dúvidas e materiais disponíveis."
             />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Perguntas frequentes" className="md:col-span-2">
+              <Field label="Perguntas frequentes" className="md:col-span-2" help={FIELD_HELP.faq}>
                 <Textarea
                   rows={7}
                   value={virtualAgent.faq}
@@ -1737,7 +1901,7 @@ export default function AgentIa() {
                   placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
                 />
               </Field>
-              <Field label="Preço, planos e políticas">
+              <Field label="Preço, planos e políticas" help={FIELD_HELP.pricingPolicy}>
                 <Textarea
                   rows={5}
                   value={virtualAgent.pricingPolicy}
@@ -1745,7 +1909,7 @@ export default function AgentIa() {
                   placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
                 />
               </Field>
-              <Field label="Horário e disponibilidade">
+              <Field label="Horário e disponibilidade" help={FIELD_HELP.operatingHours}>
                 <Textarea
                   rows={5}
                   value={virtualAgent.operatingHours}
@@ -1753,7 +1917,7 @@ export default function AgentIa() {
                   placeholder="Dias, horários, exceções e como agir fora do horário."
                 />
               </Field>
-              <Field label="Links e recursos liberados" className="md:col-span-2">
+              <Field label="Links e recursos liberados" className="md:col-span-2" help={FIELD_HELP.linksAndResources}>
                 <Textarea
                   rows={5}
                   value={virtualAgent.linksAndResources}
@@ -1761,7 +1925,7 @@ export default function AgentIa() {
                   placeholder="Links oficiais, páginas, formulários, catálogos, PDFs, materiais e orientações que o Agent pode compartilhar."
                 />
               </Field>
-              <Field label="Quando chamar humano">
+              <Field label="Quando chamar humano" help={FIELD_HELP.handoffRules}>
                 <Textarea
                   rows={4}
                   value={virtualAgent.handoffRules}
@@ -1769,7 +1933,7 @@ export default function AgentIa() {
                   placeholder="Quais casos exigem atendimento humano ou especialista."
                 />
               </Field>
-              <Field label="Limites e proibições">
+              <Field label="Limites e proibições" help={FIELD_HELP.boundaries}>
                 <Textarea
                   rows={4}
                   value={virtualAgent.boundaries}
@@ -1777,7 +1941,7 @@ export default function AgentIa() {
                   placeholder="O que a IA não pode prometer, afirmar, decidir ou inventar."
                 />
               </Field>
-              <Field label="Conhecimento extra" className="md:col-span-2">
+              <Field label="Conhecimento extra" className="md:col-span-2" help={FIELD_HELP.extraKnowledge}>
                 <Textarea
                   rows={6}
                   value={virtualAgent.extraKnowledge}
@@ -1944,14 +2108,59 @@ function Field({
   label,
   className,
   children,
+  help,
 }: {
   label: string;
   className?: string;
   children: ReactNode;
+  help?: FieldHelp;
 }) {
+  const [helpOpen, setHelpOpen] = useState(false);
+
   return (
     <div className={className ? `space-y-2 ${className}` : "space-y-2"}>
-      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <Label>{label}</Label>
+        {help ? (
+          <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+              aria-label={`Ver exemplo para ${label}`}
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </button>
+            <DialogContent className="max-w-lg rounded-3xl border border-slate-200 bg-white p-0 shadow-2xl">
+              <div className="overflow-hidden rounded-3xl">
+                <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_36%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_65%,_#ecfdf5_100%)] px-6 py-5">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl text-slate-950">{help.title}</DialogTitle>
+                    <DialogDescription className="text-sm leading-6 text-slate-600">
+                      {help.intro}
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
+                <div className="space-y-4 px-6 py-5">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Modelo de preenchimento
+                    </p>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-900">
+                      {help.example}
+                    </p>
+                  </div>
+                  {help.tip ? (
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm leading-6 text-emerald-950">
+                      <strong>Dica:</strong> {help.tip}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        ) : null}
+      </div>
       {children}
     </div>
   );
