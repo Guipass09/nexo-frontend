@@ -569,6 +569,44 @@ function sourceTypeLabel(sourceType?: string | null) {
   return labels[sourceType ?? ""] ?? humanizeLabel(sourceType ?? "Fonte");
 }
 
+function simulatorIntentLabel(intent?: string | null) {
+  const labels: Record<string, string> = {
+    fallback: "Entendimento por contexto",
+    general_support: "Atendimento geral",
+    question: "Pergunta do cliente",
+    platform_question: "Dúvida sobre plataforma",
+    evaluation_process: "Processo de atendimento",
+    schedule_request: "Pedido de agendamento",
+    scheduling: "Agendamento",
+    schedule_preference: "Preferência de horário",
+    pricing_and_plans: "Valores e planos",
+  };
+
+  return labels[intent ?? ""] ?? (intent ? humanizeLabel(intent) : "Não identificada");
+}
+
+function simulatorStrategyLabel(strategy?: string | null) {
+  const labels: Record<string, string> = {
+    planner_unavailable: "Resposta segura com RAG",
+    answer_naturally: "Resposta natural",
+    answer: "Resposta direta",
+    answer_from_context: "Resposta com contexto",
+    answer_from_prompt: "Resposta com instruções do Agent",
+    ask_more_details: "Pediu detalhe necessário",
+    continue_conversation: "Continuação do atendimento",
+    guardrail_internal_leak_blocked: "Proteção contra vazamento",
+    guardrail_business_label_leak_blocked: "Proteção de rótulos internos",
+    guardrail_direct_question_knowledge_fallback: "Resposta corrigida pelo RAG",
+    guardrail_duplicate_reply_fallback: "Proteção contra repetição",
+    guardrail_completed_step_reopen_blocked: "Etapa concluída protegida",
+    guardrail_meta_or_scheduling_loop_fallback: "Fluxo corrigido",
+    guardrail_pending_offer_fallback: "Oferta pendente avançada",
+    guardrail_registration_link_fallback: "Link de cadastro tratado",
+  };
+
+  return labels[strategy ?? ""] ?? (strategy ? humanizeLabel(strategy) : "Resposta natural");
+}
+
 function humanizeLabel(value?: string | null) {
   if (!value) {
     return "Sem assunto";
@@ -1344,8 +1382,8 @@ export default function AgentIa() {
 
                   <div className="grid gap-3 md:grid-cols-3">
                     <SimulatorMetric icon={MessageSquareText} label="Etapa detectada" value={stageLabel(latestSimulationTurn.conversationStage)} />
-                    <SimulatorMetric icon={Radio} label="Intenção" value={latestSimulationTurn.intent || "Não identificada"} />
-                    <SimulatorMetric icon={ArrowRight} label="Estratégia" value={latestSimulationTurn.responseStrategy || "Resposta natural"} />
+                    <SimulatorMetric icon={Radio} label="Intenção" value={simulatorIntentLabel(latestSimulationTurn.intent)} />
+                    <SimulatorMetric icon={ArrowRight} label="Estratégia" value={simulatorStrategyLabel(latestSimulationTurn.responseStrategy)} />
                   </div>
 
                   {latestSimulationTurn.qualityMetrics ? (
