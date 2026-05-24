@@ -184,6 +184,54 @@ function normalizeCapturedMessage(value: unknown): AiAgentSimulationCapturedMess
   };
 }
 
+function normalizeSimulationIntent(value: unknown) {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    key: toText(value.key),
+    label: toText(value.label),
+    messageAct: toText(value.message_act ?? value.messageAct),
+    directTopic: toText(value.direct_topic ?? value.directTopic),
+    mustAnswerFirst: Boolean(value.must_answer_first ?? value.mustAnswerFirst),
+  };
+}
+
+function normalizeSimulationStage(value: unknown) {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    key: toText(value.key),
+    label: toText(value.label),
+    goal: toText(value.goal),
+    nextAction: toText(value.next_action ?? value.nextAction),
+    source: toText(value.source),
+  };
+}
+
+function normalizeRuleApplied(value: unknown) {
+  const rule = isRecord(value) ? value : {};
+
+  return {
+    label: toText(rule.label),
+    source: toText(rule.source, "execution_plan"),
+  };
+}
+
+function normalizeRiskDetected(value: unknown) {
+  const risk = isRecord(value) ? value : {};
+
+  return {
+    code: toText(risk.code),
+    level: toText(risk.level, "warning"),
+    message: toText(risk.message),
+    source: toText(risk.source, "execution_plan"),
+  };
+}
+
 function normalizeQualityMetrics(value: unknown): AiAgentQualityMetrics | null {
   if (!isRecord(value)) {
     return null;
@@ -222,9 +270,18 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
     reply: typeof turn.reply === "string" ? turn.reply : null,
     conversationStage: toText(turn.conversation_stage ?? turn.conversationStage, "conversation"),
     intent: typeof turn.intent === "string" ? turn.intent : null,
+    intentDetected: normalizeSimulationIntent(turn.intent_detected ?? turn.intentDetected),
+    stageDetected: normalizeSimulationStage(turn.stage_detected ?? turn.stageDetected),
     responseStrategy: typeof (turn.response_strategy ?? turn.responseStrategy) === "string"
       ? toText(turn.response_strategy ?? turn.responseStrategy)
       : null,
+    rulesApplied: Array.isArray(turn.rules_applied ?? turn.rulesApplied)
+      ? toArray(turn.rules_applied ?? turn.rulesApplied).map(normalizeRuleApplied).filter((item) => item.label !== "")
+      : [],
+    risksDetected: Array.isArray(turn.risks_detected ?? turn.risksDetected)
+      ? toArray(turn.risks_detected ?? turn.risksDetected).map(normalizeRiskDetected).filter((item) => item.code !== "" || item.message !== "")
+      : [],
+    decisionReason: toText(turn.decision_reason ?? turn.decisionReason),
     score: toNumber(turn.score ?? (isRecord(turn.diagnostics) ? turn.diagnostics.score : undefined)),
     issues: Array.isArray(turn.issues)
       ? turn.issues.map((item) => toText(item)).filter(Boolean)

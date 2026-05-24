@@ -995,9 +995,12 @@ export default function AgentIa() {
       "No simulador do Agent IA, identifiquei um ponto para corrigir de forma geral.",
       `Mensagem do cliente: "${turn.incoming}"`,
       `Resposta da IA: "${turn.reply ?? "sem resposta"}"`,
-      `Etapa detectada: ${stageLabel(turn.conversationStage)}.`,
+      `Intenção detectada: ${turn.intentDetected?.label ?? simulatorIntentLabel(turn.intent)}.`,
+      `Etapa detectada: ${turn.stageDetected?.label ?? stageLabel(turn.conversationStage)}.`,
+      turn.decisionReason ? `Motivo da decisão: ${turn.decisionReason}` : "",
+      turn.risksDetected.length > 0 ? `Riscos detectados: ${turn.risksDetected.map((risk) => risk.message || humanizeLabel(risk.code)).join("; ")}` : "",
       "Ajuste o comportamento para melhorar esse tipo de caso em todas as conversas futuras.",
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     window.localStorage.setItem("nexo-bot-prefill", JSON.stringify({
       profileId: activeProfileId,
@@ -1471,9 +1474,19 @@ export default function AgentIa() {
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-3">
-                    <SimulatorMetric icon={MessageSquareText} label="Etapa detectada" value={stageLabel(latestSimulationTurn.conversationStage)} />
-                    <SimulatorMetric icon={Radio} label="Intenção" value={simulatorIntentLabel(latestSimulationTurn.intent)} />
+                    <SimulatorMetric icon={MessageSquareText} label="Etapa detectada" value={latestSimulationTurn.stageDetected?.label ?? stageLabel(latestSimulationTurn.conversationStage)} />
+                    <SimulatorMetric icon={Radio} label="Intenção" value={latestSimulationTurn.intentDetected?.label ?? simulatorIntentLabel(latestSimulationTurn.intent)} />
                     <SimulatorMetric icon={ArrowRight} label="Estratégia" value={simulatorStrategyLabel(latestSimulationTurn.responseStrategy)} />
+                  </div>
+
+                  <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Motivo da decisão
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-blue-950/85">
+                      {latestSimulationTurn.decisionReason || "O simulador ainda não recebeu um motivo estruturado para esta resposta."}
+                    </p>
                   </div>
 
                   {latestSimulationTurn.qualityMetrics ? (
@@ -1511,6 +1524,57 @@ export default function AgentIa() {
                       ) : null}
                     </div>
                   ) : null}
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                          Regras aplicadas
+                        </p>
+                        <Badge variant="secondary">{latestSimulationTurn.rulesApplied.length}</Badge>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {latestSimulationTurn.rulesApplied.length > 0 ? latestSimulationTurn.rulesApplied.map((rule, index) => (
+                          <div key={`${rule.source}-${rule.label}-${index}`} className="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-3 py-2">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">{humanizeLabel(rule.source)}</p>
+                            <p className="mt-1 text-sm leading-6 text-cyan-950">{rule.label}</p>
+                          </div>
+                        )) : (
+                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                            Nenhuma regra específica precisou ser destacada neste turno.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <Gauge className="h-4 w-4 text-amber-600" />
+                          Riscos detectados
+                        </p>
+                        <Badge variant="secondary">{latestSimulationTurn.risksDetected.length}</Badge>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {latestSimulationTurn.risksDetected.length > 0 ? latestSimulationTurn.risksDetected.map((risk, index) => (
+                          <div key={`${risk.source}-${risk.code}-${index}`} className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">{humanizeLabel(risk.code)}</p>
+                              <Badge variant="outline" className="border-amber-200 bg-white text-amber-900">
+                                {humanizeLabel(risk.level)}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm leading-6 text-amber-950/90">{risk.message || humanizeLabel(risk.source)}</p>
+                          </div>
+                        )) : (
+                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                            Nenhum risco relevante foi detectado para esta resposta.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="rounded-3xl border border-slate-200 bg-white p-4">

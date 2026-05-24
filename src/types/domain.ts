@@ -330,6 +330,34 @@ export interface AiAgentSimulationCapturedMessage {
   } | null;
 }
 
+export interface AiAgentSimulationIntentDetected {
+  key: string;
+  label: string;
+  messageAct: string;
+  directTopic: string;
+  mustAnswerFirst: boolean;
+}
+
+export interface AiAgentSimulationStageDetected {
+  key: string;
+  label: string;
+  goal: string;
+  nextAction: string;
+  source: string;
+}
+
+export interface AiAgentSimulationRuleApplied {
+  label: string;
+  source: string;
+}
+
+export interface AiAgentSimulationRiskDetected {
+  code: string;
+  level: string;
+  message: string;
+  source: string;
+}
+
 export interface AiAgentQualityIndicator {
   key: string;
   label: string;
@@ -353,7 +381,12 @@ export interface AiAgentSimulationTurn {
   reply?: string | null;
   conversationStage: string;
   intent?: string | null;
+  intentDetected?: AiAgentSimulationIntentDetected | null;
+  stageDetected?: AiAgentSimulationStageDetected | null;
   responseStrategy?: string | null;
+  rulesApplied: AiAgentSimulationRuleApplied[];
+  risksDetected: AiAgentSimulationRiskDetected[];
+  decisionReason: string;
   score: number;
   issues: string[];
   sourcesUsed: AiAgentSimulationSource[];
