@@ -654,6 +654,7 @@ export default function AgentIa() {
   const [virtualAgent, setVirtualAgent] = useState<AiAgentVirtualAgent>(emptyVirtualAgent);
   const [trainingPhraseIndex, setTrainingPhraseIndex] = useState(0);
   const [simulatorMessage, setSimulatorMessage] = useState("boa noite, como funciona?");
+  const [simulatorConversationMessages, setSimulatorConversationMessages] = useState<string[]>([]);
   const [simulatorResult, setSimulatorResult] = useState<AiAgentSimulationResult | null>(null);
   const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
     { profileId: activeProfileId },
@@ -702,6 +703,12 @@ export default function AgentIa() {
       window.clearInterval(interval);
     };
   }, [trainMutation.isPending]);
+
+  useEffect(() => {
+    setSimulatorConversationMessages([]);
+    setSimulatorResult(null);
+    setSimulatorMessage("boa noite, como funciona?");
+  }, [activeProfileId]);
 
   const activeProfile = useMemo(() => {
     return profiles.find((profile) => normalizeProfileId(profile.id) === activeProfileId) ?? null;
@@ -938,11 +945,14 @@ export default function AgentIa() {
       return;
     }
 
-    setSimulatorMessage(nextMessage);
+    const nextMessages = [...simulatorConversationMessages, nextMessage];
+
+    setSimulatorConversationMessages(nextMessages);
+    setSimulatorMessage("");
 
     simulateMutation.mutate({
       profileId: activeProfileId,
-      message: nextMessage,
+      messages: nextMessages,
       savedContact: true,
     }, {
       onSuccess: (result) => {
@@ -963,6 +973,8 @@ export default function AgentIa() {
         });
       },
       onError: (mutationError) => {
+        setSimulatorConversationMessages(simulatorConversationMessages);
+        setSimulatorMessage(nextMessage);
         toast({
           title: "Falha no simulador",
           description: getApiErrorMessage(mutationError),
@@ -970,6 +982,12 @@ export default function AgentIa() {
         });
       },
     });
+  };
+
+  const handleClearSimulation = () => {
+    setSimulatorConversationMessages([]);
+    setSimulatorResult(null);
+    setSimulatorMessage("boa noite, como funciona?");
   };
 
   const handleCorrectWithNexoBot = (turn: AiAgentSimulationTurn) => {
@@ -989,6 +1007,7 @@ export default function AgentIa() {
   };
 
   const latestSimulationTurn = simulatorResult?.turns.at(-1) ?? null;
+  const simulatorChatTurns = simulatorResult?.turns ?? [];
   const panelAreaStats: Record<string, string> = {
     "agent-ficha": `${filledFieldsCount} itens`,
     "agent-conhecimento": `${knowledgeSummary?.activeBlocks ?? knowledgeItems.length} blocos`,
@@ -1315,12 +1334,82 @@ export default function AgentIa() {
               </div>
 
               <div className="rounded-[1.7rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <Label className="text-slate-100">Mensagem do cliente</Label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-100">Conversa simulada</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Cada nova mensagem reaproveita o histórico para testar memória, etapa e RAG em sequência.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearSimulation}
+                    disabled={simulateMutation.isPending || (simulatorConversationMessages.length === 0 && !simulatorResult)}
+                    className="rounded-full border-white/15 bg-white/10 text-slate-100 hover:bg-white/20 hover:text-white"
+                  >
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                    Limpar
+                  </Button>
+                </div>
+
+                <div className="mt-4 max-h-[390px] space-y-3 overflow-y-auto rounded-[1.35rem] border border-white/10 bg-slate-950/35 p-3">
+                  {simulatorChatTurns.length > 0 ? simulatorChatTurns.map((turn, turnIndex) => (
+                    <div key={`${turn.incoming}-${turnIndex}`} className="space-y-2">
+                      <div className="flex justify-end">
+                        <div className="max-w-[86%] rounded-2xl rounded-tr-sm bg-blue-500 px-4 py-3 text-sm leading-6 text-white shadow-lg shadow-blue-950/20">
+                          {turn.incoming}
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-white/10 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-lg shadow-slate-950/15">
+                          {turn.capturedMessages.length > 0 ? (
+                            <div className="space-y-2">
+                              {turn.capturedMessages.map((message, messageIndex) => (
+                                <div key={`${message.type}-${messageIndex}`}>
+                                  {message.type === "media" && message.media ? (
+                                    <div className="mb-2 rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                                      {message.media.type} • {message.media.name}
+                                    </div>
+                                  ) : null}
+                                  <p>{message.text || turn.reply || "A IA não respondeu neste turno."}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p>{turn.reply || "A IA não respondeu neste turno."}</p>
+                          )}
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500">
+                            <span>{stageLabel(turn.conversationStage)}</span>
+                            <span>Nota {turn.score.toFixed(0)}</span>
+                            {turn.sourcesUsed.length > 0 ? <span>{turn.sourcesUsed.length} fonte(s)</span> : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
+                      <MessageSquareText className="h-8 w-8 text-cyan-200" />
+                      <p className="mt-3 text-sm font-semibold text-slate-100">Comece a conversa de teste</p>
+                      <p className="mt-1 max-w-sm text-xs leading-5 text-slate-400">
+                        Envie uma saudação, depois uma pergunta, depois uma confirmação. Assim analisamos a sequência inteira.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <Label className="mt-4 block text-slate-100">Nova mensagem do cliente</Label>
                 <Textarea
                   value={simulatorMessage}
                   onChange={(event) => setSimulatorMessage(event.target.value)}
-                  placeholder='Ex.: "boa noite, como funciona?"'
-                  className="mt-3 min-h-[118px] resize-none border-white/10 bg-slate-950/45 text-base leading-7 text-white placeholder:text-slate-500 focus-visible:ring-cyan-300"
+                  placeholder='Ex.: "já cadastrei" ou "quarta, 14h"'
+                  className="mt-3 min-h-[96px] resize-none border-white/10 bg-slate-950/45 text-base leading-7 text-white placeholder:text-slate-500 focus-visible:ring-cyan-300"
+                  onKeyDown={(event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                      handleSimulate();
+                    }
+                  }}
                 />
                 <div className="mt-4 flex flex-wrap gap-2">
                   {simulatorExamples.map((example) => (
@@ -1328,7 +1417,8 @@ export default function AgentIa() {
                       key={example}
                       type="button"
                       onClick={() => handleSimulate(example)}
-                      className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/10"
+                      disabled={simulateMutation.isPending || !activeProfileId}
+                      className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:border-cyan-300/60 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {example}
                     </button>
@@ -1336,7 +1426,7 @@ export default function AgentIa() {
                 </div>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs leading-5 text-slate-400">
-                    Dica: teste perguntas diretas, confirmações curtas, datas e pedidos de mídia.
+                    Dica: use Cmd/Ctrl + Enter para enviar e analisar a próxima etapa.
                   </p>
                   <Button
                     type="button"
@@ -1345,7 +1435,7 @@ export default function AgentIa() {
                     className="rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300"
                   >
                     {simulateMutation.isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Simular resposta
+                    Enviar no simulador
                   </Button>
                 </div>
               </div>
