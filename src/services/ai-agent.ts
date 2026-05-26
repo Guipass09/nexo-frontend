@@ -263,6 +263,14 @@ function normalizeQualityMetrics(value: unknown): AiAgentQualityMetrics | null {
 
 function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
   const turn = isRecord(value) ? value : {};
+  const openaiStatus = isRecord(turn.openai_status ?? turn.openaiStatus)
+    ? turn.openai_status ?? turn.openaiStatus
+    : {};
+  const normalizeOpenAiLayer = (layer: string): "ok" | "failed" | "skipped" => {
+    const status = toText(openaiStatus[layer]);
+
+    return status === "ok" || status === "failed" ? status : "skipped";
+  };
 
   return {
     incoming: toText(turn.incoming),
@@ -298,6 +306,32 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
       ? toArray(turn.captured_messages ?? turn.capturedMessages).map(normalizeCapturedMessage)
       : [],
     qualityMetrics: normalizeQualityMetrics(turn.quality_metrics ?? turn.qualityMetrics),
+    openaiStatus: {
+      planner: normalizeOpenAiLayer("planner"),
+      composer: normalizeOpenAiLayer("composer"),
+      critic: normalizeOpenAiLayer("critic"),
+      rewrite: normalizeOpenAiLayer("rewrite"),
+      embeddings: normalizeOpenAiLayer("embeddings"),
+    },
+    openaiErrors: Array.isArray(turn.openai_errors ?? turn.openaiErrors)
+      ? toArray(turn.openai_errors ?? turn.openaiErrors).map((item) => {
+        const error = isRecord(item) ? item : {};
+
+        return {
+          layer: toText(error.layer),
+          status: toText(error.status),
+          model: toText(error.model),
+          latencyMs: toNumber(error.latency_ms ?? error.latencyMs),
+          errorType: typeof (error.error_type ?? error.errorType) === "string" ? toText(error.error_type ?? error.errorType) : null,
+          error: typeof error.error === "string" ? error.error : null,
+          conversationId: error.conversation_id as string | number | null,
+          userId: error.user_id as string | number | null,
+          requestId: typeof (error.request_id ?? error.requestId) === "string" ? toText(error.request_id ?? error.requestId) : null,
+        };
+      })
+      : [],
+    fallbackUsed: Boolean(turn.fallback_used ?? turn.fallbackUsed),
+    openaiFailed: Boolean(turn.openai_failed ?? turn.openaiFailed),
   };
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpenText,
   Bot,
@@ -587,6 +588,7 @@ function simulatorIntentLabel(intent?: string | null) {
 
 function simulatorStrategyLabel(strategy?: string | null) {
   const labels: Record<string, string> = {
+    openai_failed: "Falha da OpenAI",
     planner_unavailable: "Resposta segura com RAG",
     answer_naturally: "Resposta natural",
     answer: "Resposta direta",
@@ -605,6 +607,30 @@ function simulatorStrategyLabel(strategy?: string | null) {
   };
 
   return labels[strategy ?? ""] ?? (strategy ? humanizeLabel(strategy) : "Resposta natural");
+}
+
+function openAiStatusClass(status?: string) {
+  if (status === "ok") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  }
+
+  if (status === "failed") {
+    return "border-rose-200 bg-rose-50 text-rose-900";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-500";
+}
+
+function openAiStatusLabel(status?: string) {
+  if (status === "ok") {
+    return "ok";
+  }
+
+  if (status === "failed") {
+    return "falhou";
+  }
+
+  return "não usado";
 }
 
 function humanizeLabel(value?: string | null) {
@@ -1478,6 +1504,45 @@ export default function AgentIa() {
                     <SimulatorMetric icon={Radio} label="Intenção" value={latestSimulationTurn.intentDetected?.label ?? simulatorIntentLabel(latestSimulationTurn.intent)} />
                     <SimulatorMetric icon={ArrowRight} label="Estratégia" value={simulatorStrategyLabel(latestSimulationTurn.responseStrategy)} />
                   </div>
+
+                  {latestSimulationTurn.openaiStatus ? (
+                    <div className={`rounded-3xl border p-4 ${latestSimulationTurn.openaiFailed ? "border-rose-200 bg-rose-50/80" : "border-emerald-100 bg-emerald-50/60"}`}>
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                            {latestSimulationTurn.openaiFailed ? <AlertTriangle className="h-4 w-4 text-rose-600" /> : <Sparkles className="h-4 w-4 text-emerald-600" />}
+                            Status OpenAI neste turno
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Mostra se planner, embeddings e outras camadas usaram a OpenAI real ou se houve fallback.
+                          </p>
+                        </div>
+                        {latestSimulationTurn.fallbackUsed ? (
+                          <Badge className="border-amber-200 bg-amber-50 text-amber-900">Fallback usado</Badge>
+                        ) : (
+                          <Badge className="border-emerald-200 bg-emerald-50 text-emerald-900">Sem fallback</Badge>
+                        )}
+                      </div>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                        {Object.entries(latestSimulationTurn.openaiStatus).map(([layer, status]) => (
+                          <div key={layer} className={`rounded-2xl border px-3 py-2 ${openAiStatusClass(status)}`}>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide">{humanizeLabel(layer)}</p>
+                            <p className="mt-1 text-sm font-semibold">{openAiStatusLabel(status)}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {latestSimulationTurn.openaiErrors && latestSimulationTurn.openaiErrors.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          {latestSimulationTurn.openaiErrors.slice(0, 3).map((error, index) => (
+                            <div key={`${error.layer ?? "openai"}-${index}`} className="rounded-2xl border border-rose-200 bg-white px-3 py-2 text-sm leading-6 text-rose-900">
+                              <strong>{humanizeLabel(error.layer ?? "OpenAI")}:</strong>{" "}
+                              {humanizeLabel(error.errorType ?? "erro")} {error.model ? `• ${error.model}` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">

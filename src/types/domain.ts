@@ -393,6 +393,20 @@ export interface AiAgentSimulationTurn {
   mediaSuggestions: AiAgentSimulationMediaSuggestion[];
   capturedMessages: AiAgentSimulationCapturedMessage[];
   qualityMetrics?: AiAgentQualityMetrics | null;
+  openaiStatus?: Record<"planner" | "composer" | "critic" | "rewrite" | "embeddings", "ok" | "failed" | "skipped">;
+  openaiErrors?: Array<{
+    layer?: string;
+    status?: string;
+    model?: string;
+    latencyMs?: number;
+    errorType?: string | null;
+    error?: string | null;
+    conversationId?: string | number | null;
+    userId?: string | number | null;
+    requestId?: string | null;
+  }>;
+  fallbackUsed?: boolean;
+  openaiFailed?: boolean;
 }
 
 export interface AiAgentSimulationResult {
