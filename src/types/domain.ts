@@ -205,6 +205,29 @@ export interface AiAgentPrompt {
   updatedAt?: string | null;
 }
 
+export interface AiAgentAttendanceStep {
+  step: string;
+  goal: string;
+  required_fields?: string[];
+  allowed_actions?: string[];
+  blocked_actions?: string[];
+  trigger?: string[];
+  after_action?: string;
+}
+
+export interface AiAgentAttendanceMap {
+  main_goal: string;
+  conversation_steps: AiAgentAttendanceStep[];
+  minimum_required_data: string[];
+  when_to_send_link: string;
+  when_to_schedule: string;
+  when_to_handoff: string;
+  business_hours: string;
+  never_do: string[];
+  correct_guidance_examples: string[];
+  raw_notes: string;
+}
+
 export interface AiAgentVirtualAgent {
   agentName: string;
   roleTitle: string;
@@ -231,6 +254,7 @@ export interface AiAgentVirtualAgent {
   extraKnowledge: string;
   requiredSteps: string[];
   allowedActions: string[];
+  attendanceMap: AiAgentAttendanceMap;
 }
 
 export interface AiAgentTrainingScenario {

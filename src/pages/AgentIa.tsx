@@ -66,6 +66,7 @@ import {
   useUpdateAiAgentProfile,
 } from "@/hooks/use-app-data";
 import type {
+  AiAgentAttendanceMap,
   AiAgentProfile,
   AiAgentQualityIndicator,
   AiAgentSimulationResult,
@@ -359,6 +360,19 @@ const panelAreaItems = [
   },
 ];
 
+const emptyAttendanceMap: AiAgentAttendanceMap = {
+  main_goal: "",
+  conversation_steps: [],
+  minimum_required_data: [],
+  when_to_send_link: "",
+  when_to_schedule: "",
+  when_to_handoff: "",
+  business_hours: "",
+  never_do: [],
+  correct_guidance_examples: [],
+  raw_notes: "",
+};
+
 const emptyVirtualAgent: AiAgentVirtualAgent = {
   agentName: "",
   roleTitle: "Especialista de atendimento",
@@ -385,7 +399,35 @@ const emptyVirtualAgent: AiAgentVirtualAgent = {
   extraKnowledge: "",
   requiredSteps: [],
   allowedActions: [],
+  attendanceMap: emptyAttendanceMap,
 };
+
+function textToList(value: string): string[] {
+  return value
+    .split(/\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item, index, list) => {
+      const normalized = item.toLocaleLowerCase("pt-BR");
+      return list.findIndex((candidate) => candidate.toLocaleLowerCase("pt-BR") === normalized) === index;
+    })
+    .slice(0, 40);
+}
+
+function listToText(value?: string[] | null): string {
+  return Array.isArray(value) ? value.join("\n") : "";
+}
+
+function mergeAttendanceMap(value?: Partial<AiAgentAttendanceMap> | null): AiAgentAttendanceMap {
+  return {
+    ...emptyAttendanceMap,
+    ...(value ?? {}),
+    conversation_steps: Array.isArray(value?.conversation_steps) ? value.conversation_steps.filter(Boolean) : [],
+    minimum_required_data: Array.isArray(value?.minimum_required_data) ? value.minimum_required_data.filter(Boolean) : [],
+    never_do: Array.isArray(value?.never_do) ? value.never_do.filter(Boolean) : [],
+    correct_guidance_examples: Array.isArray(value?.correct_guidance_examples) ? value.correct_guidance_examples.filter(Boolean) : [],
+  };
+}
 
 function mergeVirtualAgent(value?: Partial<AiAgentVirtualAgent> | null): AiAgentVirtualAgent {
   return {
@@ -393,6 +435,7 @@ function mergeVirtualAgent(value?: Partial<AiAgentVirtualAgent> | null): AiAgent
     ...(value ?? {}),
     requiredSteps: Array.isArray(value?.requiredSteps) ? value?.requiredSteps.filter(Boolean) : [],
     allowedActions: Array.isArray(value?.allowedActions) ? value?.allowedActions.filter(Boolean) : [],
+    attendanceMap: mergeAttendanceMap(value?.attendanceMap),
   };
 }
 
@@ -755,14 +798,29 @@ export default function AgentIa() {
 
   const filledFieldsCount = useMemo(() => {
     const stringCount = Object.entries(virtualAgent)
-      .filter(([key, value]) => !["requiredSteps", "allowedActions"].includes(key) && typeof value === "string" && value.trim() !== "")
+      .filter(([key, value]) => !["requiredSteps", "allowedActions", "attendanceMap"].includes(key) && typeof value === "string" && value.trim() !== "")
       .length;
     const arrayCount = virtualAgent.requiredSteps.length + virtualAgent.allowedActions.length;
+    const attendanceMap = virtualAgent.attendanceMap ?? emptyAttendanceMap;
+    const attendanceStringCount = [
+      attendanceMap.main_goal,
+      attendanceMap.when_to_send_link,
+      attendanceMap.when_to_schedule,
+      attendanceMap.when_to_handoff,
+      attendanceMap.business_hours,
+      attendanceMap.raw_notes,
+    ].filter((value) => value.trim() !== "").length;
+    const attendanceListCount =
+      attendanceMap.minimum_required_data.length +
+      attendanceMap.never_do.length +
+      attendanceMap.correct_guidance_examples.length +
+      attendanceMap.conversation_steps.length;
 
-    return stringCount + arrayCount;
+    return stringCount + arrayCount + attendanceStringCount + attendanceListCount;
   }, [virtualAgent]);
 
   const contextPreview = useMemo(() => {
+    const attendanceMap = virtualAgent.attendanceMap ?? emptyAttendanceMap;
     const lines = [
       virtualAgent.agentName && `Pessoa virtual: ${virtualAgent.agentName}`,
       virtualAgent.roleTitle && `Papel: ${virtualAgent.roleTitle}`,
@@ -775,6 +833,13 @@ export default function AgentIa() {
       virtualAgent.responseLength && `Tamanho ideal: ${optionLabel(RESPONSE_LENGTH_OPTIONS, virtualAgent.responseLength)}`,
       virtualAgent.requiredSteps.length > 0 && `Requisitos antes de avançar: ${virtualAgent.requiredSteps.map((item) => optionLabel(REQUIRED_STEP_OPTIONS, item)).join(", ")}`,
       virtualAgent.allowedActions.length > 0 && `Ações permitidas: ${virtualAgent.allowedActions.map((item) => optionLabel(ALLOWED_ACTION_OPTIONS, item)).join(", ")}`,
+      attendanceMap.main_goal && `Mapa de atendimento - objetivo central: ${attendanceMap.main_goal}`,
+      attendanceMap.raw_notes && `Mapa de atendimento - ordem ideal:\n${attendanceMap.raw_notes}`,
+      attendanceMap.minimum_required_data.length > 0 && `Dados mínimos do mapa: ${attendanceMap.minimum_required_data.join(", ")}`,
+      attendanceMap.when_to_send_link && `Quando enviar link: ${attendanceMap.when_to_send_link}`,
+      attendanceMap.when_to_schedule && `Quando agendar: ${attendanceMap.when_to_schedule}`,
+      attendanceMap.business_hours && `Horários permitidos: ${attendanceMap.business_hours}`,
+      attendanceMap.never_do.length > 0 && `Nunca fazer: ${attendanceMap.never_do.join(", ")}`,
       virtualAgent.businessDescription && `Sobre a empresa:\n${virtualAgent.businessDescription}`,
       virtualAgent.audienceDescription && `Quem atende:\n${virtualAgent.audienceDescription}`,
       virtualAgent.services && `Ofertas e soluções:\n${virtualAgent.services}`,
@@ -794,6 +859,16 @@ export default function AgentIa() {
     setVirtualAgent((current) => ({
       ...current,
       [field]: value,
+    }));
+  };
+
+  const updateAttendanceMapField = <K extends keyof AiAgentAttendanceMap>(field: K, value: AiAgentAttendanceMap[K]) => {
+    setVirtualAgent((current) => ({
+      ...current,
+      attendanceMap: {
+        ...(current.attendanceMap ?? emptyAttendanceMap),
+        [field]: value,
+      },
     }));
   };
 
@@ -2138,6 +2213,102 @@ export default function AgentIa() {
                   value={virtualAgent.successSignals}
                   onChange={(event) => updateField("successSignals", event.target.value)}
                   placeholder="Ex.: cliente com horário marcado, lead qualificado, proposta aceita, suporte resolvido."
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/35 to-emerald-50/40 p-5 md:p-6">
+            <SectionHeader
+              icon={Workflow}
+              title="Mapa de Atendimento"
+              description="O trilho central da persona: responde perguntas fora do mapa quando souber, mas volta ao foco do atendimento sem parecer robô."
+            />
+            <div className="mt-5 rounded-2xl border border-cyan-200 bg-white/75 p-4 text-sm leading-6 text-slate-700">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-slate-950">
+                <Target className="h-4 w-4 text-cyan-600" />
+                Como usar este mapa
+              </div>
+              Defina o caminho ideal, os dados mínimos e os limites. O Agent pode responder dúvidas da ficha/RAG no meio da conversa, mas depois retoma o próximo passo sem pedir informação demais.
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <Field label="Objetivo central do atendimento" className="md:col-span-2">
+                <Input
+                  value={virtualAgent.attendanceMap.main_goal}
+                  onChange={(event) => updateAttendanceMapField("main_goal", event.target.value)}
+                  placeholder="Ex.: converter interessados em cadastro e agendamento, sem pular acolhimento."
+                />
+              </Field>
+
+              <Field label="Ordem ideal da conversa" className="md:col-span-2">
+                <Textarea
+                  rows={6}
+                  value={virtualAgent.attendanceMap.raw_notes}
+                  onChange={(event) => updateAttendanceMapField("raw_notes", event.target.value)}
+                  placeholder={"Ex.:\n1. Cumprimentar e acolher\n2. Entender a necessidade\n3. Coletar idade e principal dificuldade\n4. Responder dúvidas diretas\n5. Enviar cadastro quando houver interesse\n6. Confirmar cadastro\n7. Agendar dentro dos horários permitidos"}
+                />
+              </Field>
+
+              <Field label="Dados mínimos que precisa coletar">
+                <Textarea
+                  rows={5}
+                  value={listToText(virtualAgent.attendanceMap.minimum_required_data)}
+                  onChange={(event) => updateAttendanceMapField("minimum_required_data", textToList(event.target.value))}
+                  placeholder={"Uma por linha. Ex.:\nidade\nprincipal dificuldade\nnome do responsável"}
+                />
+              </Field>
+
+              <Field label="Horários permitidos para atendimento/agendamento">
+                <Textarea
+                  rows={5}
+                  value={virtualAgent.attendanceMap.business_hours}
+                  onChange={(event) => updateAttendanceMapField("business_hours", event.target.value)}
+                  placeholder="Ex.: Segunda a sexta, 8h às 18h. Sábado, 8h às 12h. Não atender madrugada."
+                />
+              </Field>
+
+              <Field label="Quando enviar link">
+                <Textarea
+                  rows={4}
+                  value={virtualAgent.attendanceMap.when_to_send_link}
+                  onChange={(event) => updateAttendanceMapField("when_to_send_link", event.target.value)}
+                  placeholder="Ex.: enviar o link quando o cliente pedir cadastro, quiser começar ou aceitar seguir após entender o caso."
+                />
+              </Field>
+
+              <Field label="Quando agendar">
+                <Textarea
+                  rows={4}
+                  value={virtualAgent.attendanceMap.when_to_schedule}
+                  onChange={(event) => updateAttendanceMapField("when_to_schedule", event.target.value)}
+                  placeholder="Ex.: agendar depois que o cadastro estiver concluído ou quando a empresa permitir agendamento direto."
+                />
+              </Field>
+
+              <Field label="Quando encaminhar para humano" className="md:col-span-2">
+                <Textarea
+                  rows={4}
+                  value={virtualAgent.attendanceMap.when_to_handoff}
+                  onChange={(event) => updateAttendanceMapField("when_to_handoff", event.target.value)}
+                  placeholder="Ex.: dúvidas sensíveis, reclamações, urgência, exceção de preço, indisponibilidade ou pedido explícito por humano."
+                />
+              </Field>
+
+              <Field label="O que a IA nunca deve fazer">
+                <Textarea
+                  rows={5}
+                  value={listToText(virtualAgent.attendanceMap.never_do)}
+                  onChange={(event) => updateAttendanceMapField("never_do", textToList(event.target.value))}
+                  placeholder={"Uma por linha. Ex.:\nnão enviar link logo após saudação\nnão aceitar horário fora do funcionamento\nnão pedir dados repetidos\nnão diagnosticar"}
+                />
+              </Field>
+
+              <Field label="Exemplos de condução correta">
+                <Textarea
+                  rows={5}
+                  value={listToText(virtualAgent.attendanceMap.correct_guidance_examples)}
+                  onChange={(event) => updateAttendanceMapField("correct_guidance_examples", textToList(event.target.value))}
+                  placeholder={"Uma por linha. Ex.:\nSe perguntar preço, responda primeiro e depois conduza.\nSe disser cadastrei, avance para agenda.\nSe pedir cadastro, envie o link e peça confirmação."}
                 />
               </Field>
             </div>
