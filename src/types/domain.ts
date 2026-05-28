@@ -431,6 +431,42 @@ export interface AiAgentSimulationTurn {
   }>;
   fallbackUsed?: boolean;
   openaiFailed?: boolean;
+  route?: string | null;
+  routeSelected?: string | null;
+  routeFinal?: string | null;
+  openaiCalled?: boolean;
+  openaiIntended?: boolean;
+  modelUsed?: string | null;
+  estimatedCostBrl?: number | null;
+  whyNotOpenai?: string;
+  fallbackReason?: string;
+  fastLocalUsed?: boolean;
+  mapaAtendimentoUsed?: boolean;
+  playbookLoaded?: boolean;
+  playbookStepBefore?: string;
+  playbookStepAfter?: string;
+  playbookDecision?: string;
+  playbookBlockedActions?: string[];
+  playbookAllowedActions?: string[];
+  completedSteps?: string[];
+  currentStepBefore?: string;
+  currentStepAfter?: string;
+  memoryLoaded?: Record<string, unknown>;
+  memorySaved?: Record<string, unknown>;
+  debugPath?: string[];
+  executionPath?: string[];
+  servicesCalled?: string[];
+  servicesSkipped?: string[];
+  timingsMs?: Record<string, unknown>;
+  timeoutSource?: string;
+  openaiDebug?: {
+    openaiIntended?: boolean;
+    openaiCalled?: boolean;
+    model?: string;
+    tokensEstimated?: number;
+    costEstimated?: number | null;
+    error?: string | null;
+  };
 }
 
 export interface AiAgentSimulationResult {

@@ -266,11 +266,15 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
   const openaiStatus = isRecord(turn.openai_status ?? turn.openaiStatus)
     ? turn.openai_status ?? turn.openaiStatus
     : {};
+  const openaiDebug = isRecord(turn.openai_debug ?? turn.openaiDebug)
+    ? turn.openai_debug ?? turn.openaiDebug
+    : {};
   const normalizeOpenAiLayer = (layer: string): "ok" | "failed" | "skipped" => {
     const status = toText(openaiStatus[layer]);
 
     return status === "ok" || status === "failed" ? status : "skipped";
   };
+  const textArray = (input: unknown) => toArray(input).map((item) => toText(item)).filter(Boolean);
 
   return {
     incoming: toText(turn.incoming),
@@ -332,6 +336,60 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
       : [],
     fallbackUsed: Boolean(turn.fallback_used ?? turn.fallbackUsed),
     openaiFailed: Boolean(turn.openai_failed ?? turn.openaiFailed),
+    route: typeof (turn.route ?? turn.route_used ?? turn.routeUsed) === "string"
+      ? toText(turn.route ?? turn.route_used ?? turn.routeUsed)
+      : null,
+    routeSelected: typeof (turn.route_selected ?? turn.routeSelected) === "string"
+      ? toText(turn.route_selected ?? turn.routeSelected)
+      : null,
+    routeFinal: typeof (turn.route_final ?? turn.routeFinal) === "string"
+      ? toText(turn.route_final ?? turn.routeFinal)
+      : null,
+    openaiCalled: Boolean(turn.openai_called ?? turn.openaiCalled),
+    openaiIntended: Boolean(turn.openai_intended ?? turn.openaiIntended),
+    modelUsed: typeof (turn.model_used ?? turn.modelUsed) === "string"
+      ? toText(turn.model_used ?? turn.modelUsed)
+      : null,
+    estimatedCostBrl: turn.estimated_cost_brl === null || turn.estimatedCostBrl === null
+      ? null
+      : toNumber(turn.estimated_cost_brl ?? turn.estimatedCostBrl, 0),
+    whyNotOpenai: toText(turn.why_not_openai ?? turn.whyNotOpenai),
+    fallbackReason: toText(turn.fallback_reason ?? turn.fallbackReason),
+    fastLocalUsed: Boolean(turn.fast_local_used ?? turn.fastLocalUsed),
+    mapaAtendimentoUsed: Boolean(turn.mapa_atendimento_used ?? turn.mapaAtendimentoUsed),
+    playbookLoaded: Boolean(turn.playbook_loaded ?? turn.playbookLoaded),
+    playbookStepBefore: toText(turn.playbook_step_before ?? turn.playbookStepBefore),
+    playbookStepAfter: toText(turn.playbook_step_after ?? turn.playbookStepAfter),
+    playbookDecision: toText(turn.playbook_decision ?? turn.playbookDecision),
+    playbookBlockedActions: textArray(turn.playbook_blocked_actions ?? turn.playbookBlockedActions),
+    playbookAllowedActions: textArray(turn.playbook_allowed_actions ?? turn.playbookAllowedActions),
+    completedSteps: textArray(turn.completed_steps ?? turn.completedSteps),
+    currentStepBefore: toText(turn.current_step_before ?? turn.currentStepBefore),
+    currentStepAfter: toText(turn.current_step_after ?? turn.currentStepAfter),
+    memoryLoaded: isRecord(turn.memory_loaded ?? turn.memoryLoaded)
+      ? (turn.memory_loaded ?? turn.memoryLoaded) as Record<string, unknown>
+      : undefined,
+    memorySaved: isRecord(turn.memory_saved ?? turn.memorySaved)
+      ? (turn.memory_saved ?? turn.memorySaved) as Record<string, unknown>
+      : undefined,
+    debugPath: textArray(turn.debug_path ?? turn.debugPath),
+    executionPath: textArray(turn.execution_path ?? turn.executionPath),
+    servicesCalled: textArray(turn.services_called ?? turn.servicesCalled ?? turn.services_executed ?? turn.servicesExecuted),
+    servicesSkipped: textArray(turn.services_skipped ?? turn.servicesSkipped),
+    timingsMs: isRecord(turn.timings_ms ?? turn.timingsMs)
+      ? (turn.timings_ms ?? turn.timingsMs) as Record<string, unknown>
+      : undefined,
+    timeoutSource: toText(turn.timeout_source ?? turn.timeoutSource),
+    openaiDebug: {
+      openaiIntended: Boolean(openaiDebug.openai_intended ?? openaiDebug.openaiIntended),
+      openaiCalled: Boolean(openaiDebug.openai_called ?? openaiDebug.openaiCalled),
+      model: toText(openaiDebug.model),
+      tokensEstimated: toNumber(openaiDebug.tokens_estimated ?? openaiDebug.tokensEstimated),
+      costEstimated: openaiDebug.cost_estimated === null || openaiDebug.costEstimated === null
+        ? null
+        : toNumber(openaiDebug.cost_estimated ?? openaiDebug.costEstimated, 0),
+      error: typeof openaiDebug.error === "string" ? openaiDebug.error : null,
+    },
   };
 }
 

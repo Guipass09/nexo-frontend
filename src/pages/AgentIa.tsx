@@ -1619,6 +1619,94 @@ export default function AgentIa() {
                     </div>
                   ) : null}
 
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <Database className="h-4 w-4 text-slate-600" />
+                          Debug do caminho real
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          Mostra a rota, memória e serviços usados neste turno para confirmar se o simulador entrou no runtime correto.
+                        </p>
+                      </div>
+                      <Badge className="border-slate-200 bg-slate-50 text-slate-700">
+                        {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "sem rota"}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rota</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">
+                          {latestSimulationTurn.routeSelected || "?"} → {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "?"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">OpenAI</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">
+                          {latestSimulationTurn.openaiIntended ? "esperada" : "não esperada"} / {latestSimulationTurn.openaiCalled ? "chamada" : "não chamada"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Estado</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">
+                          {latestSimulationTurn.currentStepBefore || "?"} → {latestSimulationTurn.currentStepAfter || "?"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cadastro concluído</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">
+                          {latestSimulationTurn.completedSteps?.includes("signup") ? "sim" : "não"}
+                        </p>
+                      </div>
+                    </div>
+                    {(latestSimulationTurn.whyNotOpenai || latestSimulationTurn.fallbackReason || latestSimulationTurn.timeoutSource) ? (
+                      <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
+                        {latestSimulationTurn.whyNotOpenai ? <p><strong>Por que não chamou OpenAI:</strong> {latestSimulationTurn.whyNotOpenai}</p> : null}
+                        {latestSimulationTurn.fallbackReason ? <p><strong>Fallback:</strong> {latestSimulationTurn.fallbackReason}</p> : null}
+                        {latestSimulationTurn.timeoutSource ? <p><strong>Timeout:</strong> {latestSimulationTurn.timeoutSource}</p> : null}
+                      </div>
+                    ) : null}
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços chamados</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-700">
+                          {latestSimulationTurn.servicesCalled && latestSimulationTurn.servicesCalled.length > 0
+                            ? latestSimulationTurn.servicesCalled.join(" → ")
+                            : "nenhum serviço informado"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços pulados</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-700">
+                          {latestSimulationTurn.servicesSkipped && latestSimulationTurn.servicesSkipped.length > 0
+                            ? latestSimulationTurn.servicesSkipped.join(", ")
+                            : "nenhum serviço pulado informado"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Memória carregada</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-700">
+                          {latestSimulationTurn.memoryLoaded ? JSON.stringify(latestSimulationTurn.memoryLoaded) : "sem memória carregada"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Mapa de atendimento</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-700">
+                          {latestSimulationTurn.mapaAtendimentoUsed ? "usado" : "não usado"}
+                          {latestSimulationTurn.playbookDecision ? ` • ${latestSimulationTurn.playbookDecision}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    {latestSimulationTurn.executionPath && latestSimulationTurn.executionPath.length > 0 ? (
+                      <p className="mt-3 text-xs leading-5 text-slate-500">
+                        Caminho: {latestSimulationTurn.executionPath.join(" → ")}
+                      </p>
+                    ) : null}
+                  </div>
+
                   <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
                       <Target className="h-4 w-4 text-blue-600" />
