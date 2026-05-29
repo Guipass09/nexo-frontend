@@ -17,6 +17,107 @@ import { WhatsAppConnectionCard } from "@/components/profile/WhatsAppConnectionC
 import { resolveMediaUrl } from "@/lib/media-url";
 import { updateProfile } from "@/services/profile";
 
+const AVATAR_HARD_LIMIT_BYTES = 2 * 1024 * 1024;
+const AVATAR_TARGET_BYTES = Math.floor(1.8 * 1024 * 1024);
+const AVATAR_MAX_DIMENSION = 1024;
+
+async function loadImageFromFile(file: File) {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("Nao foi possivel ler a imagem selecionada."));
+      element.src = objectUrl;
+    });
+
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Nao foi possivel preparar a imagem para upload."));
+        return;
+      }
+
+      resolve(blob);
+    }, type, quality);
+  });
+}
+
+async function optimizeAvatarForUpload(file: File) {
+  const image = await loadImageFromFile(file);
+  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+  const requiresResize = largestSide > AVATAR_MAX_DIMENSION;
+  const requiresCompression = file.size > AVATAR_TARGET_BYTES;
+
+  if (!requiresResize && !requiresCompression) {
+    return file;
+  }
+
+  const scale = requiresResize ? AVATAR_MAX_DIMENSION / largestSide : 1;
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Nao foi possivel preparar a foto selecionada.");
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+
+  const candidates = [
+    { type: "image/webp", quality: 0.9 },
+    { type: "image/webp", quality: 0.82 },
+    { type: "image/jpeg", quality: 0.86 },
+    { type: "image/jpeg", quality: 0.76 },
+  ];
+
+  let bestBlob: Blob | null = null;
+
+  for (const candidate of candidates) {
+    const blob = await canvasToBlob(canvas, candidate.type, candidate.quality);
+
+    if (!bestBlob || blob.size < bestBlob.size) {
+      bestBlob = blob;
+    }
+
+    if (blob.size <= AVATAR_TARGET_BYTES) {
+      bestBlob = blob;
+      break;
+    }
+  }
+
+  if (!bestBlob) {
+    throw new Error("Nao foi possivel preparar a foto selecionada.");
+  }
+
+  return new File([bestBlob], `${file.name.replace(/\.[^.]+$/, "") || "avatar"}.${bestBlob.type === "image/png" ? "png" : bestBlob.type === "image/jpeg" ? "jpg" : "webp"}`, {
+    type: bestBlob.type,
+    lastModified: Date.now(),
+  });
+}
+
+function getProfileSaveErrorMessage(error: unknown) {
+  const message = getApiErrorMessage(error, "Nao foi possivel salvar suas alteracoes agora.");
+
+  if (message.toLowerCase().includes("avatar failed to upload")) {
+    return "A foto escolhida ultrapassou o limite do servidor. Tente uma imagem menor ou aguarde a compactacao automatica.";
+  }
+
+  return message;
+}
+
 export default function Perfil() {
   const nav = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -28,6 +129,7 @@ export default function Perfil() {
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isPreparingAvatar, setIsPreparingAvatar] = useState(false);
 
   useEffect(() => subscribeToAuthUserChanges(setUser), []);
 
@@ -79,20 +181,49 @@ export default function Perfil() {
     [connectionQuery.error, connectionQuery.isError],
   );
 
-  const handleAvatarSelection = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
     if (!file) {
       return;
     }
 
-    if (avatarPreviewUrl) {
-      URL.revokeObjectURL(avatarPreviewUrl);
-    }
+    setIsPreparingAvatar(true);
 
-    setAvatarFile(file);
-    setRemoveAvatar(false);
-    setAvatarPreviewUrl(URL.createObjectURL(file));
+    try {
+      const optimizedFile = await optimizeAvatarForUpload(file);
+
+      if (optimizedFile.size > AVATAR_HARD_LIMIT_BYTES) {
+        throw new Error("A imagem ainda ficou acima do limite de 2MB. Escolha uma foto menor.");
+      }
+
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+
+      setAvatarFile(optimizedFile);
+      setRemoveAvatar(false);
+      setAvatarPreviewUrl(URL.createObjectURL(optimizedFile));
+
+      if (optimizedFile.size < file.size) {
+        toast({
+          title: "Foto ajustada para upload",
+          description: "Otimizamos automaticamente a imagem para ela caber melhor no perfil.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Nao foi possivel usar essa foto",
+        description: error instanceof Error ? error.message : "Escolha uma imagem menor e tente novamente.",
+        variant: "destructive",
+      });
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setIsPreparingAvatar(false);
+    }
   };
 
   const handleRemoveAvatar = () => {
@@ -152,7 +283,7 @@ export default function Perfil() {
     } catch (error) {
       toast({
         title: "Falha ao salvar perfil",
-        description: getApiErrorMessage(error, "Nao foi possivel salvar suas alteracoes agora."),
+        description: getProfileSaveErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -311,7 +442,9 @@ export default function Perfil() {
               type="file"
               accept="image/png,image/jpeg,image/webp,image/jpg"
               className="hidden"
-              onChange={handleAvatarSelection}
+            onChange={(event) => {
+              void handleAvatarSelection(event);
+            }}
             />
           </div>
           <div className="flex-1 text-center sm:text-left">
@@ -321,10 +454,11 @@ export default function Perfil() {
               {user?.role === "admin" ? "Administrador" : "Usuario"}
             </span>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                Trocar foto
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isPreparingAvatar}>
+                {isPreparingAvatar ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                {isPreparingAvatar ? "Preparando..." : "Trocar foto"}
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={!user?.avatarUrl && !avatarPreviewUrl}>
+              <Button type="button" variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={isPreparingAvatar || (!user?.avatarUrl && !avatarPreviewUrl)}>
                 <Trash2 className="mr-1.5 h-4 w-4" />
                 Remover foto
               </Button>
@@ -359,7 +493,7 @@ export default function Perfil() {
           <div className="space-y-2"><Label>Cargo</Label><Input value={user?.role === "admin" ? "Administrador do sistema" : "Usuario operacional"} readOnly /></div>
         </div>
         <div className="flex justify-end mt-5">
-          <Button className="gradient-primary text-primary-foreground" onClick={() => void handleSaveProfile()} disabled={isSavingProfile}>
+          <Button className="gradient-primary text-primary-foreground" onClick={() => void handleSaveProfile()} disabled={isSavingProfile || isPreparingAvatar}>
             {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Salvar alteracoes
           </Button>
