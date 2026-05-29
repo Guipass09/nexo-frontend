@@ -61,25 +61,25 @@ export function AppSidebar() {
             to={item.url}
             className={cn(
               "group relative flex items-center gap-3 rounded-2xl px-3 transition-smooth",
-              "text-sidebar-foreground/80 hover:bg-white/8 hover:text-white",
-              isActive && "bg-white/10 text-white shadow-[inset_0_0_0_1px_hsl(190_93%_47%_/_0.22),0_18px_44px_-28px_hsl(190_93%_47%_/_0.65)] font-semibold",
+              "text-sidebar-foreground/80 hover:bg-white/7 hover:text-white",
+              isActive && "bg-[linear-gradient(135deg,rgba(37,99,255,0.18),rgba(124,58,237,0.14))] text-white shadow-[inset_0_0_0_1px_rgba(37,99,255,0.22),0_18px_44px_-28px_rgba(37,99,255,0.5)] font-semibold",
             )}
           >
             <span
               className={cn(
                 "absolute inset-y-2 left-0 w-1 rounded-full bg-transparent transition-smooth",
-                isActive && "bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.7)]",
+                isActive && "bg-blue-400 shadow-[0_0_18px_rgba(37,99,255,0.7)]",
               )}
             />
             <span className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sidebar-foreground/70 transition-smooth group-hover:bg-white/10 group-hover:text-cyan-200",
-              isActive && "bg-cyan-400/10 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18)]",
+              isActive && "bg-white/8 text-slate-50 shadow-[inset_0_0_0_1px_rgba(37,99,255,0.18)]",
             )}>
               <item.icon className="h-[18px] w-[18px]" />
             </span>
             {!collapsed && <span className="text-sm">{item.title}</span>}
             {!collapsed && "badge" in item && item.badge && (
-              <span className="ml-auto rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-extrabold text-nexo-navy shadow-glow">
+              <span className="ml-auto rounded-full bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_100%)] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-[0_12px_24px_-18px_rgba(37,99,255,0.7)]">
                 {item.badge}
               </span>
             )}
@@ -136,7 +136,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border/80 p-4">
         {!collapsed ? (
-          <div className="rounded-[1.35rem] border border-white/12 bg-white/6 p-3.5 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08),0_18px_36px_-30px_rgba(0,0,0,0.8)] backdrop-blur">
+          <div className="rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-3.5 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08),0_18px_36px_-30px_rgba(0,0,0,0.8)] backdrop-blur">
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse-dot" />
               <span className="text-xs font-semibold text-white">Robô ativo</span>

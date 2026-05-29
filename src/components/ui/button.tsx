@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "gradient-primary text-primary-foreground shadow-md hover:-translate-y-0.5 hover:shadow-glow",
-        premium: "gradient-primary text-primary-foreground shadow-md hover:-translate-y-0.5 hover:shadow-glow",
+        default: "gradient-primary text-primary-foreground shadow-[0_20px_44px_-28px_rgba(37,99,255,0.56)] hover:-translate-y-0.5 hover:shadow-glow",
+        premium: "gradient-primary text-primary-foreground shadow-[0_20px_44px_-28px_rgba(37,99,255,0.56)] hover:-translate-y-0.5 hover:shadow-glow",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:-translate-y-0.5 hover:bg-destructive/90 hover:shadow-md",
-        outline: "border border-border/80 bg-white/80 text-foreground shadow-sm backdrop-blur hover:-translate-y-0.5 hover:border-primary/35 hover:bg-white hover:text-primary",
-        secondary: "border border-border/70 bg-secondary/85 text-secondary-foreground shadow-sm hover:-translate-y-0.5 hover:bg-secondary",
-        soft: "border border-primary/15 bg-primary/10 text-primary shadow-sm hover:-translate-y-0.5 hover:bg-primary/15",
-        ghost: "text-muted-foreground hover:bg-accent-soft hover:text-primary",
+        outline: "border border-border/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.82),rgba(240,245,253,0.74))] text-foreground shadow-[0_14px_32px_-28px_rgba(5,8,22,0.28)] backdrop-blur hover:-translate-y-0.5 hover:border-primary/28 hover:text-primary",
+        secondary: "border border-border/65 bg-[linear-gradient(180deg,rgba(243,246,252,0.92),rgba(235,241,250,0.82))] text-secondary-foreground shadow-[0_14px_32px_-28px_rgba(5,8,22,0.2)] hover:-translate-y-0.5 hover:bg-secondary",
+        soft: "border border-primary/16 bg-[linear-gradient(135deg,rgba(37,99,255,0.12),rgba(124,58,237,0.08))] text-primary shadow-[0_14px_32px_-28px_rgba(37,99,255,0.28)] hover:-translate-y-0.5 hover:border-primary/24 hover:bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.12))]",
+        ghost: "text-muted-foreground hover:bg-[linear-gradient(135deg,rgba(37,99,255,0.08),rgba(124,58,237,0.08))] hover:text-primary",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

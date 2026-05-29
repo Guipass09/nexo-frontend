@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    --background: 210 33% 97%;
-    --foreground: 231 56% 11%;
+    --background: 215 43% 98%;
+    --foreground: 228 45% 10%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 231 56% 11%;
+    --card: 216 43% 97%;
+    --card-foreground: 228 45% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 231 56% 11%;
+    --popover: 216 43% 97%;
+    --popover-foreground: 228 45% 10%;
 
     --primary: 219 100% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 313 100% 65%;
+    --primary-glow: 327 82% 61%;
 
-    --secondary: 225 42% 96%;
-    --secondary-foreground: 231 46% 18%;
+    --secondary: 223 35% 94%;
+    --secondary-foreground: 229 31% 18%;
 
-    --muted: 220 33% 95%;
-    --muted-foreground: 222 16% 42%;
+    --muted: 223 29% 93%;
+    --muted-foreground: 224 15% 39%;
 
-    --accent: 313 100% 65%;
-    --accent-foreground: 231 56% 11%;
-    --accent-soft: 258 100% 97%;
+    --accent: 271 83% 58%;
+    --accent-foreground: 228 45% 10%;
+    --accent-soft: 252 100% 97%;
 
     --destructive: 0 78% 58%;
     --destructive-foreground: 0 0% 100%;
@@ -41,53 +41,53 @@
     --info: 201 94% 47%;
     --info-foreground: 0 0% 100%;
 
-    --border: 226 26% 88%;
-    --input: 226 26% 88%;
+    --border: 224 28% 85%;
+    --input: 224 28% 85%;
     --ring: 259 100% 62%;
 
     --radius: 1.25rem;
 
-    --nexo-navy: 232 79% 9%;
-    --nexo-navy-soft: 228 70% 16%;
+    --nexo-navy: 229 63% 6%;
+    --nexo-navy-soft: 228 44% 14%;
     --nexo-blue: 219 100% 53%;
-    --nexo-royal: 259 100% 62%;
+    --nexo-royal: 271 83% 58%;
     --nexo-cyan: 194 100% 55%;
-    --nexo-surface: 214 45% 98%;
+    --nexo-surface: 216 43% 97%;
 
-    --gradient-primary: linear-gradient(135deg, #050A2B 0%, #0D5BFF 45%, #7A3CFF 75%, #FF4FD8 100%);
-    --gradient-accent: linear-gradient(135deg, #0D5BFF 0%, #7A3CFF 52%, #FF4FD8 100%);
-    --gradient-hero: radial-gradient(circle at 18% 16%, rgb(13 91 255 / 0.36), transparent 32%),
-      radial-gradient(circle at 82% 10%, rgb(255 79 216 / 0.28), transparent 30%),
-      radial-gradient(circle at 70% 84%, rgb(122 60 255 / 0.28), transparent 36%),
-      linear-gradient(135deg, #050A2B 0%, #0D5BFF 45%, #7A3CFF 75%, #FF4FD8 100%);
-    --gradient-subtle: radial-gradient(circle at top left, rgb(13 91 255 / 0.13), transparent 34%),
-      radial-gradient(circle at top right, rgb(255 79 216 / 0.11), transparent 30%),
-      radial-gradient(circle at 48% 100%, rgb(122 60 255 / 0.09), transparent 34%),
-      linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100% / 0.98), hsl(220 60% 99% / 0.92));
-    --gradient-shell: radial-gradient(circle at 0% 0%, rgb(13 91 255 / 0.12), transparent 26%),
-      radial-gradient(circle at 100% 12%, rgb(255 79 216 / 0.08), transparent 24%),
-      linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
-    --gradient-sidebar: linear-gradient(180deg, #050A2B 0%, #07183F 42%, #0A2A6C 100%);
-    --gradient-glass: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.68));
+    --gradient-primary: linear-gradient(135deg, #050816 0%, #2563FF 46%, #7C3AED 76%, #EC4899 100%);
+    --gradient-accent: linear-gradient(135deg, #2563FF 0%, #7C3AED 55%, #EC4899 100%);
+    --gradient-hero: radial-gradient(circle at 18% 16%, rgb(37 99 255 / 0.34), transparent 32%),
+      radial-gradient(circle at 82% 10%, rgb(236 72 153 / 0.22), transparent 30%),
+      radial-gradient(circle at 70% 84%, rgb(124 58 237 / 0.24), transparent 36%),
+      linear-gradient(135deg, #050816 0%, #2563FF 45%, #7C3AED 75%, #EC4899 100%);
+    --gradient-subtle: radial-gradient(circle at top left, rgb(37 99 255 / 0.09), transparent 34%),
+      radial-gradient(circle at top right, rgb(236 72 153 / 0.07), transparent 30%),
+      radial-gradient(circle at 48% 100%, rgb(124 58 237 / 0.07), transparent 34%),
+      linear-gradient(180deg, #f8fafc 0%, #eff4fb 100%);
+    --gradient-card: linear-gradient(180deg, rgb(248 250 252 / 0.92), rgb(240 245 253 / 0.84));
+    --gradient-shell: radial-gradient(circle at 0% 0%, rgb(37 99 255 / 0.08), transparent 26%),
+      radial-gradient(circle at 100% 12%, rgb(236 72 153 / 0.06), transparent 24%),
+      linear-gradient(180deg, #f8fafc 0%, #edf3fa 100%);
+    --gradient-sidebar: linear-gradient(180deg, #050816 0%, #09112b 46%, #111a3d 100%);
+    --gradient-glass: linear-gradient(180deg, rgb(248 250 252 / 0.82), rgb(240 245 253 / 0.7));
 
-    --shadow-sm: 0 1px 2px hsl(231 56% 11% / 0.04);
-    --shadow-md: 0 18px 40px -28px hsl(231 56% 11% / 0.22);
-    --shadow-lg: 0 34px 90px -46px hsl(231 56% 11% / 0.32);
-    --shadow-glow: 0 22px 56px -28px rgb(255 79 216 / 0.58);
-    --shadow-card: 0 24px 72px -40px hsl(231 56% 11% / 0.24);
-    --shadow-panel: 0 28px 80px -48px rgb(5 10 43 / 0.32);
+    --shadow-sm: 0 1px 2px hsl(228 45% 10% / 0.06);
+    --shadow-md: 0 18px 40px -28px hsl(228 45% 10% / 0.26);
+    --shadow-lg: 0 34px 90px -46px hsl(228 45% 10% / 0.36);
+    --shadow-glow: 0 24px 60px -30px rgb(124 58 237 / 0.42);
+    --shadow-card: 0 24px 72px -40px hsl(228 45% 10% / 0.26);
+    --shadow-panel: 0 28px 80px -48px rgb(5 8 22 / 0.34);
 
     --transition-smooth: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
-    --sidebar-background: 232 79% 9%;
-    --sidebar-foreground: 229 32% 78%;
+    --sidebar-background: 229 63% 6%;
+    --sidebar-foreground: 228 24% 79%;
     --sidebar-primary: 219 100% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 259 76% 18%;
+    --sidebar-accent: 231 44% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 219 42% 17%;
-    --sidebar-ring: 313 100% 65%;
+    --sidebar-border: 226 39% 14%;
+    --sidebar-ring: 271 83% 58%;
   }
 
   .dark {
@@ -180,9 +180,9 @@
 @layer components {
   .nexo-shell {
     background:
-      radial-gradient(circle at 6% 0%, rgb(13 91 255 / 0.14), transparent 32%),
-      radial-gradient(circle at 98% 12%, rgb(255 79 216 / 0.10), transparent 30%),
-      radial-gradient(circle at 50% 110%, rgb(122 60 255 / 0.08), transparent 36%),
+      radial-gradient(circle at 6% 0%, rgb(37 99 255 / 0.09), transparent 32%),
+      radial-gradient(circle at 98% 12%, rgb(236 72 153 / 0.06), transparent 30%),
+      radial-gradient(circle at 50% 110%, rgb(124 58 237 / 0.06), transparent 36%),
       hsl(var(--background));
   }
 
@@ -203,28 +203,30 @@
   }
 
   .nexo-premium-surface {
-    @apply rounded-[1.7rem] border border-white/55 shadow-[0_28px_80px_-50px_rgba(5,11,46,0.34)] backdrop-blur-2xl;
+    @apply rounded-[1.7rem] border shadow-[0_28px_80px_-50px_rgba(5,8,22,0.34)] backdrop-blur-2xl;
     background:
-      radial-gradient(circle at top left, rgb(37 99 255 / 0.1), transparent 32%),
-      radial-gradient(circle at top right, rgb(236 72 153 / 0.08), transparent 28%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.8), rgb(247 250 255 / 0.72));
+      radial-gradient(circle at top left, rgb(37 99 255 / 0.08), transparent 32%),
+      radial-gradient(circle at top right, rgb(236 72 153 / 0.06), transparent 28%),
+      linear-gradient(180deg, rgb(248 250 252 / 0.82), rgb(239 244 252 / 0.76));
+    border-color: rgb(255 255 255 / 0.52);
   }
 
   .nexo-premium-dark {
-    @apply rounded-[1.8rem] border border-white/10 shadow-[0_34px_90px_-50px_rgba(5,11,46,0.62)] backdrop-blur-2xl;
+    @apply rounded-[1.8rem] border border-white/10 shadow-[0_34px_90px_-50px_rgba(5,8,22,0.68)] backdrop-blur-2xl;
     background:
-      radial-gradient(circle at top left, rgb(37 99 255 / 0.22), transparent 30%),
-      radial-gradient(circle at top right, rgb(124 58 237 / 0.2), transparent 26%),
-      linear-gradient(145deg, rgba(5, 11, 46, 0.96), rgba(12, 24, 72, 0.92) 55%, rgba(37, 99, 255, 0.26));
+      radial-gradient(circle at top left, rgb(37 99 255 / 0.18), transparent 30%),
+      radial-gradient(circle at top right, rgb(124 58 237 / 0.16), transparent 26%),
+      linear-gradient(145deg, rgba(5, 8, 22, 0.98), rgba(9, 17, 43, 0.94) 55%, rgba(37, 99, 255, 0.18));
   }
 
   .nexo-premium-chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold text-slate-100 backdrop-blur;
-    background: linear-gradient(135deg, rgb(37 99 255 / 0.18), rgb(124 58 237 / 0.14));
+    background: linear-gradient(135deg, rgb(37 99 255 / 0.14), rgb(124 58 237 / 0.14));
   }
 
   .nexo-soft-input {
-    @apply border-white/60 bg-white/70 shadow-[0_16px_38px_-30px_rgba(5,11,46,0.46)] backdrop-blur;
+    @apply border-white/25 shadow-[0_16px_38px_-30px_rgba(5,8,22,0.42)] backdrop-blur;
+    background: linear-gradient(180deg, rgb(248 250 252 / 0.12), rgb(248 250 252 / 0.08));
   }
 
   .nexo-chip {
