@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -15,9 +15,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 62% 10%;
 
-    --primary: 216 94% 48%;
+    --primary: 219 88% 23%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 198 92% 56%;
+    --primary-glow: 194 100% 51%;
 
     --secondary: 216 35% 95%;
     --secondary-foreground: 222 52% 15%;
@@ -47,18 +47,19 @@
 
     --radius: 1rem;
 
-    --nexo-navy: 224 68% 9%;
-    --nexo-navy-soft: 221 56% 15%;
-    --nexo-blue: 216 94% 48%;
-    --nexo-royal: 222 88% 42%;
-    --nexo-cyan: 190 93% 47%;
+    --nexo-navy: 222 74% 11%;
+    --nexo-navy-soft: 219 88% 23%;
+    --nexo-blue: 216 94% 52%;
+    --nexo-royal: 224 87% 36%;
+    --nexo-cyan: 194 100% 51%;
     --nexo-surface: 214 45% 98%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(222 88% 42%) 0%, hsl(216 94% 52%) 48%, hsl(190 93% 48%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(190 93% 47%), hsl(198 92% 56%));
-    --gradient-hero: radial-gradient(circle at 18% 18%, hsl(190 93% 47% / 0.34), transparent 34%),
-      radial-gradient(circle at 78% 8%, hsl(216 94% 52% / 0.38), transparent 30%),
-      linear-gradient(135deg, hsl(224 68% 9%) 0%, hsl(221 56% 15%) 52%, hsl(204 88% 20%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(222 74% 11%) 0%, hsl(219 88% 23%) 44%, hsl(216 94% 52%) 76%, hsl(194 100% 51%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(216 94% 52%), hsl(194 100% 51%));
+    --gradient-hero: radial-gradient(circle at 18% 16%, hsl(194 100% 51% / 0.32), transparent 32%),
+      radial-gradient(circle at 82% 10%, hsl(216 94% 52% / 0.44), transparent 32%),
+      radial-gradient(circle at 70% 84%, hsl(194 100% 51% / 0.20), transparent 36%),
+      linear-gradient(135deg, hsl(222 74% 11%) 0%, hsl(219 88% 23%) 54%, hsl(224 87% 36%) 100%);
     --gradient-subtle: radial-gradient(circle at top left, hsl(190 93% 47% / 0.12), transparent 30%),
       linear-gradient(180deg, hsl(214 45% 98%), hsl(218 35% 96%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100% / 0.96), hsl(214 45% 99% / 0.9));
@@ -66,14 +67,14 @@
     --shadow-sm: 0 1px 2px hsl(222 62% 10% / 0.05);
     --shadow-md: 0 10px 28px -18px hsl(222 62% 10% / 0.36);
     --shadow-lg: 0 24px 70px -42px hsl(222 62% 10% / 0.45);
-    --shadow-glow: 0 18px 40px -22px hsl(198 92% 56% / 0.9);
+    --shadow-glow: 0 18px 44px -22px hsl(194 100% 51% / 0.9);
     --shadow-card: 0 16px 48px -34px hsl(222 62% 10% / 0.45);
 
     --transition-smooth: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 
-    --sidebar-background: 224 68% 7%;
+    --sidebar-background: 222 74% 11%;
     --sidebar-foreground: 214 28% 76%;
-    --sidebar-primary: 216 94% 52%;
+    --sidebar-primary: 194 100% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 52% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
@@ -144,7 +145,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Manrope", ui-sans-serif, sans-serif;
+    font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, sans-serif;
     font-feature-settings: "cv11", "ss01", "liga";
     background: var(--gradient-subtle);
   }
@@ -153,7 +154,7 @@
   h2,
   h3,
   .font-display {
-    font-family: "Sora", "Manrope", ui-sans-serif, sans-serif;
+    font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, sans-serif;
   }
 
   ::selection {
