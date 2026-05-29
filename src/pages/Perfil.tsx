@@ -51,6 +51,27 @@ async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: n
   });
 }
 
+async function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result !== "string" || reader.result.length === 0) {
+        reject(new Error("Nao foi possivel preparar a foto selecionada."));
+        return;
+      }
+
+      resolve(reader.result);
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Nao foi possivel preparar a foto selecionada."));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 async function optimizeAvatarForUpload(file: File) {
   const image = await loadImageFromFile(file);
   const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
@@ -125,7 +146,7 @@ export default function Perfil() {
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [companyName, setCompanyName] = useState(user?.companyName ?? "");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -201,7 +222,7 @@ export default function Perfil() {
         URL.revokeObjectURL(avatarPreviewUrl);
       }
 
-      setAvatarFile(optimizedFile);
+      setAvatarDataUrl(await readFileAsDataUrl(optimizedFile));
       setRemoveAvatar(false);
       setAvatarPreviewUrl(URL.createObjectURL(optimizedFile));
 
@@ -232,7 +253,7 @@ export default function Perfil() {
     }
 
     setAvatarPreviewUrl(null);
-    setAvatarFile(null);
+    setAvatarDataUrl(null);
     setRemoveAvatar(true);
 
     if (fileInputRef.current) {
@@ -248,20 +269,13 @@ export default function Perfil() {
     setIsSavingProfile(true);
 
     try {
-      const formData = new FormData();
-      formData.append("name", name.trim());
-      formData.append("email", email.trim());
-      formData.append("company_name", companyName.trim());
-
-      if (removeAvatar) {
-        formData.append("remove_avatar", "1");
-      }
-
-      if (avatarFile) {
-        formData.append("avatar", avatarFile);
-      }
-
-      const response = await updateProfile(formData);
+      const response = await updateProfile({
+        name: name.trim(),
+        email: email.trim(),
+        company_name: companyName.trim(),
+        ...(removeAvatar ? { remove_avatar: true } : {}),
+        ...(avatarDataUrl ? { avatar_data_url: avatarDataUrl } : {}),
+      });
 
       updateStoredAuthUser({
         ...response.data,
@@ -275,7 +289,7 @@ export default function Perfil() {
         });
       }
 
-      setAvatarFile(null);
+      setAvatarDataUrl(null);
       setRemoveAvatar(false);
       if (avatarPreviewUrl) {
         URL.revokeObjectURL(avatarPreviewUrl);

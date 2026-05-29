@@ -25,8 +25,9 @@ export function resolveMediaUrl(rawUrl?: string | null) {
   try {
     const parsedUrl = new URL(rawUrl, window.location.origin);
     const isStoragePath = parsedUrl.pathname.startsWith("/storage/");
+    const isApiPath = parsedUrl.pathname.startsWith("/api/");
 
-    if (isStoragePath) {
+    if (isStoragePath || isApiPath) {
       const mediaOrigin = resolveMediaOrigin();
 
       return `${mediaOrigin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
