@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/nexo/BrandMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +9,6 @@ import { queryClient } from "@/App";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { consumeAuthNotice, setAuthSession } from "@/lib/auth";
 import { login } from "@/services/auth";
-
-const logoSrc = "/Nexo%20IA%20Logo%20v2.png";
 
 const highlights = [
   "Atendimento inteligente",
@@ -98,28 +97,42 @@ function CircuitBackdrop() {
 
 function BrandSignature() {
   return (
-    <div className="space-y-6">
-      <div className="relative w-full max-w-[30rem]">
-        <div className="absolute inset-x-[10%] top-8 h-44 rounded-full bg-[radial-gradient(circle,rgba(122,60,255,0.32),transparent_66%)] blur-3xl" />
-        <div className="absolute inset-x-[22%] top-0 h-32 rounded-full bg-[radial-gradient(circle,rgba(255,79,216,0.18),transparent_72%)] blur-2xl" />
-        <div className="relative h-[17rem] overflow-hidden">
-          <img
-            src={logoSrc}
-            alt="Nexo IA"
-            className="absolute left-1/2 top-[-3.35rem] w-[38rem] max-w-none -translate-x-1/2 object-contain opacity-[0.98] saturate-[1.05] [filter:drop-shadow(0_36px_72px_rgba(122,60,255,0.3))]"
-          />
-        </div>
+    <div className="relative flex max-w-[34rem] flex-col gap-6 sm:flex-row sm:items-center sm:gap-7">
+      <div className="relative flex h-[8.5rem] w-[8.5rem] shrink-0 items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.22),transparent_62%)] blur-3xl" />
+        <div className="absolute inset-[14%] rounded-full border border-white/12 bg-white/[0.03] backdrop-blur" />
+        <svg className="absolute -inset-8 opacity-[0.72]" viewBox="0 0 180 180" fill="none">
+          <path d="M26 108L58 66L92 86L124 46L154 76" stroke="url(#hero-line-a)" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M58 66L58 124L88 150M92 86L116 118L146 108" stroke="rgba(255,255,255,0.24)" strokeWidth="1.2" strokeLinecap="round" />
+          {[26, 58, 92, 124, 154, 88, 146].map((cx, index) => {
+            const cy = [108, 66, 86, 46, 76, 150, 108][index];
+            const radius = [4.5, 4.5, 5, 4.5, 4.5, 4, 4][index];
+            return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={radius} fill="url(#hero-dot-a)" />;
+          })}
+          <defs>
+            <linearGradient id="hero-line-a" x1="26" y1="46" x2="154" y2="150" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#0D5BFF" />
+              <stop offset="0.52" stopColor="#7A3CFF" />
+              <stop offset="1" stopColor="#FF4FD8" />
+            </linearGradient>
+            <radialGradient id="hero-dot-a" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(90 90) rotate(90) scale(72)">
+              <stop stopColor="#FFFFFF" />
+              <stop offset="1" stopColor="#FF4FD8" />
+            </radialGradient>
+          </defs>
+        </svg>
+        <BrandMark className="relative h-[5.4rem] w-[5.4rem] rounded-[1.9rem] shadow-[0_26px_70px_-28px_rgba(255,79,216,0.7)]" letterClassName="text-[2.3rem]" />
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-end gap-4 text-[clamp(3.8rem,8vw,5.9rem)] font-light tracking-[-0.09em] text-white">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-end gap-3 text-[clamp(2.7rem,7vw,4.4rem)] font-light leading-none tracking-[-0.08em] text-white">
           <span className="font-display">Ne</span>
           <span className="bg-[linear-gradient(135deg,#FFFFFF_0%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">x</span>
           <span className="font-display">o</span>
-          <span className="mb-3 hidden h-14 w-px bg-gradient-to-b from-white/0 via-white/35 to-white/0 md:block" />
+          <span className="hidden h-10 w-px self-center bg-gradient-to-b from-white/0 via-white/35 to-white/0 sm:block" />
           <span className="bg-[linear-gradient(135deg,#D7C8FF_0%,#7A3CFF_46%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">IA</span>
         </div>
-        <p className="pl-1 text-[11px] font-semibold uppercase tracking-[0.42em] text-violet-200/72">
+        <p className="pl-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-violet-200/72">
           Inteligência que conecta
         </p>
       </div>
