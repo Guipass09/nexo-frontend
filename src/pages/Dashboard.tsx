@@ -54,8 +54,8 @@ export default function Dashboard() {
       ) : null}
 
       <Card className="nexo-premium-surface relative overflow-hidden p-5 md:p-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.12),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(236,72,153,0.1),transparent_22%)]" />
-        <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/20 blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.14),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(236,72,153,0.12),transparent_22%)]" />
+        <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/24 blur-3xl" />
         <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-[1.1rem] gradient-primary flex items-center justify-center shadow-glow shrink-0 ring-1 ring-white/40">
@@ -63,24 +63,24 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="mb-1 flex items-center gap-2">
-              <h2 className="font-display text-lg font-semibold">{workspaceTitle}</h2>
+              <h2 className="font-display text-lg font-bold text-slate-950">{workspaceTitle}</h2>
                 <StatusBadge status="ativo" withDot />
               </div>
-              <p className="text-sm text-muted-foreground">{workspaceSummary}</p>
+              <p className="text-sm text-slate-700">{workspaceSummary}</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(37,99,255,0.4)] backdrop-blur">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Operação</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">Visão em tempo real</p>
+            <div className="rounded-2xl border border-[rgba(124,58,237,.12)] bg-[linear-gradient(135deg,rgba(37,99,255,.04),rgba(124,58,237,.04))] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,.06)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">Operação</p>
+              <p className="mt-2 text-sm font-bold text-slate-950">Visão em tempo real</p>
             </div>
-            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(124,58,237,0.35)] backdrop-blur">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Fluxos</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">Automações alinhadas</p>
+            <div className="rounded-2xl border border-[rgba(124,58,237,.12)] bg-[linear-gradient(135deg,rgba(37,99,255,.04),rgba(124,58,237,.04))] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,.06)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">Fluxos</p>
+              <p className="mt-2 text-sm font-bold text-slate-950">Automações alinhadas</p>
             </div>
-            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(236,72,153,0.3)] backdrop-blur">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">IA</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">Contexto e memória ativos</p>
+            <div className="rounded-2xl border border-[rgba(124,58,237,.12)] bg-[linear-gradient(135deg,rgba(37,99,255,.04),rgba(124,58,237,.04))] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,.06)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">IA</p>
+              <p className="mt-2 text-sm font-bold text-slate-950">Contexto e memória ativos</p>
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
         <Card className="nexo-premium-surface p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-semibold">Volume de mensagens</h3>
+              <h3 className="font-bold text-slate-950">Volume de mensagens</h3>
               <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
             </div>
             <div className="flex gap-2 text-xs">
@@ -120,20 +120,20 @@ export default function Dashboard() {
                 <AreaChart data={dashboard.messagesChart}>
                   <defs>
                     <linearGradient id="gMsg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#2563FF" stopOpacity={0.42} />
+                      <stop offset="100%" stopColor="#2563FF" stopOpacity={0.03} />
                     </linearGradient>
                     <linearGradient id="gAud" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.03} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
-                  <Area type="monotone" dataKey="mensagens" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gMsg)" />
-                  <Area type="monotone" dataKey="audios" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#gAud)" />
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(124,58,237,0.14)" vertical={false} />
+                  <XAxis dataKey="day" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "rgba(248,250,252,0.98)", border: "1px solid rgba(124,58,237,0.12)", borderRadius: 16, fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,.06)" }} />
+                  <Area type="monotone" dataKey="mensagens" stroke="#2563FF" strokeWidth={2.75} fill="url(#gMsg)" />
+                  <Area type="monotone" dataKey="audios" stroke="#7C3AED" strokeWidth={2.5} fill="url(#gAud)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
         <Card className="nexo-premium-surface p-5">
           <div className="mb-4">
-            <h3 className="font-semibold">Funil de atendimento</h3>
+            <h3 className="font-bold text-slate-950">Funil de atendimento</h3>
             <p className="text-xs text-muted-foreground">Distribuição por etapa</p>
           </div>
           <div className="h-64">
@@ -151,11 +151,17 @@ export default function Dashboard() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboard.funnelData} layout="vertical" margin={{ left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="stage" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={110} />
-                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(124,58,237,0.14)" horizontal={false} />
+                  <XAxis type="number" stroke="#475569" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="stage" stroke="#475569" fontSize={11} tickLine={false} axisLine={false} width={110} />
+                  <Tooltip contentStyle={{ background: "rgba(248,250,252,0.98)", border: "1px solid rgba(124,58,237,0.12)", borderRadius: 16, fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,.06)" }} />
+                  <Bar dataKey="value" fill="url(#barFunnelGradient)" radius={[0, 8, 8, 0]} />
+                  <defs>
+                    <linearGradient id="barFunnelGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#2563FF" />
+                      <stop offset="100%" stopColor="#7C3AED" />
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -166,14 +172,14 @@ export default function Dashboard() {
       {/* Shortcuts + recent */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="nexo-premium-surface p-5">
-          <h3 className="font-semibold mb-4">Atalhos rápidos</h3>
+          <h3 className="mb-4 font-bold text-slate-950">Atalhos rápidos</h3>
           <div className="grid grid-cols-2 gap-3">
             {shortcuts.map((s) => (
               <Link key={s.label} to={s.to} className="group rounded-[1.35rem] border border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(241,245,255,0.72))] p-4 shadow-[0_18px_40px_-32px_rgba(5,11,46,0.32)] transition-smooth hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_26px_50px_-34px_rgba(37,99,255,0.42)]">
                 <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,255,0.18),rgba(124,58,237,0.16))] text-primary shadow-[0_14px_34px_-24px_rgba(37,99,255,0.65)] transition-smooth group-hover:scale-110">
                   <s.icon className="h-5 w-5" />
                 </div>
-                <div className="text-sm font-medium text-slate-950">{s.label}</div>
+                <div className="text-sm font-semibold text-slate-950">{s.label}</div>
               </Link>
             ))}
           </div>
@@ -181,7 +187,7 @@ export default function Dashboard() {
 
         <Card className="nexo-premium-surface p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Conversas recentes</h3>
+            <h3 className="font-bold text-slate-950">Conversas recentes</h3>
             <Link to="/conversas">
               <Button variant="ghost" size="sm" className="gap-1 text-xs">Ver todas <ArrowRight className="h-3 w-3" /></Button>
             </Link>
@@ -229,19 +235,19 @@ export default function Dashboard() {
       {isAdmin && dashboard.auditSummary && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <Card className="nexo-premium-surface p-5">
-            <h3 className="font-semibold mb-4">Resumo operacional</h3>
+            <h3 className="font-bold text-slate-950 mb-4">Resumo operacional</h3>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Erros</p>
-                <p className="text-xl font-bold">{dashboard.auditSummary.errorEvents}</p>
+                <p className="text-xl font-extrabold text-slate-950">{dashboard.auditSummary.errorEvents}</p>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Falhas envio</p>
-                <p className="text-xl font-bold">{dashboard.auditSummary.failedMessages}</p>
+                <p className="text-xl font-extrabold text-slate-950">{dashboard.auditSummary.failedMessages}</p>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Manuais hoje</p>
-                <p className="text-xl font-bold">{dashboard.auditSummary.manualMessagesToday}</p>
+                <p className="text-xl font-extrabold text-slate-950">{dashboard.auditSummary.manualMessagesToday}</p>
               </div>
             </div>
             <div className="mt-4">
@@ -260,7 +266,7 @@ export default function Dashboard() {
           <Card className="nexo-premium-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-semibold">Mensagens manuais</h3>
+                <h3 className="font-bold text-slate-950">Mensagens manuais</h3>
                 <p className="text-xs text-muted-foreground">Últimos 7 dias</p>
               </div>
               <Link to="/auditoria">
@@ -270,11 +276,17 @@ export default function Dashboard() {
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboard.auditSummary.messagesByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
-                  <Bar dataKey="sent" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(124,58,237,0.14)" vertical={false} />
+                  <XAxis dataKey="day" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "rgba(248,250,252,0.98)", border: "1px solid rgba(124,58,237,0.12)", borderRadius: 16, fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,.06)" }} />
+                  <Bar dataKey="sent" fill="url(#barManualGradient)" radius={[8, 8, 0, 0]} />
+                  <defs>
+                    <linearGradient id="barManualGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#7C3AED" />
+                      <stop offset="100%" stopColor="#2563FF" />
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -282,7 +294,7 @@ export default function Dashboard() {
 
           <Card className="nexo-premium-surface p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Últimos eventos operacionais</h3>
+              <h3 className="font-bold text-slate-950">Últimos eventos operacionais</h3>
               <Link to="/auditoria">
                 <Button variant="ghost" size="sm" className="gap-1 text-xs">Ver auditoria <ArrowRight className="h-3 w-3" /></Button>
               </Link>

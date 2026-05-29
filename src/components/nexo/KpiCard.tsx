@@ -11,19 +11,19 @@ interface KpiCardProps {
 }
 
 const toneMap = {
-  primary: "bg-[linear-gradient(135deg,rgba(37,99,255,0.14),rgba(124,58,237,0.12))] text-primary shadow-[0_14px_36px_-24px_rgba(37,99,255,0.5)]",
-  accent: "bg-[linear-gradient(135deg,rgba(124,58,237,0.14),rgba(236,72,153,0.14))] text-violet-700 shadow-[0_14px_36px_-24px_rgba(124,58,237,0.46)]",
-  info: "bg-[linear-gradient(135deg,rgba(14,165,233,0.14),rgba(37,99,255,0.12))] text-sky-700 shadow-[0_14px_36px_-24px_rgba(14,165,233,0.42)]",
-  warning: "bg-[linear-gradient(135deg,rgba(245,158,11,0.14),rgba(236,72,153,0.1))] text-amber-700 shadow-[0_14px_36px_-24px_rgba(245,158,11,0.4)]",
-  success: "bg-[linear-gradient(135deg,rgba(16,185,129,0.14),rgba(37,99,255,0.1))] text-emerald-700 shadow-[0_14px_36px_-24px_rgba(16,185,129,0.4)]",
+  primary: "bg-[linear-gradient(135deg,rgba(37,99,255,0.18),rgba(124,58,237,0.16))] text-primary shadow-[0_16px_34px_-24px_rgba(37,99,255,0.58)]",
+  accent: "bg-[linear-gradient(135deg,rgba(124,58,237,0.18),rgba(236,72,153,0.18))] text-violet-700 shadow-[0_16px_34px_-24px_rgba(124,58,237,0.56)]",
+  info: "bg-[linear-gradient(135deg,rgba(14,165,233,0.18),rgba(37,99,255,0.16))] text-sky-700 shadow-[0_16px_34px_-24px_rgba(14,165,233,0.52)]",
+  warning: "bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(236,72,153,0.14))] text-amber-700 shadow-[0_16px_34px_-24px_rgba(245,158,11,0.48)]",
+  success: "bg-[linear-gradient(135deg,rgba(16,185,129,0.18),rgba(37,99,255,0.14))] text-emerald-700 shadow-[0_16px_34px_-24px_rgba(16,185,129,0.48)]",
 };
 
 export function KpiCard({ label, value, delta, icon: Icon, tone = "primary" }: KpiCardProps) {
   const isNegative = delta?.startsWith("-");
   return (
-    <Card className="group nexo-premium-surface p-5 hover:-translate-y-0.5 hover:border-primary/18 hover:shadow-[0_30px_72px_-42px_rgba(37,99,255,0.36)]">
+    <Card className="group nexo-premium-surface p-5 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_18px_40px_rgba(37,99,255,0.1)]">
       <div className="flex items-start justify-between mb-3">
-        <div className={cn("flex h-12 w-12 items-center justify-center rounded-[1.15rem] ring-1 ring-white/35 transition-smooth group-hover:scale-105", toneMap[tone])}>
+        <div className={cn("flex h-12 w-12 items-center justify-center rounded-[1.15rem] ring-1 ring-white/55 transition-smooth group-hover:scale-105", toneMap[tone])}>
           <Icon className="h-5 w-5" />
         </div>
         {delta && (
@@ -38,8 +38,8 @@ export function KpiCard({ label, value, delta, icon: Icon, tone = "primary" }: K
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div>
-      <div className="mt-1 text-sm text-slate-600">{label}</div>
+      <div className="text-[2rem] font-extrabold tracking-tight text-slate-950">{value}</div>
+      <div className="mt-1 text-sm font-medium text-slate-700">{label}</div>
     </Card>
   );
 }
