@@ -20,8 +20,9 @@ export function resolveMediaUrl(rawUrl?: string | null) {
   try {
     const parsedUrl = new URL(rawUrl, window.location.origin);
     const apiOrigin = resolveApiOrigin();
+    const isRelativeStoragePath = rawUrl.startsWith("/storage/");
 
-    if (parsedUrl.pathname.startsWith("/storage/") && parsedUrl.origin !== apiOrigin && isRewriteCandidateHostname(parsedUrl.hostname)) {
+    if (parsedUrl.pathname.startsWith("/storage/") && (isRelativeStoragePath || (parsedUrl.origin !== apiOrigin && isRewriteCandidateHostname(parsedUrl.hostname)))) {
       return `${apiOrigin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
     }
 
