@@ -1,0 +1,32 @@
+{
+  "routes": [
+    {
+      "src": "^\\/api(?:\\/(.*))?$",
+      "dest": "https://mossy-smugly-connector.ngrok-free.dev/api/$1",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": {
+            "key": "ngrok-skip-browser-warning"
+          },
+          "args": "true"
+        }
+      ]
+    },
+    {
+      "src": "^\\/storage(?:\\/(.*))?$",
+      "dest": "https://mossy-smugly-connector.ngrok-free.dev/storage/$1",
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": {
+            "key": "ngrok-skip-browser-warning"
+          },
+          "args": "true"
+        }
+      ]
+    }
+  ]
+}

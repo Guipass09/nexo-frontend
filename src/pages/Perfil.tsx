@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { Bell, Camera, Globe, Loader2, LogOut, Moon, Trash2 } from "lucide-react";
 import { queryClient } from "@/App";
-import { clearAuthSession, getStoredAuthUser, subscribeToAuthUserChanges, updateStoredAuthUser } from "@/lib/auth";
+import { clearAuthSession, getAuthToken, getStoredAuthUser, subscribeToAuthUserChanges, updateStoredAuthUser } from "@/lib/auth";
 import { logout } from "@/services/auth";
 import { toast } from "@/hooks/use-toast";
 import { getWhatsAppConnectionErrorMessage, useWhatsAppConnection } from "@/hooks/use-whatsapp-connection";
@@ -267,7 +267,13 @@ export default function Perfil() {
         ...response.data,
         tokenExpiresAt: response.data.tokenExpiresAt ?? user.tokenExpiresAt ?? null,
       });
-      queryClient.setQueriesData({ queryKey: ["auth", "me"] }, response.data);
+      const token = getAuthToken();
+      if (token) {
+        queryClient.setQueryData(["auth", "me", token], {
+          ...response.data,
+          tokenExpiresAt: response.data.tokenExpiresAt ?? user.tokenExpiresAt ?? null,
+        });
+      }
 
       setAvatarFile(null);
       setRemoveAvatar(false);

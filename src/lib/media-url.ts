@@ -6,10 +6,15 @@ function resolveApiOrigin() {
   }
 }
 
-function isRewriteCandidateHostname(hostname: string) {
-  return hostname === "localhost"
-    || hostname === "127.0.0.1"
-    || hostname === "0.0.0.0";
+function resolveMediaOrigin() {
+  const hostname = window.location.hostname;
+  const isVercelHost = hostname.endsWith(".vercel.app");
+
+  if (isVercelHost) {
+    return window.location.origin;
+  }
+
+  return resolveApiOrigin();
 }
 
 export function resolveMediaUrl(rawUrl?: string | null) {
@@ -19,11 +24,12 @@ export function resolveMediaUrl(rawUrl?: string | null) {
 
   try {
     const parsedUrl = new URL(rawUrl, window.location.origin);
-    const apiOrigin = resolveApiOrigin();
-    const isRelativeStoragePath = rawUrl.startsWith("/storage/");
+    const isStoragePath = parsedUrl.pathname.startsWith("/storage/");
 
-    if (parsedUrl.pathname.startsWith("/storage/") && (isRelativeStoragePath || (parsedUrl.origin !== apiOrigin && isRewriteCandidateHostname(parsedUrl.hostname)))) {
-      return `${apiOrigin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    if (isStoragePath) {
+      const mediaOrigin = resolveMediaOrigin();
+
+      return `${mediaOrigin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
     }
 
     return parsedUrl.toString();
