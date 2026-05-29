@@ -136,6 +136,7 @@ export default function Perfil() {
         ...response.data,
         tokenExpiresAt: response.data.tokenExpiresAt ?? user.tokenExpiresAt ?? null,
       });
+      queryClient.setQueriesData({ queryKey: ["auth", "me"] }, response.data);
 
       setAvatarFile(null);
       setRemoveAvatar(false);

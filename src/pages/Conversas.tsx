@@ -52,6 +52,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/nexo/EmptyState";
+import { getStoredAuthUser, subscribeToAuthUserChanges } from "@/lib/auth";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 type ConversationDraft = {
   contactId: string;
@@ -299,6 +301,32 @@ function ContactAvatar({
         <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-500 shadow-sm" />
       ) : null}
     </div>
+  );
+}
+
+function OperatorAvatar({
+  name,
+  fallback,
+  avatarUrl,
+  size = "sm",
+}: {
+  name: string;
+  fallback: string;
+  avatarUrl?: string | null;
+  size?: "sm" | "md";
+}) {
+  const sizeClass = {
+    sm: "h-8 w-8",
+    md: "h-10 w-10",
+  }[size];
+
+  return (
+    <Avatar className={cn(sizeClass, "border border-white/80 shadow-sm ring-1 ring-primary/10")}>
+      {avatarUrl ? <AvatarImage src={resolveMediaUrl(avatarUrl) ?? undefined} alt={name} className="object-cover" /> : null}
+      <AvatarFallback className="gradient-primary text-primary-foreground text-xs font-semibold">
+        {fallback}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -603,6 +631,7 @@ function renderMessageBody(
 }
 
 export default function Conversas() {
+  const [operatorUser, setOperatorUser] = useState(() => getStoredAuthUser());
   const [conversationDialogOpen, setConversationDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationDraft, setConversationDraft] = useState<ConversationDraft>(emptyConversationDraft);
@@ -648,6 +677,16 @@ export default function Conversas() {
   });
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [previewMessage, setPreviewMessage] = useState<ConversationMessage | null>(null);
+
+  useEffect(() => subscribeToAuthUserChanges(setOperatorUser), []);
+
+  const operatorInitials = useMemo(() => operatorUser?.name
+    ?.split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "NX", [operatorUser?.name]);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearch(search);
@@ -1256,9 +1295,9 @@ export default function Conversas() {
   }
 
   return (
-    <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
+    <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
       {/* List */}
-      <Card className="flex flex-col overflow-hidden">
+      <Card className="flex flex-col overflow-hidden border-white/60 bg-white/78 shadow-[0_28px_70px_-42px_rgba(5,10,43,0.32)] backdrop-blur-xl">
         <div className="space-y-3 border-b border-border/70 p-4 gradient-card">
           {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
@@ -1310,7 +1349,7 @@ export default function Conversas() {
             </select>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-thin bg-gradient-to-b from-white/50 to-secondary/25">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,247,250,0.82))]">
           {isInitialConversationsLoading ? (
             <div className="space-y-3 p-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -1349,8 +1388,8 @@ export default function Conversas() {
                       setSelectedId(c.id);
                     }}
                     className={cn(
-                      "group flex w-full items-start gap-3 border-b border-border/50 px-4 py-3 text-left transition-smooth hover:bg-white/80",
-                      selected?.id === c.id && "bg-white shadow-[inset_3px_0_0_hsl(var(--primary))]",
+                      "group mx-2 my-1 flex w-[calc(100%-1rem)] items-start gap-3 rounded-[1.35rem] border border-transparent px-4 py-3 text-left transition-smooth hover:border-primary/10 hover:bg-white/88",
+                      selected?.id === c.id && "border-primary/10 bg-white shadow-[inset_3px_0_0_hsl(var(--primary)),0_18px_40px_-34px_rgba(13,91,255,0.4)]",
                     )}
                   >
                     <ContactAvatar name={c.name} fallback={c.avatar} avatarUrl={c.avatarUrl} active={c.status === "ativo" || c.status === "humano"} />
@@ -1391,10 +1430,10 @@ export default function Conversas() {
       </Card>
 
       {/* Chat */}
-      <Card className="flex flex-col overflow-hidden">
+      <Card className="flex flex-col overflow-hidden border-white/60 bg-white/76 shadow-[0_28px_70px_-42px_rgba(5,10,43,0.32)] backdrop-blur-xl">
         {selected ? (
           <>
-            <div className="flex items-center gap-3 border-b border-border/70 p-4 gradient-card">
+            <div className="flex items-center gap-3 border-b border-border/70 p-5 gradient-card">
               <ContactAvatar name={selected.name} fallback={selected.avatar} avatarUrl={selected.avatarUrl} size="lg" active={selected.status === "ativo" || selected.status === "humano"} />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1443,8 +1482,9 @@ export default function Conversas() {
               onScroll={(event) => {
                 shouldStickToBottomRef.current = shouldAutoScrollToBottom(event.currentTarget);
               }}
-              className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_28%),linear-gradient(180deg,hsl(var(--secondary)/0.45),hsl(var(--background)))]"
+              className="flex-1 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,79,216,0.06),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,247,250,0.86))]"
             >
+              <div className="mx-auto max-w-4xl space-y-5">
               {activeConversationError ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   Nao foi possivel carregar o detalhe desta conversa agora. A lista continua ativa por realtime/polling.
@@ -1492,17 +1532,35 @@ export default function Conversas() {
                 return (
                   <div key={m.id} className={cn("flex gap-2.5", isClient ? "justify-end" : "justify-start")}>
                     {!isClient && (
-                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-sm">
-                        {isHumanAgent ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
-                      </div>
+                      isHumanAgent ? (
+                        <div className="mt-1 shrink-0">
+                          <OperatorAvatar
+                            name={operatorUser?.name ?? "Voce"}
+                            fallback={operatorInitials}
+                            avatarUrl={operatorUser?.avatarUrl}
+                            size="sm"
+                          />
+                        </div>
+                      ) : (
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-sm">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                      )
                     )}
                     <div className={cn(
                       "max-w-[78%] rounded-[1.35rem] px-4 py-3 shadow-sm ring-1",
                       isClient
                         ? "gradient-primary text-white rounded-br-md ring-blue-500/20"
-                        : "bg-card/95 text-foreground rounded-bl-md ring-border/70 backdrop-blur",
+                        : isHumanAgent
+                          ? "bg-white/95 text-foreground rounded-bl-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(13,91,255,0.4)] backdrop-blur"
+                          : "bg-card/95 text-foreground rounded-bl-md ring-border/70 backdrop-blur",
                       isFailed && "ring-destructive/30"
                     )}>
+                      {!isClient ? (
+                        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                          {isHumanAgent ? (operatorUser?.name ?? "Humano") : "Nexo IA"}
+                        </div>
+                      ) : null}
                       {renderMessageBody(
                         m,
                         isClient,
@@ -1533,15 +1591,28 @@ export default function Conversas() {
                 );
               })}
               {showAiProcessingBubble ? <AiProcessingBubble /> : null}
+              </div>
             </div>
 
-            <div className="border-t border-border/70 bg-white/90 p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
+            <div className="border-t border-border/70 bg-white/88 p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
               {requiresTemplate ? (
                 <div className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
                   <span>Fora da janela de 24h. Use um template oficial aprovado para reabrir o atendimento.</span>
                 </div>
               ) : null}
+              <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border/60 bg-white/76 px-3 py-2 shadow-sm">
+                <OperatorAvatar
+                  name={operatorUser?.name ?? "Voce"}
+                  fallback={operatorInitials}
+                  avatarUrl={operatorUser?.avatarUrl}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-950">Respondendo como {operatorUser?.name ?? "sua conta"}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">Sua foto de perfil agora acompanha as mensagens humanas nesta conversa.</p>
+                </div>
+              </div>
               {availableTemplates.length > 0 ? (
                 <div className="mb-2 space-y-2">
               <div className="flex items-center gap-2">
@@ -1739,13 +1810,13 @@ export default function Conversas() {
               {mediaError ? <p className="text-xs text-destructive">{mediaError}</p> : null}
                 </div>
               ) : null}
-              <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-background/80 p-2 shadow-sm">
+              <div className="flex items-center gap-2 rounded-[1.65rem] border border-border/70 bg-background/88 p-2 shadow-[0_18px_40px_-32px_rgba(5,10,43,0.3)]">
                 <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setShowMediaComposer((current) => !current)} disabled={requiresTemplate}>
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Input
                   placeholder={requiresTemplate ? "Use um template oficial para esta conversa..." : "Digite uma mensagem ou intervenha no atendimento..."}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-[15px]"
                   value={draftMessage}
                   disabled={requiresTemplate}
                   translate="no"
