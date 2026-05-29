@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Bot, CheckCircle2, Lock, Mail, MessageCircle, Network, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bot, CheckCircle2, Lock, Mail, MessageCircle, Network, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,17 +11,51 @@ import { login } from "@/services/auth";
 
 const logoSrc = "/1780012194868.png";
 
-const platformHighlights = [
-  { icon: MessageCircle, label: "Conversas", value: "WhatsApp em tempo real" },
-  { icon: Bot, label: "Nexo IA", value: "Atendimento contextual" },
-  { icon: Network, label: "Automação", value: "Fluxos e jornadas" },
+const trustPoints = [
+  "Atendimento inteligente",
+  "Conversas em tempo real",
+  "Fluxos automatizados",
+  "Memória contextual",
 ];
 
-const trustPoints = [
-  "IA conversacional para atendimento e vendas",
-  "Operação humana e automações no mesmo painel",
-  "Fluxos, mídia, métricas e contexto por empresa",
+const signalCards = [
+  { icon: MessageCircle, label: "WhatsApp", detail: "centralizado" },
+  { icon: Bot, label: "Agent IA", detail: "contextual" },
+  { icon: Network, label: "Fluxos", detail: "automatizados" },
 ];
+
+function NeuralBackdrop() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <svg className="absolute left-[5%] top-[9%] h-[36rem] w-[36rem] opacity-[0.18]" viewBox="0 0 520 520" fill="none">
+        <path d="M82 294L145 188L236 252L318 151L421 222M145 188L219 86L318 151M236 252L304 351L421 222M82 294L171 407L304 351L426 429" stroke="url(#networkGradient)" strokeWidth="2" />
+        {[82, 145, 236, 318, 421, 219, 304, 171, 426].map((cx, index) => {
+          const cy = [294, 188, 252, 151, 222, 86, 351, 407, 429][index];
+          const r = [7, 5, 8, 6, 7, 5, 6, 7, 5][index];
+          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="url(#dotGradient)" />;
+        })}
+        <defs>
+          <linearGradient id="networkGradient" x1="74" y1="86" x2="430" y2="429" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#16D7FF" />
+            <stop offset="0.55" stopColor="#2878FF" />
+            <stop offset="1" stopColor="#0A2A6C" />
+          </linearGradient>
+          <radialGradient id="dotGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 260) rotate(90) scale(185)">
+            <stop stopColor="#67E8F9" />
+            <stop offset="1" stopColor="#1D4ED8" />
+          </radialGradient>
+        </defs>
+      </svg>
+      <svg className="absolute bottom-[6%] right-[7%] h-[24rem] w-[24rem] opacity-[0.12]" viewBox="0 0 360 360" fill="none">
+        <path d="M54 218L118 124L190 182L263 82L310 176M118 124L178 42M190 182L254 278L310 176M54 218L133 308L254 278" stroke="#49D9FF" strokeWidth="1.6" />
+        {[54, 118, 190, 263, 310, 178, 254, 133].map((cx, index) => {
+          const cy = [218, 124, 182, 82, 176, 42, 278, 308][index];
+          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4.5" fill="#49D9FF" />;
+        })}
+      </svg>
+    </div>
+  );
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -56,157 +90,161 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#07152F] text-white">
-      <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute -left-24 top-16 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" />
-      <div className="absolute right-[-8rem] top-[-5rem] h-[30rem] w-[30rem] rounded-full bg-blue-500/25 blur-3xl" />
-      <div className="absolute bottom-0 left-1/2 h-64 w-[48rem] -translate-x-1/2 rounded-full bg-cyan-300/10 blur-3xl" />
-      <div className="absolute inset-0 nexo-grid-surface opacity-[0.09]" />
+    <div className="relative min-h-screen overflow-hidden bg-[#041027] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(22,215,255,0.26),transparent_28%),radial-gradient(circle_at_78%_22%,rgba(37,99,235,0.34),transparent_31%),linear-gradient(135deg,#041027_0%,#071C48_48%,#0A2A6C_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-300/10 to-transparent" />
+      <div className="absolute -left-32 top-10 h-[34rem] w-[34rem] rounded-full bg-cyan-400/16 blur-3xl" />
+      <div className="absolute right-[-12rem] top-[-8rem] h-[40rem] w-[40rem] rounded-full bg-blue-600/28 blur-3xl" />
+      <div className="absolute bottom-[-12rem] left-1/2 h-[28rem] w-[52rem] -translate-x-1/2 rounded-full bg-cyan-300/12 blur-3xl" />
+      <div className="absolute inset-0 nexo-grid-surface opacity-[0.055]" />
+      <NeuralBackdrop />
 
-      <main className="relative grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="hidden min-h-screen flex-col justify-between px-10 py-10 lg:flex xl:px-16">
-          <div className="flex items-center justify-between">
-            <div className="rounded-[1.75rem] border border-white/15 bg-white/95 p-3 shadow-[0_24px_80px_-42px_rgba(0,210,255,0.85)]">
-              <img src={logoSrc} alt="Nexo IA - Inteligência que conecta" className="h-20 w-72 rounded-2xl object-contain" />
-            </div>
-            <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100 backdrop-blur">
-              SaaS conversacional
-            </div>
+      <main className="relative mx-auto grid min-h-screen w-full max-w-[1480px] items-center gap-10 px-5 py-8 md:px-8 lg:grid-cols-[minmax(0,1fr)_500px] lg:px-12 xl:px-16">
+        <section className="animate-fade-in-up space-y-10">
+          <div className="relative inline-flex">
+            <div className="absolute -inset-8 rounded-full bg-cyan-300/20 blur-3xl" />
+            <img src={logoSrc} alt="Nexo IA - Inteligência que conecta" className="relative h-auto w-[300px] max-w-[72vw] object-contain drop-shadow-[0_24px_50px_rgba(34,211,238,0.22)] md:w-[390px]" />
           </div>
 
-          <div className="max-w-2xl space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm font-semibold text-cyan-50 backdrop-blur">
+          <div className="max-w-3xl space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-white/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-100 shadow-[0_18px_60px_-40px_rgba(34,211,238,0.8)] backdrop-blur-xl">
               <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.9)]" />
-              Inteligência que conecta
+              IA Conversacional
             </div>
 
             <div className="space-y-5">
-              <h1 className="max-w-3xl font-display text-5xl font-extrabold leading-[1.02] tracking-[-0.04em] text-balance xl:text-6xl">
-                Plataforma premium de IA para atendimento no WhatsApp.
+              <h1 className="max-w-4xl font-display text-5xl font-extrabold leading-[0.98] tracking-[-0.055em] text-white text-balance md:text-6xl xl:text-7xl">
+                IA para WhatsApp que realmente atende.
               </h1>
-              <p className="max-w-xl text-lg leading-8 text-blue-50/80">
-                Centralize conversas, automações e inteligência contextual em uma operação clara, rápida e preparada para empresas.
+              <p className="max-w-2xl text-lg leading-8 text-blue-50/76 md:text-xl">
+                Centralize atendimento, automações, memória, contexto e inteligência em uma única operação.
               </p>
             </div>
 
-            <div className="grid max-w-3xl gap-3 sm:grid-cols-3">
-              {platformHighlights.map(({ icon: Icon, label, value }) => (
-                <div key={label} className="rounded-3xl border border-white/12 bg-white/[0.08] p-4 shadow-[0_20px_60px_-38px_rgba(0,210,255,0.7)] backdrop-blur-xl transition-smooth hover:-translate-y-1 hover:bg-white/[0.11]">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-300/15 text-cyan-100">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/70">{label}</p>
-                  <p className="mt-2 text-sm font-semibold leading-5 text-white">{value}</p>
+            <div className="grid max-w-2xl gap-3 sm:grid-cols-2">
+              {trustPoints.map((point) => (
+                <div key={point} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-semibold text-blue-50/88 backdrop-blur-xl">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-200" />
+                  {point}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid max-w-3xl gap-3 rounded-[2rem] border border-white/12 bg-white/[0.07] p-4 backdrop-blur-xl xl:grid-cols-3">
-            {trustPoints.map((point) => (
-              <div key={point} className="flex items-start gap-3 rounded-2xl bg-white/[0.06] p-3 text-sm leading-5 text-blue-50/80">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />
-                <span>{point}</span>
+          <div className="hidden max-w-3xl gap-3 lg:grid lg:grid-cols-3">
+            {signalCards.map(({ icon: Icon, label, detail }) => (
+              <div key={label} className="group rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition-smooth hover:-translate-y-1 hover:border-cyan-200/30 hover:bg-white/[0.09]">
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300/12 text-cyan-100 shadow-[0_20px_48px_-30px_rgba(34,211,238,0.9)] transition-smooth group-hover:scale-105">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-100/64">{label}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{detail}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="flex min-h-screen items-center justify-center p-5 md:p-8 lg:p-10">
-          <div className="w-full max-w-[520px] animate-fade-in-up">
-            <div className="mb-6 flex justify-center lg:hidden">
-              <div className="rounded-[1.4rem] border border-white/15 bg-white/95 p-2 shadow-glow">
-                <img src={logoSrc} alt="Nexo IA - Inteligência que conecta" className="h-16 w-64 rounded-2xl object-contain" />
+        <section className="flex items-center justify-center lg:justify-end">
+          <div className="w-full max-w-[500px] animate-fade-in-up [animation-delay:90ms]">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/20 bg-white/[0.88] p-6 text-foreground shadow-[0_38px_130px_-58px_rgba(0,0,0,0.85)] backdrop-blur-2xl md:p-8">
+              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
+              <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-300/24 blur-3xl" />
+              <div className="absolute -bottom-24 left-8 h-56 w-56 rounded-full bg-blue-500/12 blur-3xl" />
+
+              <div className="relative">
+                <div className="mb-7 flex items-start justify-between gap-5">
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#0A2A6C]/10 bg-[#0A2A6C]/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#0A2A6C]">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Acesso seguro
+                    </div>
+                    <h2 className="font-display text-3xl font-extrabold tracking-[-0.04em] text-[#07152F] md:text-4xl">
+                      Entrar no painel
+                    </h2>
+                    <p className="max-w-sm text-sm leading-6 text-slate-600">
+                      Gerencie conversas, fluxos e inteligência do atendimento em tempo real.
+                    </p>
+                  </div>
+                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#07152F] via-[#0A2A6C] to-cyan-400 text-white shadow-glow sm:flex">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold text-[#07152F]">
+                      E-mail corporativo
+                    </Label>
+                    <div className="group relative">
+                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-500" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="seuemail@empresa.com.br"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="h-13 rounded-2xl border-slate-200 bg-white/78 pl-12 shadow-sm transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <Label htmlFor="password" className="text-sm font-semibold text-[#07152F]">
+                        Senha
+                      </Label>
+                      <button type="button" className="text-xs font-bold text-[#0A2A6C] transition-colors hover:text-cyan-600">
+                        Esqueci minha senha
+                      </button>
+                    </div>
+                    <div className="group relative">
+                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-500" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Digite sua senha"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        className="h-13 rounded-2xl border-slate-200 bg-white/78 pl-12 shadow-sm transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={loading} className="h-13 w-full rounded-2xl bg-[linear-gradient(135deg,#061842_0%,#0A2A6C_42%,#2478FF_74%,#14D8FF_100%)] text-[15px] shadow-[0_22px_52px_-25px_rgba(20,216,255,0.95)] hover:scale-[1.01] hover:shadow-[0_26px_60px_-25px_rgba(20,216,255,1)]">
+                    {loading ? "Entrando..." : "Entrar no painel"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+
+                  <div className="rounded-2xl border border-slate-200/80 bg-white/55 p-4 text-xs leading-5 text-slate-500">
+                    Ao continuar, você concorda com os{" "}
+                    <Link to="/termos" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                      Termos
+                    </Link>{" "}
+                    e a{" "}
+                    <Link to="/politica-de-privacidade" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                      Política de privacidade
+                    </Link>
+                    .
+                  </div>
+
+                  <p className="text-center text-sm text-slate-500">
+                    Ainda não tem conta?{" "}
+                    <Link to="/cadastro" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                      Criar acesso
+                    </Link>
+                  </p>
+                </form>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/[0.96] p-6 text-foreground shadow-[0_30px_100px_-55px_rgba(0,0,0,0.75)] backdrop-blur-2xl md:p-8">
-              <div className="absolute inset-x-0 top-0 h-1 gradient-primary" />
-              <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl" />
-
-              <div className="relative space-y-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Acesso seguro
-                </div>
-                <h2 className="font-display text-3xl font-extrabold tracking-[-0.03em] text-[#07152F] md:text-4xl">
-                  Acesse sua operação
-                </h2>
-                <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-                  Entre no painel para acompanhar conversas, fluxos e automações do Nexo IA.
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="relative mt-8 space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-[#07152F]">E-mail corporativo</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="seuemail@empresa.com.br"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      className="h-12 rounded-2xl border-slate-200 bg-slate-50/80 pl-11"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <Label htmlFor="password" className="text-sm font-semibold text-[#07152F]">Senha</Label>
-                    <button type="button" className="text-xs font-semibold text-primary transition-colors hover:text-cyan-600">
-                      Esqueci minha senha
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Digite sua senha"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className="h-12 rounded-2xl border-slate-200 bg-slate-50/80 pl-11"
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
-                    {error}
-                  </div>
-                )}
-
-                <Button type="submit" disabled={loading} className="h-12 w-full rounded-2xl text-[15px]">
-                  {loading ? "Entrando no painel..." : "Entrar no painel"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs leading-5 text-muted-foreground">
-                  Ao continuar, você concorda com os{" "}
-                  <Link to="/termos" className="font-semibold text-[#07152F] transition-colors hover:text-primary">
-                    Termos
-                  </Link>{" "}
-                  e a{" "}
-                  <Link to="/politica-de-privacidade" className="font-semibold text-[#07152F] transition-colors hover:text-primary">
-                    Política de privacidade
-                  </Link>
-                  .
-                </div>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Ainda não tem conta?{" "}
-                  <Link to="/cadastro" className="font-bold text-[#07152F] transition-colors hover:text-primary">
-                    Criar acesso
-                  </Link>
-                </p>
-              </form>
-            </div>
-
-            <p className="mt-5 text-center text-xs font-medium text-blue-50/60">
-              Nexo IA · Inteligência que conecta atendimento, dados e automação.
+            <p className="mt-5 text-center text-xs font-semibold text-blue-50/52">
+              Nexo IA · Inteligência que conecta
             </p>
           </div>
         </section>
