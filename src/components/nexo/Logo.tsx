@@ -12,7 +12,7 @@ export function Logo({ collapsed, className }: LogoProps) {
       <BrandMark />
       {!collapsed && (
         <div className="flex flex-col leading-none">
-          <span className="font-display text-base font-bold tracking-tight text-sidebar-foreground">Nexo IA</span>
+          <span className="font-display text-base font-bold tracking-tight text-white">Nexo IA</span>
           <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">Inteligência que conecta</span>
         </div>
       )}

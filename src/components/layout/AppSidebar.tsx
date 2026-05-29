@@ -56,18 +56,24 @@ export function AppSidebar() {
     const isActive = location.pathname === item.url;
     return (
       <SidebarMenuItem key={item.title}>
-        <SidebarMenuButton asChild tooltip={item.title} className="h-11">
+        <SidebarMenuButton asChild tooltip={item.title} className="h-12">
           <NavLink
             to={item.url}
             className={cn(
-              "group flex items-center gap-3 rounded-xl px-3 transition-smooth",
-              "text-sidebar-foreground/75 hover:bg-white/10 hover:text-white",
-              isActive && "bg-white/10 text-white shadow-[inset_0_0_0_1px_hsl(190_93%_47%_/_0.28),0_14px_34px_-24px_hsl(190_93%_47%_/_0.8)] font-semibold",
+              "group relative flex items-center gap-3 rounded-2xl px-3 transition-smooth",
+              "text-sidebar-foreground/80 hover:bg-white/8 hover:text-white",
+              isActive && "bg-white/10 text-white shadow-[inset_0_0_0_1px_hsl(190_93%_47%_/_0.22),0_18px_44px_-28px_hsl(190_93%_47%_/_0.65)] font-semibold",
             )}
           >
+            <span
+              className={cn(
+                "absolute inset-y-2 left-0 w-1 rounded-full bg-transparent transition-smooth",
+                isActive && "bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.7)]",
+              )}
+            />
             <span className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-smooth group-hover:bg-white/10 group-hover:text-cyan-200",
-              isActive && "bg-cyan-400/10 text-cyan-200",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sidebar-foreground/70 transition-smooth group-hover:bg-white/10 group-hover:text-cyan-200",
+              isActive && "bg-cyan-400/10 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18)]",
             )}>
               <item.icon className="h-[18px] w-[18px]" />
             </span>
@@ -84,12 +90,12 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border/80 p-4">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar [background:var(--gradient-sidebar)]">
+      <SidebarHeader className="border-b border-sidebar-border/80 p-5">
         <Logo collapsed={collapsed} />
       </SidebarHeader>
 
-      <SidebarContent className="scrollbar-thin px-2 py-4">
+      <SidebarContent className="scrollbar-thin px-3 py-5">
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel className="px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
@@ -128,9 +134,9 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/80 p-3">
+      <SidebarFooter className="border-t border-sidebar-border/80 p-4">
         {!collapsed ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08)]">
+          <div className="rounded-[1.35rem] border border-white/12 bg-white/6 p-3.5 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08),0_18px_36px_-30px_rgba(0,0,0,0.8)] backdrop-blur">
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse-dot" />
               <span className="text-xs font-semibold text-white">Robô ativo</span>

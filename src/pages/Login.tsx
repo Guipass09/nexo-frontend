@@ -9,7 +9,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { consumeAuthNotice, setAuthSession } from "@/lib/auth";
 import { login } from "@/services/auth";
 
-const logoSrc = "/1780012194868.png";
+const logoSrc = "/Nexo%20IA%20Logo%20v2.png";
 
 const trustPoints = [
   "Atendimento inteligente",
@@ -114,10 +114,10 @@ export default function Login() {
 
             <div className="space-y-5">
               <h1 className="max-w-4xl font-display text-5xl font-extrabold leading-[0.98] tracking-[-0.055em] text-white text-balance md:text-6xl xl:text-7xl">
-                IA para WhatsApp que realmente atende.
+                Inteligência artificial para empresas que querem atender melhor.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-blue-50/76 md:text-xl">
-                Centralize atendimento, automações, memória, contexto e inteligência em uma única operação.
+                Automações, contexto, memória e IA conversacional em um único lugar.
               </p>
             </div>
 
@@ -146,7 +146,7 @@ export default function Login() {
 
         <section className="flex items-center justify-center lg:justify-end">
           <div className="w-full max-w-[500px] animate-fade-in-up [animation-delay:90ms]">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/20 bg-white/[0.88] p-6 text-foreground shadow-[0_38px_130px_-58px_rgba(0,0,0,0.85)] backdrop-blur-2xl md:p-8">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/18 bg-white/[0.84] p-6 text-foreground shadow-[0_42px_130px_-56px_rgba(0,0,0,0.9)] backdrop-blur-2xl md:p-8">
               <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
               <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-300/24 blur-3xl" />
               <div className="absolute -bottom-24 left-8 h-56 w-56 rounded-full bg-blue-500/12 blur-3xl" />
@@ -162,7 +162,7 @@ export default function Login() {
                       Entrar no painel
                     </h2>
                     <p className="max-w-sm text-sm leading-6 text-slate-600">
-                      Gerencie conversas, fluxos e inteligência do atendimento em tempo real.
+                      Entre para operar atendimento, fluxos e inteligência em tempo real.
                     </p>
                   </div>
                   <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#07152F] via-[#0A2A6C] to-cyan-400 text-white shadow-glow sm:flex">
@@ -183,7 +183,7 @@ export default function Login() {
                         placeholder="seuemail@empresa.com.br"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        className="h-13 rounded-2xl border-slate-200 bg-white/78 pl-12 shadow-sm transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                        className="h-13 rounded-2xl border-slate-200/90 bg-white/78 pl-12 shadow-[0_14px_28px_-24px_rgba(5,10,43,0.55)] transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
                       />
                     </div>
                   </div>
@@ -205,7 +205,7 @@ export default function Login() {
                         placeholder="Digite sua senha"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        className="h-13 rounded-2xl border-slate-200 bg-white/78 pl-12 shadow-sm transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                        className="h-13 rounded-2xl border-slate-200/90 bg-white/78 pl-12 shadow-[0_14px_28px_-24px_rgba(5,10,43,0.55)] transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
                       />
                     </div>
                   </div>
@@ -216,7 +216,7 @@ export default function Login() {
                     </div>
                   )}
 
-                  <Button type="submit" disabled={loading} className="h-13 w-full rounded-2xl bg-[linear-gradient(135deg,#061842_0%,#0A2A6C_42%,#2478FF_74%,#14D8FF_100%)] text-[15px] shadow-[0_22px_52px_-25px_rgba(20,216,255,0.95)] hover:scale-[1.01] hover:shadow-[0_26px_60px_-25px_rgba(20,216,255,1)]">
+                  <Button type="submit" disabled={loading} className="h-13 w-full rounded-2xl bg-[linear-gradient(135deg,#050A2B_0%,#0D5BFF_45%,#7A3CFF_75%,#FF4FD8_100%)] text-[15px] shadow-[0_22px_56px_-24px_rgba(122,60,255,0.78)] hover:scale-[1.01] hover:shadow-[0_28px_70px_-22px_rgba(255,79,216,0.92)]">
                     {loading ? "Entrando..." : "Entrar no painel"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

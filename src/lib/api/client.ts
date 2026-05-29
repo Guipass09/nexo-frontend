@@ -85,12 +85,12 @@ export function resolveApiBaseUrl() {
     return configuredBaseUrl || "/api";
   }
 
-  if (hostname.endsWith(".vercel.app")) {
-    return "/api";
-  }
-
   if (configuredBaseUrl) {
     return configuredBaseUrl;
+  }
+
+  if (hostname.endsWith(".vercel.app")) {
+    return "/api";
   }
 
   return "/api";

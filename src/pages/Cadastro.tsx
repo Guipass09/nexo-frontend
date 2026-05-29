@@ -119,6 +119,7 @@ export default function Cadastro() {
               </p>
             </div>
 
+            <div className="glass rounded-[2rem] border border-white/60 p-6 shadow-[0_32px_90px_-56px_rgba(5,10,43,0.46)] backdrop-blur-2xl md:p-7">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="signup-name">Seu nome</Label>
@@ -226,6 +227,7 @@ export default function Cadastro() {
                 Depois do cadastro, voce sera levado ao Perfil para conectar seu WhatsApp e comecar do zero.
               </p>
             </form>
+            </div>
           </div>
         </div>
       </div>

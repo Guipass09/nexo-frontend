@@ -35,6 +35,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -1261,89 +1267,103 @@ export default function AgentIa() {
           </div>
 
           {(activeTrainingReport.critic?.strengths?.length || activeTrainingReport.critic?.priorities?.length || activeTrainingReport.appliedAdjustments.length > 0 || activeTrainingReport.issues.length > 0 || (activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0) && (
-            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-              {(activeTrainingReport.critic?.strengths?.length ?? 0) > 0 && (
-                <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-emerald-950">Pontos fortes</p>
-                  <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
-                    {activeTrainingReport.critic?.strengths.slice(0, 4).map((item) => (
-                      <p key={item}>• {item}</p>
-                    ))}
+            <Accordion type="single" collapsible className="mt-5">
+              <AccordionItem value="training-insights" className="border-primary/10 bg-white/70">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-slate-950">Abrir leitura detalhada do treino</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Pontos fortes, prioridades do crítico, ajustes aplicados e próximos focos.
+                    </p>
                   </div>
-                </div>
-              )}
-
-              {(activeTrainingReport.critic?.priorities?.length ?? 0) > 0 && (
-                <div className="rounded-2xl border border-violet-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-violet-950">Prioridades do crítico</p>
-                  <div className="mt-3 space-y-3">
-                    {activeTrainingReport.critic?.priorities.slice(0, 3).map((item) => (
-                      <div key={`${item.scenarioKey}-${item.severity}`} className="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-violet-950">{item.scenarioTitle}</p>
-                            <p className="mt-1 text-xs leading-5 text-violet-900/80">{item.reason}</p>
-                          </div>
-                          <Badge variant="outline" className={criticSeverityClass(item.severity)}>
-                            {criticSeverityLabel(item.severity)}
-                          </Badge>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+                    {(activeTrainingReport.critic?.strengths?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-emerald-950">Pontos fortes</p>
+                        <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
+                          {activeTrainingReport.critic?.strengths.slice(0, 4).map((item) => (
+                            <p key={item}>• {item}</p>
+                          ))}
                         </div>
-                        <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-violet-700/80">
-                          Ação positiva
-                        </p>
-                        <p className="mt-1 text-sm leading-5 text-violet-950/90">{item.positiveAction}</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    )}
 
-              {activeTrainingReport.appliedAdjustments.length > 0 && (
-                <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-emerald-950">Ajustes aplicados</p>
-                  <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
-                    {activeTrainingReport.appliedAdjustments.slice(0, 5).map((item) => (
-                      <p key={item}>• {item}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    {(activeTrainingReport.critic?.priorities?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-violet-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-violet-950">Prioridades do crítico</p>
+                        <div className="mt-3 space-y-3">
+                          {activeTrainingReport.critic?.priorities.slice(0, 3).map((item) => (
+                            <div key={`${item.scenarioKey}-${item.severity}`} className="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-violet-950">{item.scenarioTitle}</p>
+                                  <p className="mt-1 text-xs leading-5 text-violet-900/80">{item.reason}</p>
+                                </div>
+                                <Badge variant="outline" className={criticSeverityClass(item.severity)}>
+                                  {criticSeverityLabel(item.severity)}
+                                </Badge>
+                              </div>
+                              <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-violet-700/80">
+                                Ação positiva
+                              </p>
+                              <p className="mt-1 text-sm leading-5 text-violet-950/90">{item.positiveAction}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-              {(activeTrainingReport.critic?.safeActions?.length ?? 0) > 0 && (
-                <div className="rounded-2xl border border-cyan-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-cyan-950">Ações que fortalecem o Agent</p>
-                  <div className="mt-3 space-y-2 text-sm text-cyan-900/90">
-                    {activeTrainingReport.critic?.safeActions.slice(0, 5).map((item) => (
-                      <p key={item}>• {item}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    {activeTrainingReport.appliedAdjustments.length > 0 && (
+                      <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-emerald-950">Ajustes aplicados</p>
+                        <div className="mt-3 space-y-2 text-sm text-emerald-900/90">
+                          {activeTrainingReport.appliedAdjustments.slice(0, 5).map((item) => (
+                            <p key={item}>• {item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-              {(activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0 && (
-                <div className="rounded-2xl border border-sky-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-sky-950">Próximo foco do treino</p>
-                  <div className="mt-3 space-y-2 text-sm text-sky-900/90">
-                    {activeTrainingReport.progression?.nextFocus.slice(0, 3).map((item) => (
-                      <p key={item}>• {item}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    {(activeTrainingReport.critic?.safeActions?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-cyan-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-cyan-950">Ações que fortalecem o Agent</p>
+                        <div className="mt-3 space-y-2 text-sm text-cyan-900/90">
+                          {activeTrainingReport.critic?.safeActions.slice(0, 5).map((item) => (
+                            <p key={item}>• {item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-              {activeTrainingReport.issues.length > 0 && (
-                <div className="rounded-2xl border border-amber-200 bg-white/80 p-4">
-                  <p className="text-sm font-semibold text-amber-950">Pontos ainda observados</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {activeTrainingReport.issues.map((item) => (
-                      <Badge key={item} variant="secondary" className="bg-amber-100 text-amber-900">
-                        {item}
-                      </Badge>
-                    ))}
+                    {(activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-sky-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-sky-950">Próximo foco do treino</p>
+                        <div className="mt-3 space-y-2 text-sm text-sky-900/90">
+                          {activeTrainingReport.progression?.nextFocus.slice(0, 3).map((item) => (
+                            <p key={item}>• {item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTrainingReport.issues.length > 0 && (
+                      <div className="rounded-2xl border border-amber-200 bg-white/80 p-4">
+                        <p className="text-sm font-semibold text-amber-950">Pontos ainda observados</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {activeTrainingReport.issues.map((item) => (
+                            <Badge key={item} variant="secondary" className="bg-amber-100 text-amber-900">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           )}
           </Card>
         ) : (
@@ -1390,27 +1410,41 @@ export default function AgentIa() {
           </div>
 
           {knowledgeItems.length > 0 ? (
-            <div className="mt-5 grid gap-3 lg:grid-cols-2">
-              {knowledgeItems.slice(0, 8).map((item) => (
-                <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950">{humanizeLabel(item.topic)}</p>
-                      <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                        {sourceTypeLabel(item.sourceType)} {item.sourceLabel ? `• ${item.sourceLabel}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge variant="outline">P{item.priority}</Badge>
-                      <Badge variant={item.hasEmbedding ? "default" : "secondary"}>
-                        {item.hasEmbedding ? "Embedding" : "Texto"}
-                      </Badge>
-                    </div>
+            <Accordion type="single" collapsible className="mt-5">
+              <AccordionItem value="knowledge-items">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-slate-950">Explorar blocos salvos</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      Veja as principais fontes e o conteúdo indexado que a IA pode recuperar.
+                    </p>
                   </div>
-                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-600">{item.content}</p>
-                </div>
-              ))}
-            </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {knowledgeItems.slice(0, 8).map((item) => (
+                      <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950">{humanizeLabel(item.topic)}</p>
+                            <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                              {sourceTypeLabel(item.sourceType)} {item.sourceLabel ? `• ${item.sourceLabel}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge variant="outline">P{item.priority}</Badge>
+                            <Badge variant={item.hasEmbedding ? "default" : "secondary"}>
+                              {item.hasEmbedding ? "Embedding" : "Texto"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-600">{item.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           ) : (
             <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
               Nenhum bloco RAG ativo apareceu para este Agent ainda. Salve a ficha, rode o treino ou ensine pelo Nexo bot para alimentar esta base automaticamente.
@@ -1582,149 +1616,6 @@ export default function AgentIa() {
                     <SimulatorMetric icon={ArrowRight} label="Estratégia" value={simulatorStrategyLabel(latestSimulationTurn.responseStrategy)} />
                   </div>
 
-                  {latestSimulationTurn.openaiStatus ? (
-                    <div className={`rounded-3xl border p-4 ${latestSimulationTurn.openaiFailed ? "border-rose-200 bg-rose-50/80" : "border-emerald-100 bg-emerald-50/60"}`}>
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                            {latestSimulationTurn.openaiFailed ? <AlertTriangle className="h-4 w-4 text-rose-600" /> : <Sparkles className="h-4 w-4 text-emerald-600" />}
-                            Status OpenAI neste turno
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">
-                            Mostra se planner, embeddings e outras camadas usaram a OpenAI real ou se houve fallback.
-                          </p>
-                        </div>
-                        {latestSimulationTurn.fallbackUsed ? (
-                          <Badge className="border-amber-200 bg-amber-50 text-amber-900">Fallback usado</Badge>
-                        ) : (
-                          <Badge className="border-emerald-200 bg-emerald-50 text-emerald-900">Sem fallback</Badge>
-                        )}
-                      </div>
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-                        {Object.entries(latestSimulationTurn.openaiStatus).map(([layer, status]) => (
-                          <div key={layer} className={`rounded-2xl border px-3 py-2 ${openAiStatusClass(status)}`}>
-                            <p className="text-[11px] font-semibold uppercase tracking-wide">{humanizeLabel(layer)}</p>
-                            <p className="mt-1 text-sm font-semibold">{openAiStatusLabel(status)}</p>
-                          </div>
-                        ))}
-                      </div>
-                      {latestSimulationTurn.openaiErrors && latestSimulationTurn.openaiErrors.length > 0 ? (
-                        <div className="mt-4 space-y-2">
-                          {latestSimulationTurn.openaiErrors.slice(0, 3).map((error, index) => (
-                            <div key={`${error.layer ?? "openai"}-${index}`} className="rounded-2xl border border-rose-200 bg-white px-3 py-2 text-sm leading-6 text-rose-900">
-                              <strong>{humanizeLabel(error.layer ?? "OpenAI")}:</strong>{" "}
-                              {humanizeLabel(error.errorType ?? "erro")} {error.model ? `• ${error.model}` : ""}
-                              <div className="mt-1 text-xs leading-5 text-rose-800">
-                                {error.httpStatus ? <span>HTTP {error.httpStatus} </span> : null}
-                                {error.errorCode ? <span>• código {error.errorCode} </span> : null}
-                                {error.endpoint ? <span>• endpoint {error.endpoint} </span> : null}
-                                {error.requestId ? <span>• request {error.requestId} </span> : null}
-                              </div>
-                              {error.errorMessage || error.error ? (
-                                <p className="mt-1 text-xs leading-5 text-rose-700">
-                                  {error.errorMessage || error.error}
-                                </p>
-                              ) : null}
-                              {error.exceptionClass ? (
-                                <p className="mt-1 text-[11px] leading-5 text-rose-500">
-                                  Classe: {error.exceptionClass}
-                                </p>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                          <Database className="h-4 w-4 text-slate-600" />
-                          Debug do caminho real
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Mostra a rota, memória e serviços usados neste turno para confirmar se o simulador entrou no runtime correto.
-                        </p>
-                      </div>
-                      <Badge className="border-slate-200 bg-slate-50 text-slate-700">
-                        {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "sem rota"}
-                      </Badge>
-                    </div>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rota</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {latestSimulationTurn.routeSelected || "?"} → {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "?"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">OpenAI</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {latestSimulationTurn.openaiIntended ? "esperada" : "não esperada"} / {latestSimulationTurn.openaiCalled ? "chamada" : "não chamada"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Estado</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {latestSimulationTurn.currentStepBefore || "?"} → {latestSimulationTurn.currentStepAfter || "?"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cadastro concluído</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {latestSimulationTurn.completedSteps?.includes("signup") ? "sim" : "não"}
-                        </p>
-                      </div>
-                    </div>
-                    {(latestSimulationTurn.whyNotOpenai || latestSimulationTurn.fallbackReason || latestSimulationTurn.timeoutSource) ? (
-                      <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
-                        {latestSimulationTurn.whyNotOpenai ? <p><strong>Por que não chamou OpenAI:</strong> {latestSimulationTurn.whyNotOpenai}</p> : null}
-                        {latestSimulationTurn.fallbackReason ? <p><strong>Fallback:</strong> {latestSimulationTurn.fallbackReason}</p> : null}
-                        {latestSimulationTurn.timeoutSource ? <p><strong>Timeout:</strong> {latestSimulationTurn.timeoutSource}</p> : null}
-                      </div>
-                    ) : null}
-                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços chamados</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-700">
-                          {latestSimulationTurn.servicesCalled && latestSimulationTurn.servicesCalled.length > 0
-                            ? latestSimulationTurn.servicesCalled.join(" → ")
-                            : "nenhum serviço informado"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços pulados</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-700">
-                          {latestSimulationTurn.servicesSkipped && latestSimulationTurn.servicesSkipped.length > 0
-                            ? latestSimulationTurn.servicesSkipped.join(", ")
-                            : "nenhum serviço pulado informado"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Memória carregada</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-700">
-                          {latestSimulationTurn.memoryLoaded ? JSON.stringify(latestSimulationTurn.memoryLoaded) : "sem memória carregada"}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Mapa de atendimento</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-700">
-                          {latestSimulationTurn.mapaAtendimentoUsed ? "usado" : "não usado"}
-                          {latestSimulationTurn.playbookDecision ? ` • ${latestSimulationTurn.playbookDecision}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    {latestSimulationTurn.executionPath && latestSimulationTurn.executionPath.length > 0 ? (
-                      <p className="mt-3 text-xs leading-5 text-slate-500">
-                        Caminho: {latestSimulationTurn.executionPath.join(" → ")}
-                      </p>
-                    ) : null}
-                  </div>
-
                   <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
                       <Target className="h-4 w-4 text-blue-600" />
@@ -1735,146 +1626,339 @@ export default function AgentIa() {
                     </p>
                   </div>
 
-                  {latestSimulationTurn.qualityMetrics ? (
-                    <div className="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-emerald-50 p-4">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                            <ShieldCheck className="h-4 w-4 text-cyan-600" />
-                            Métricas de qualidade
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">
-                            Régua da resposta: fonte, memória, calendário, mídia, educação, etapa e confiança.
-                          </p>
-                        </div>
-                        <Badge className={qualityStatusClass(latestSimulationTurn.qualityMetrics.status)}>
-                          {qualityStatusLabel(latestSimulationTurn.qualityMetrics.status)} • {latestSimulationTurn.qualityMetrics.overallScore.toFixed(0)}
-                        </Badge>
-                      </div>
-                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        {latestSimulationTurn.qualityMetrics.indicators.map((indicator) => (
-                          <QualityIndicatorCard key={indicator.key} indicator={indicator} />
-                        ))}
-                      </div>
-                      {latestSimulationTurn.qualityMetrics.pointsToImprove.length > 0 ? (
-                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">Pontos a melhorar</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {latestSimulationTurn.qualityMetrics.pointsToImprove.slice(0, 5).map((point) => (
-                              <Badge key={point} variant="secondary" className="bg-white text-amber-950">
-                                {point}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                          <ShieldCheck className="h-4 w-4 text-cyan-600" />
-                          Regras aplicadas
-                        </p>
-                        <Badge variant="secondary">{latestSimulationTurn.rulesApplied.length}</Badge>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {latestSimulationTurn.rulesApplied.length > 0 ? latestSimulationTurn.rulesApplied.map((rule, index) => (
-                          <div key={`${rule.source}-${rule.label}-${index}`} className="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-3 py-2">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">{humanizeLabel(rule.source)}</p>
-                            <p className="mt-1 text-sm leading-6 text-cyan-950">{rule.label}</p>
-                          </div>
-                        )) : (
-                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
-                            Nenhuma regra específica precisou ser destacada neste turno.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                          <Gauge className="h-4 w-4 text-amber-600" />
-                          Riscos detectados
-                        </p>
-                        <Badge variant="secondary">{latestSimulationTurn.risksDetected.length}</Badge>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {latestSimulationTurn.risksDetected.length > 0 ? latestSimulationTurn.risksDetected.map((risk, index) => (
-                          <div key={`${risk.source}-${risk.code}-${index}`} className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">{humanizeLabel(risk.code)}</p>
-                              <Badge variant="outline" className="border-amber-200 bg-white text-amber-900">
-                                {humanizeLabel(risk.level)}
-                              </Badge>
-                            </div>
-                            <p className="mt-1 text-sm leading-6 text-amber-950/90">{risk.message || humanizeLabel(risk.source)}</p>
-                          </div>
-                        )) : (
-                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
-                            Nenhum risco relevante foi detectado para esta resposta.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                          <BookOpenText className="h-4 w-4 text-blue-600" />
-                          Fontes usadas
-                        </p>
-                        <Badge variant="secondary">{latestSimulationTurn.sourcesUsed.length}</Badge>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {latestSimulationTurn.sourcesUsed.length > 0 ? latestSimulationTurn.sourcesUsed.map((source, index) => (
-                          <div key={`${source.sourceType}-${source.topic}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              {source.sourceLabel || source.sourceType} • {source.topic}
+                  <Accordion type="multiple" className="space-y-3">
+                    {latestSimulationTurn.qualityMetrics ? (
+                      <AccordionItem value="simulation-quality">
+                        <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                          <div className="text-left">
+                            <p className="text-sm font-semibold text-slate-950">Qualidade da resposta</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                              Fonte, memória, etapa, tom e confiança da resposta gerada.
                             </p>
-                            <p className="mt-1 line-clamp-3 text-sm leading-6 text-slate-700">{source.content}</p>
                           </div>
-                        )) : (
-                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
-                            Nenhuma fonte específica foi necessária ou encontrada para esta mensagem.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                          <Radio className="h-4 w-4 text-emerald-600" />
-                          Mídia sugerida
-                        </p>
-                        <Badge variant="secondary">{latestSimulationTurn.mediaSuggestions.length}</Badge>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {latestSimulationTurn.mediaSuggestions.length > 0 ? latestSimulationTurn.mediaSuggestions.map((media, index) => (
-                          <div key={`${media.assetName}-${index}`} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="text-sm font-semibold text-emerald-950">{media.assetName || media.topic}</p>
-                              <Badge variant="outline" className="border-emerald-200 text-emerald-800">
-                                {media.canSend ? "Enviável" : "Referência"}
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="rounded-3xl border border-cyan-100 bg-gradient-to-br from-cyan-50 via-white to-emerald-50 p-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                  <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                                  Métricas de qualidade
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-slate-600">
+                                  Régua da resposta: fonte, memória, calendário, mídia, educação, etapa e confiança.
+                                </p>
+                              </div>
+                              <Badge className={qualityStatusClass(latestSimulationTurn.qualityMetrics.status)}>
+                                {qualityStatusLabel(latestSimulationTurn.qualityMetrics.status)} • {latestSimulationTurn.qualityMetrics.overallScore.toFixed(0)}
                               </Badge>
                             </div>
-                            <p className="mt-1 text-xs text-emerald-900/75">{media.sendWhen}</p>
-                            {media.guidance ? <p className="mt-2 text-sm leading-6 text-emerald-950/90">{media.guidance}</p> : null}
+                            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                              {latestSimulationTurn.qualityMetrics.indicators.map((indicator) => (
+                                <QualityIndicatorCard key={indicator.key} indicator={indicator} />
+                              ))}
+                            </div>
+                            {latestSimulationTurn.qualityMetrics.pointsToImprove.length > 0 ? (
+                              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">Pontos a melhorar</p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {latestSimulationTurn.qualityMetrics.pointsToImprove.slice(0, 5).map((point) => (
+                                    <Badge key={point} variant="secondary" className="bg-white text-amber-950">
+                                      {point}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
-                        )) : (
-                          <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
-                            Nenhuma mídia foi sugerida para esta pergunta.
+                        </AccordionContent>
+                      </AccordionItem>
+                    ) : null}
+
+                    <AccordionItem value="simulation-runtime">
+                      <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-slate-950">Modo avançado e runtime</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            OpenAI, fallback, caminho de execução, memória e serviços usados.
                           </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 px-4 pb-4">
+                        {latestSimulationTurn.openaiStatus ? (
+                          <div className={`rounded-3xl border p-4 ${latestSimulationTurn.openaiFailed ? "border-rose-200 bg-rose-50/80" : "border-emerald-100 bg-emerald-50/60"}`}>
+                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                  {latestSimulationTurn.openaiFailed ? <AlertTriangle className="h-4 w-4 text-rose-600" /> : <Sparkles className="h-4 w-4 text-emerald-600" />}
+                                  Status OpenAI neste turno
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-slate-600">
+                                  Mostra se planner, embeddings e outras camadas usaram a OpenAI real ou se houve fallback.
+                                </p>
+                              </div>
+                              {latestSimulationTurn.fallbackUsed ? (
+                                <Badge className="border-amber-200 bg-amber-50 text-amber-900">Fallback usado</Badge>
+                              ) : (
+                                <Badge className="border-emerald-200 bg-emerald-50 text-emerald-900">Sem fallback</Badge>
+                              )}
+                            </div>
+                            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                              {Object.entries(latestSimulationTurn.openaiStatus).map(([layer, status]) => (
+                                <div key={layer} className={`rounded-2xl border px-3 py-2 ${openAiStatusClass(status)}`}>
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide">{humanizeLabel(layer)}</p>
+                                  <p className="mt-1 text-sm font-semibold">{openAiStatusLabel(status)}</p>
+                                </div>
+                              ))}
+                            </div>
+                            {latestSimulationTurn.openaiErrors && latestSimulationTurn.openaiErrors.length > 0 ? (
+                              <div className="mt-4 space-y-2">
+                                {latestSimulationTurn.openaiErrors.slice(0, 3).map((error, index) => (
+                                  <div key={`${error.layer ?? "openai"}-${index}`} className="rounded-2xl border border-rose-200 bg-white px-3 py-2 text-sm leading-6 text-rose-900">
+                                    <strong>{humanizeLabel(error.layer ?? "OpenAI")}:</strong>{" "}
+                                    {humanizeLabel(error.errorType ?? "erro")} {error.model ? `• ${error.model}` : ""}
+                                    <div className="mt-1 text-xs leading-5 text-rose-800">
+                                      {error.httpStatus ? <span>HTTP {error.httpStatus} </span> : null}
+                                      {error.errorCode ? <span>• código {error.errorCode} </span> : null}
+                                      {error.endpoint ? <span>• endpoint {error.endpoint} </span> : null}
+                                      {error.requestId ? <span>• request {error.requestId} </span> : null}
+                                    </div>
+                                    {error.errorMessage || error.error ? (
+                                      <p className="mt-1 text-xs leading-5 text-rose-700">
+                                        {error.errorMessage || error.error}
+                                      </p>
+                                    ) : null}
+                                    {error.exceptionClass ? (
+                                      <p className="mt-1 text-[11px] leading-5 text-rose-500">
+                                        Classe: {error.exceptionClass}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                <Database className="h-4 w-4 text-slate-600" />
+                                Debug do caminho real
+                              </p>
+                              <p className="mt-1 text-sm leading-6 text-slate-600">
+                                Mostra a rota, memória e serviços usados neste turno para confirmar se o simulador entrou no runtime correto.
+                              </p>
+                            </div>
+                            <Badge className="border-slate-200 bg-slate-50 text-slate-700">
+                              {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "sem rota"}
+                            </Badge>
+                          </div>
+                          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rota</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-950">
+                                {latestSimulationTurn.routeSelected || "?"} → {latestSimulationTurn.routeFinal || latestSimulationTurn.route || "?"}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">OpenAI</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-950">
+                                {latestSimulationTurn.openaiIntended ? "esperada" : "não esperada"} / {latestSimulationTurn.openaiCalled ? "chamada" : "não chamada"}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Estado</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-950">
+                                {latestSimulationTurn.currentStepBefore || "?"} → {latestSimulationTurn.currentStepAfter || "?"}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cadastro concluído</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-950">
+                                {latestSimulationTurn.completedSteps?.includes("signup") ? "sim" : "não"}
+                              </p>
+                            </div>
+                          </div>
+                          {(latestSimulationTurn.whyNotOpenai || latestSimulationTurn.fallbackReason || latestSimulationTurn.timeoutSource) ? (
+                            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
+                              {latestSimulationTurn.whyNotOpenai ? <p><strong>Por que não chamou OpenAI:</strong> {latestSimulationTurn.whyNotOpenai}</p> : null}
+                              {latestSimulationTurn.fallbackReason ? <p><strong>Fallback:</strong> {latestSimulationTurn.fallbackReason}</p> : null}
+                              {latestSimulationTurn.timeoutSource ? <p><strong>Timeout:</strong> {latestSimulationTurn.timeoutSource}</p> : null}
+                            </div>
+                          ) : null}
+                          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços chamados</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-700">
+                                {latestSimulationTurn.servicesCalled && latestSimulationTurn.servicesCalled.length > 0
+                                  ? latestSimulationTurn.servicesCalled.join(" → ")
+                                  : "nenhum serviço informado"}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Serviços pulados</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-700">
+                                {latestSimulationTurn.servicesSkipped && latestSimulationTurn.servicesSkipped.length > 0
+                                  ? latestSimulationTurn.servicesSkipped.join(", ")
+                                  : "nenhum serviço pulado informado"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Memória carregada</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-700">
+                                {latestSimulationTurn.memoryLoaded ? JSON.stringify(latestSimulationTurn.memoryLoaded) : "sem memória carregada"}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Mapa de atendimento</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-700">
+                                {latestSimulationTurn.mapaAtendimentoUsed ? "usado" : "não usado"}
+                                {latestSimulationTurn.playbookDecision ? ` • ${latestSimulationTurn.playbookDecision}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          {latestSimulationTurn.executionPath && latestSimulationTurn.executionPath.length > 0 ? (
+                            <p className="mt-3 text-xs leading-5 text-slate-500">
+                              Caminho: {latestSimulationTurn.executionPath.join(" → ")}
+                            </p>
+                          ) : null}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="simulation-guardrails">
+                      <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-slate-950">Regras e riscos</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            Entenda o que guiou a resposta e onde ainda existe risco operacional.
+                          </p>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                <ShieldCheck className="h-4 w-4 text-cyan-600" />
+                                Regras aplicadas
+                              </p>
+                              <Badge variant="secondary">{latestSimulationTurn.rulesApplied.length}</Badge>
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              {latestSimulationTurn.rulesApplied.length > 0 ? latestSimulationTurn.rulesApplied.map((rule, index) => (
+                                <div key={`${rule.source}-${rule.label}-${index}`} className="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-3 py-2">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">{humanizeLabel(rule.source)}</p>
+                                  <p className="mt-1 text-sm leading-6 text-cyan-950">{rule.label}</p>
+                                </div>
+                              )) : (
+                                <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                                  Nenhuma regra específica precisou ser destacada neste turno.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                <Gauge className="h-4 w-4 text-amber-600" />
+                                Riscos detectados
+                              </p>
+                              <Badge variant="secondary">{latestSimulationTurn.risksDetected.length}</Badge>
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              {latestSimulationTurn.risksDetected.length > 0 ? latestSimulationTurn.risksDetected.map((risk, index) => (
+                                <div key={`${risk.source}-${risk.code}-${index}`} className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">{humanizeLabel(risk.code)}</p>
+                                    <Badge variant="outline" className="border-amber-200 bg-white text-amber-900">
+                                      {humanizeLabel(risk.level)}
+                                    </Badge>
+                                  </div>
+                                  <p className="mt-1 text-sm leading-6 text-amber-950/90">{risk.message || humanizeLabel(risk.source)}</p>
+                                </div>
+                              )) : (
+                                <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                                  Nenhum risco relevante foi detectado para esta resposta.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="simulation-sources">
+                      <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-slate-950">Fontes e mídia sugerida</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            Veja quais conteúdos sustentaram a resposta e quais ativos poderiam ser enviados.
+                          </p>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                <BookOpenText className="h-4 w-4 text-blue-600" />
+                                Fontes usadas
+                              </p>
+                              <Badge variant="secondary">{latestSimulationTurn.sourcesUsed.length}</Badge>
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              {latestSimulationTurn.sourcesUsed.length > 0 ? latestSimulationTurn.sourcesUsed.map((source, index) => (
+                                <div key={`${source.sourceType}-${source.topic}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    {source.sourceLabel || source.sourceType} • {source.topic}
+                                  </p>
+                                  <p className="mt-1 line-clamp-3 text-sm leading-6 text-slate-700">{source.content}</p>
+                                </div>
+                              )) : (
+                                <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                                  Nenhuma fonte específica foi necessária ou encontrada para esta mensagem.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                                <Radio className="h-4 w-4 text-emerald-600" />
+                                Mídia sugerida
+                              </p>
+                              <Badge variant="secondary">{latestSimulationTurn.mediaSuggestions.length}</Badge>
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              {latestSimulationTurn.mediaSuggestions.length > 0 ? latestSimulationTurn.mediaSuggestions.map((media, index) => (
+                                <div key={`${media.assetName}-${index}`} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <p className="text-sm font-semibold text-emerald-950">{media.assetName || media.topic}</p>
+                                    <Badge variant="outline" className="border-emerald-200 text-emerald-800">
+                                      {media.canSend ? "Enviável" : "Referência"}
+                                    </Badge>
+                                  </div>
+                                  <p className="mt-1 text-xs text-emerald-900/75">{media.sendWhen}</p>
+                                  {media.guidance ? <p className="mt-2 text-sm leading-6 text-emerald-950/90">{media.guidance}</p> : null}
+                                </div>
+                              )) : (
+                                <p className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm leading-6 text-slate-500">
+                                  Nenhuma mídia foi sugerida para esta pergunta.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
 
                   <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -2270,257 +2354,308 @@ export default function AgentIa() {
             </div>
           </Card>
 
-          <Card className="border-border/60 p-5 md:p-6">
-            <SectionHeader
-              icon={Waypoints}
-              title="Requisitos e ações do agente"
-              description="Aqui nasce o fluxo invisível: o que pode existir antes de avançar e o que o Agent está autorizado a fazer."
-            />
-            <div className="mt-5 grid gap-6 lg:grid-cols-2">
-              <div className="space-y-3">
-                <Label>Requisitos antes de avançar</Label>
-                <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
-                  {REQUIRED_STEP_OPTIONS.map((option) => (
-                    <ChecklistOption
-                      key={option.value}
-                      checked={virtualAgent.requiredSteps.includes(option.value)}
-                      label={option.label}
-                      onCheckedChange={() => toggleListField("requiredSteps", option.value)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label>Ações permitidas ao Agent</Label>
-                <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
-                  {ALLOWED_ACTION_OPTIONS.map((option) => (
-                    <ChecklistOption
-                      key={option.value}
-                      checked={virtualAgent.allowedActions.includes(option.value)}
-                      label={option.label}
-                      onCheckedChange={() => toggleListField("allowedActions", option.value)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <Field label="Como a conversa deve progredir" className="lg:col-span-2" help={FIELD_HELP.progressionRules}>
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.progressionRules}
-                  onChange={(event) => updateField("progressionRules", event.target.value)}
-                  placeholder="Explique a lógica da conversa sem escrever frases prontas. Ex.: primeiro entender a necessidade, depois validar fit, depois enviar proposta."
-                />
-              </Field>
-              <Field label="Como saber que a conversa foi bem sucedida" className="lg:col-span-2" help={FIELD_HELP.successSignals}>
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.successSignals}
-                  onChange={(event) => updateField("successSignals", event.target.value)}
-                  placeholder="Ex.: cliente com horário marcado, lead qualificado, proposta aceita, suporte resolvido."
-                />
-              </Field>
+          <div className="rounded-[1.8rem] border border-border/70 bg-white/75 p-3 shadow-sm backdrop-blur">
+            <div className="mb-4 rounded-[1.5rem] border border-primary/10 bg-[linear-gradient(135deg,rgba(13,91,255,0.08),rgba(122,60,255,0.06),rgba(255,79,216,0.05))] px-4 py-4">
+              <p className="text-sm font-semibold text-slate-950">Modo avançado do Agent</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Use estas áreas para refinar regras, jornada e conhecimento operacional sem poluir a configuração principal.
+              </p>
             </div>
-          </Card>
 
-          <Card className="overflow-hidden border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/35 to-emerald-50/40 p-5 md:p-6">
-            <SectionHeader
-              icon={Workflow}
-              title="Mapa de Atendimento"
-              description="O trilho central da persona: responde perguntas fora do mapa quando souber, mas volta ao foco do atendimento sem parecer robô."
-            />
-            <div className="mt-5 rounded-2xl border border-cyan-200 bg-white/75 p-4 text-sm leading-6 text-slate-700">
-              <div className="mb-1 flex items-center gap-2 font-semibold text-slate-950">
-                <Target className="h-4 w-4 text-cyan-600" />
-                Como usar este mapa
-              </div>
-              Defina o caminho ideal, os dados mínimos e os limites. O Agent pode responder dúvidas da ficha/RAG no meio da conversa, mas depois retoma o próximo passo sem pedir informação demais.
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Objetivo central do atendimento" className="md:col-span-2">
-                <Input
-                  value={virtualAgent.attendanceMap.main_goal}
-                  onChange={(event) => updateAttendanceMapField("main_goal", event.target.value)}
-                  placeholder="Ex.: converter interessados em cadastro e agendamento, sem pular acolhimento."
-                />
-              </Field>
+            <Accordion type="multiple" className="space-y-3">
+              <AccordionItem value="agent-rules">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <AgentAccordionHeader
+                    icon={Waypoints}
+                    title="Requisitos e ações do agente"
+                    description="O que precisa existir antes de avançar e o que esse Agent está autorizado a fazer."
+                  />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label>Requisitos antes de avançar</Label>
+                      <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
+                        {REQUIRED_STEP_OPTIONS.map((option) => (
+                          <ChecklistOption
+                            key={option.value}
+                            checked={virtualAgent.requiredSteps.includes(option.value)}
+                            label={option.label}
+                            onCheckedChange={() => toggleListField("requiredSteps", option.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-              <Field label="Ordem ideal da conversa" className="md:col-span-2">
-                <Textarea
-                  rows={6}
-                  value={virtualAgent.attendanceMap.raw_notes}
-                  onChange={(event) => updateAttendanceMapField("raw_notes", event.target.value)}
-                  placeholder={"Ex.:\n1. Cumprimentar e acolher\n2. Entender a necessidade\n3. Coletar idade e principal dificuldade\n4. Responder dúvidas diretas\n5. Enviar cadastro quando houver interesse\n6. Confirmar cadastro\n7. Agendar dentro dos horários permitidos"}
-                />
-              </Field>
+                    <div className="space-y-3">
+                      <Label>Ações permitidas ao Agent</Label>
+                      <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
+                        {ALLOWED_ACTION_OPTIONS.map((option) => (
+                          <ChecklistOption
+                            key={option.value}
+                            checked={virtualAgent.allowedActions.includes(option.value)}
+                            label={option.label}
+                            onCheckedChange={() => toggleListField("allowedActions", option.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-              <Field label="Dados mínimos que precisa coletar">
-                <Textarea
-                  rows={5}
-                  value={listToText(virtualAgent.attendanceMap.minimum_required_data)}
-                  onChange={(event) => updateAttendanceMapField("minimum_required_data", textToList(event.target.value))}
-                  placeholder={"Uma por linha. Ex.:\nidade\nprincipal dificuldade\nnome do responsável"}
-                />
-              </Field>
+                    <Field label="Como a conversa deve progredir" className="lg:col-span-2" help={FIELD_HELP.progressionRules}>
+                      <Textarea
+                        rows={5}
+                        value={virtualAgent.progressionRules}
+                        onChange={(event) => updateField("progressionRules", event.target.value)}
+                        placeholder="Explique a lógica da conversa sem escrever frases prontas. Ex.: primeiro entender a necessidade, depois validar fit, depois enviar proposta."
+                      />
+                    </Field>
+                    <Field label="Como saber que a conversa foi bem sucedida" className="lg:col-span-2" help={FIELD_HELP.successSignals}>
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.successSignals}
+                        onChange={(event) => updateField("successSignals", event.target.value)}
+                        placeholder="Ex.: cliente com horário marcado, lead qualificado, proposta aceita, suporte resolvido."
+                      />
+                    </Field>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
 
-              <Field label="Horários permitidos para atendimento/agendamento">
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.attendanceMap.business_hours}
-                  onChange={(event) => updateAttendanceMapField("business_hours", event.target.value)}
-                  placeholder="Ex.: Segunda a sexta, 8h às 18h. Sábado, 8h às 12h. Não atender madrugada."
-                />
-              </Field>
+              <AccordionItem value="agent-map">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <AgentAccordionHeader
+                    icon={Workflow}
+                    title="Mapa de atendimento"
+                    description="O trilho central da persona para manter direção sem parecer robô."
+                  />
+                </AccordionTrigger>
+                <AccordionContent className="space-y-5 px-4 pb-4">
+                  <div className="rounded-2xl border border-cyan-200 bg-white/75 p-4 text-sm leading-6 text-slate-700">
+                    <div className="mb-1 flex items-center gap-2 font-semibold text-slate-950">
+                      <Target className="h-4 w-4 text-cyan-600" />
+                      Como usar este mapa
+                    </div>
+                    Defina o caminho ideal, os dados mínimos e os limites. O Agent pode responder dúvidas da ficha/RAG no meio da conversa, mas depois retoma o próximo passo sem pedir informação demais.
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Objetivo central do atendimento" className="md:col-span-2">
+                      <Input
+                        value={virtualAgent.attendanceMap.main_goal}
+                        onChange={(event) => updateAttendanceMapField("main_goal", event.target.value)}
+                        placeholder="Ex.: converter interessados em cadastro e agendamento, sem pular acolhimento."
+                      />
+                    </Field>
 
-              <Field label="Quando enviar link">
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.attendanceMap.when_to_send_link}
-                  onChange={(event) => updateAttendanceMapField("when_to_send_link", event.target.value)}
-                  placeholder="Ex.: enviar o link quando o cliente pedir cadastro, quiser começar ou aceitar seguir após entender o caso."
-                />
-              </Field>
+                    <Field label="Ordem ideal da conversa" className="md:col-span-2">
+                      <Textarea
+                        rows={6}
+                        value={virtualAgent.attendanceMap.raw_notes}
+                        onChange={(event) => updateAttendanceMapField("raw_notes", event.target.value)}
+                        placeholder={"Ex.:\n1. Cumprimentar e acolher\n2. Entender a necessidade\n3. Coletar idade e principal dificuldade\n4. Responder dúvidas diretas\n5. Enviar cadastro quando houver interesse\n6. Confirmar cadastro\n7. Agendar dentro dos horários permitidos"}
+                      />
+                    </Field>
 
-              <Field label="Quando agendar">
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.attendanceMap.when_to_schedule}
-                  onChange={(event) => updateAttendanceMapField("when_to_schedule", event.target.value)}
-                  placeholder="Ex.: agendar depois que o cadastro estiver concluído ou quando a empresa permitir agendamento direto."
-                />
-              </Field>
+                    <Field label="Dados mínimos que precisa coletar">
+                      <Textarea
+                        rows={5}
+                        value={listToText(virtualAgent.attendanceMap.minimum_required_data)}
+                        onChange={(event) => updateAttendanceMapField("minimum_required_data", textToList(event.target.value))}
+                        placeholder={"Uma por linha. Ex.:\nidade\nprincipal dificuldade\nnome do responsável"}
+                      />
+                    </Field>
 
-              <Field label="Quando encaminhar para humano" className="md:col-span-2">
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.attendanceMap.when_to_handoff}
-                  onChange={(event) => updateAttendanceMapField("when_to_handoff", event.target.value)}
-                  placeholder="Ex.: dúvidas sensíveis, reclamações, urgência, exceção de preço, indisponibilidade ou pedido explícito por humano."
-                />
-              </Field>
+                    <Field label="Horários permitidos para atendimento/agendamento">
+                      <Textarea
+                        rows={5}
+                        value={virtualAgent.attendanceMap.business_hours}
+                        onChange={(event) => updateAttendanceMapField("business_hours", event.target.value)}
+                        placeholder="Ex.: Segunda a sexta, 8h às 18h. Sábado, 8h às 12h. Não atender madrugada."
+                      />
+                    </Field>
 
-              <Field label="O que a IA nunca deve fazer">
-                <Textarea
-                  rows={5}
-                  value={listToText(virtualAgent.attendanceMap.never_do)}
-                  onChange={(event) => updateAttendanceMapField("never_do", textToList(event.target.value))}
-                  placeholder={"Uma por linha. Ex.:\nnão enviar link logo após saudação\nnão aceitar horário fora do funcionamento\nnão pedir dados repetidos\nnão diagnosticar"}
-                />
-              </Field>
+                    <Field label="Quando enviar link">
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.attendanceMap.when_to_send_link}
+                        onChange={(event) => updateAttendanceMapField("when_to_send_link", event.target.value)}
+                        placeholder="Ex.: enviar o link quando o cliente pedir cadastro, quiser começar ou aceitar seguir após entender o caso."
+                      />
+                    </Field>
 
-              <Field label="Exemplos de condução correta">
-                <Textarea
-                  rows={5}
-                  value={listToText(virtualAgent.attendanceMap.correct_guidance_examples)}
-                  onChange={(event) => updateAttendanceMapField("correct_guidance_examples", textToList(event.target.value))}
-                  placeholder={"Uma por linha. Ex.:\nSe perguntar preço, responda primeiro e depois conduza.\nSe disser cadastrei, avance para agenda.\nSe pedir cadastro, envie o link e peça confirmação."}
-                />
-              </Field>
-            </div>
-          </Card>
+                    <Field label="Quando agendar">
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.attendanceMap.when_to_schedule}
+                        onChange={(event) => updateAttendanceMapField("when_to_schedule", event.target.value)}
+                        placeholder="Ex.: agendar depois que o cadastro estiver concluído ou quando a empresa permitir agendamento direto."
+                      />
+                    </Field>
 
-          <Card className="border-border/60 p-5 md:p-6">
-            <SectionHeader
-              icon={Building2}
-              title="Conhecimento operacional"
-              description="Tudo o que o Agent precisa dominar sobre funcionamento, preços, dúvidas e materiais disponíveis."
-            />
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Perguntas frequentes" className="md:col-span-2" help={FIELD_HELP.faq}>
-                <Textarea
-                  rows={7}
-                  value={virtualAgent.faq}
-                  onChange={(event) => updateField("faq", event.target.value)}
-                  placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
-                />
-              </Field>
-              <Field label="Preço, planos e políticas" help={FIELD_HELP.pricingPolicy}>
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.pricingPolicy}
-                  onChange={(event) => updateField("pricingPolicy", event.target.value)}
-                  placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
-                />
-              </Field>
-              <Field label="Horário e disponibilidade" help={FIELD_HELP.operatingHours}>
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.operatingHours}
-                  onChange={(event) => updateField("operatingHours", event.target.value)}
-                  placeholder="Dias, horários, exceções e como agir fora do horário."
-                />
-              </Field>
-              <Field label="Links e recursos liberados" className="md:col-span-2" help={FIELD_HELP.linksAndResources}>
-                <Textarea
-                  rows={5}
-                  value={virtualAgent.linksAndResources}
-                  onChange={(event) => updateField("linksAndResources", event.target.value)}
-                  placeholder="Links oficiais, páginas, formulários, catálogos, PDFs, materiais e orientações que o Agent pode compartilhar."
-                />
-              </Field>
-              <Field label="Quando chamar humano" help={FIELD_HELP.handoffRules}>
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.handoffRules}
-                  onChange={(event) => updateField("handoffRules", event.target.value)}
-                  placeholder="Quais casos exigem atendimento humano ou especialista."
-                />
-              </Field>
-              <Field label="Limites e proibições" help={FIELD_HELP.boundaries}>
-                <Textarea
-                  rows={4}
-                  value={virtualAgent.boundaries}
-                  onChange={(event) => updateField("boundaries", event.target.value)}
-                  placeholder="O que a IA não pode prometer, afirmar, decidir ou inventar."
-                />
-              </Field>
-              <Field label="Conhecimento extra" className="md:col-span-2" help={FIELD_HELP.extraKnowledge}>
-                <Textarea
-                  rows={6}
-                  value={virtualAgent.extraKnowledge}
-                  onChange={(event) => updateField("extraKnowledge", event.target.value)}
-                  placeholder="Exceções, observações estratégicas, detalhes importantes que não couberam nos outros blocos."
-                />
-              </Field>
-            </div>
-          </Card>
+                    <Field label="Quando encaminhar para humano" className="md:col-span-2">
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.attendanceMap.when_to_handoff}
+                        onChange={(event) => updateAttendanceMapField("when_to_handoff", event.target.value)}
+                        placeholder="Ex.: dúvidas sensíveis, reclamações, urgência, exceção de preço, indisponibilidade ou pedido explícito por humano."
+                      />
+                    </Field>
+
+                    <Field label="O que a IA nunca deve fazer">
+                      <Textarea
+                        rows={5}
+                        value={listToText(virtualAgent.attendanceMap.never_do)}
+                        onChange={(event) => updateAttendanceMapField("never_do", textToList(event.target.value))}
+                        placeholder={"Uma por linha. Ex.:\nnão enviar link logo após saudação\nnão aceitar horário fora do funcionamento\nnão pedir dados repetidos\nnão diagnosticar"}
+                      />
+                    </Field>
+
+                    <Field label="Exemplos de condução correta">
+                      <Textarea
+                        rows={5}
+                        value={listToText(virtualAgent.attendanceMap.correct_guidance_examples)}
+                        onChange={(event) => updateAttendanceMapField("correct_guidance_examples", textToList(event.target.value))}
+                        placeholder={"Uma por linha. Ex.:\nSe perguntar preço, responda primeiro e depois conduza.\nSe disser cadastrei, avance para agenda.\nSe pedir cadastro, envie o link e peça confirmação."}
+                      />
+                    </Field>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="agent-knowledge">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <AgentAccordionHeader
+                    icon={Building2}
+                    title="Conhecimento operacional"
+                    description="Perguntas, políticas, horários, materiais e limites que sustentam o atendimento."
+                  />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Perguntas frequentes" className="md:col-span-2" help={FIELD_HELP.faq}>
+                      <Textarea
+                        rows={7}
+                        value={virtualAgent.faq}
+                        onChange={(event) => updateField("faq", event.target.value)}
+                        placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
+                      />
+                    </Field>
+                    <Field label="Preço, planos e políticas" help={FIELD_HELP.pricingPolicy}>
+                      <Textarea
+                        rows={5}
+                        value={virtualAgent.pricingPolicy}
+                        onChange={(event) => updateField("pricingPolicy", event.target.value)}
+                        placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
+                      />
+                    </Field>
+                    <Field label="Horário e disponibilidade" help={FIELD_HELP.operatingHours}>
+                      <Textarea
+                        rows={5}
+                        value={virtualAgent.operatingHours}
+                        onChange={(event) => updateField("operatingHours", event.target.value)}
+                        placeholder="Dias, horários, exceções e como agir fora do horário."
+                      />
+                    </Field>
+                    <Field label="Links e recursos liberados" className="md:col-span-2" help={FIELD_HELP.linksAndResources}>
+                      <Textarea
+                        rows={5}
+                        value={virtualAgent.linksAndResources}
+                        onChange={(event) => updateField("linksAndResources", event.target.value)}
+                        placeholder="Links oficiais, páginas, formulários, catálogos, PDFs, materiais e orientações que o Agent pode compartilhar."
+                      />
+                    </Field>
+                    <Field label="Quando chamar humano" help={FIELD_HELP.handoffRules}>
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.handoffRules}
+                        onChange={(event) => updateField("handoffRules", event.target.value)}
+                        placeholder="Quais casos exigem atendimento humano ou especialista."
+                      />
+                    </Field>
+                    <Field label="Limites e proibições" help={FIELD_HELP.boundaries}>
+                      <Textarea
+                        rows={4}
+                        value={virtualAgent.boundaries}
+                        onChange={(event) => updateField("boundaries", event.target.value)}
+                        placeholder="O que a IA não pode prometer, afirmar, decidir ou inventar."
+                      />
+                    </Field>
+                    <Field label="Conhecimento extra" className="md:col-span-2" help={FIELD_HELP.extraKnowledge}>
+                      <Textarea
+                        rows={6}
+                        value={virtualAgent.extraKnowledge}
+                        onChange={(event) => updateField("extraKnowledge", event.target.value)}
+                        placeholder="Exceções, observações estratégicas, detalhes importantes que não couberam nos outros blocos."
+                      />
+                    </Field>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <Card className="border-border/60 p-5 md:p-6">
             <SectionHeader
               icon={ShieldCheck}
-              title="Como o Agent vai pensar"
-              description="Essa ficha vira dados estruturados. O motor do Agent interpreta objetivo, requisitos, ações e regras antes de escrever a resposta."
+              title="Resumo do Agent"
+              description="O essencial para entender o estágio atual sem entrar no detalhe técnico."
             />
-            <div className="mt-5 space-y-3 text-sm">
-              <InfoBlock title="Sem texto pronto">
-                O Agent não deve decorar frases. Ele usa essa estrutura para decidir o melhor próximo passo e redigir na hora.
+            <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <InfoBlock title="Campos preenchidos">
+                {filledFieldsCount} partes já ajudam o Agent a interpretar objetivo, tom e condução.
               </InfoBlock>
-              <InfoBlock title="Universal por projeto">
-                Em vez de assumir funis iguais, o sistema usa o que você marcar como objetivo, requisito e ação permitida.
+              <InfoBlock title="Sem frases prontas">
+                A IA usa estrutura e contexto para responder, em vez de decorar um script fixo.
               </InfoBlock>
-              <InfoBlock title="Treino com regressão">
-                O botão Treinar IA valida se o Agent ficou educado, coeso, útil e sem repetição, e tenta preservar o que já melhorou.
-              </InfoBlock>
-              <InfoBlock title="Fluxos continuam existentes">
-                A aba Fluxo segue disponível. Aqui o objetivo é criar uma estratégia invisível para o atendimento conversacional.
+              <InfoBlock title="Treino progressivo">
+                Cada treino tenta preservar o que melhorou e reduzir regressões no atendimento.
               </InfoBlock>
             </div>
           </Card>
 
-          <Card className="border-border/60 p-5 md:p-6">
-            <SectionHeader
-              icon={Workflow}
-              title="Prévia da estrutura"
-              description={`${filledFieldsCount} itens preenchidos`}
-            />
-            <div className="mt-5 rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4">
-              <pre className="max-h-[560px] whitespace-pre-wrap break-words text-xs leading-6 text-foreground/90">
-                {contextPreview || "Preencha a ficha para ver como o Agent IA vai estruturar esse negócio internamente."}
-              </pre>
-            </div>
+          <Card className="border-border/60 p-3 md:p-4">
+            <Accordion type="multiple" className="space-y-3">
+              <AccordionItem value="agent-thinking-notes">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <AgentAccordionHeader
+                    icon={ShieldCheck}
+                    title="Como o motor usa esta ficha"
+                    description="Explicação rápida para operação, sem precisar abrir o simulador."
+                  />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-3 text-sm">
+                    <InfoBlock title="Universal por projeto">
+                      Em vez de assumir funis iguais, o sistema usa o que você marcar como objetivo, requisito e ação permitida.
+                    </InfoBlock>
+                    <InfoBlock title="Treino com regressão">
+                      O botão Treinar IA valida se o Agent ficou educado, coeso, útil e sem repetição, e tenta preservar o que já melhorou.
+                    </InfoBlock>
+                    <InfoBlock title="Fluxos continuam existentes">
+                      A aba Fluxo segue disponível. Aqui o objetivo é criar uma estratégia invisível para o atendimento conversacional.
+                    </InfoBlock>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="agent-structure-preview">
+                <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
+                  <AgentAccordionHeader
+                    icon={Workflow}
+                    title="Prévia técnica da estrutura"
+                    description={`${filledFieldsCount} itens preenchidos`}
+                  />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4">
+                    <pre className="max-h-[560px] whitespace-pre-wrap break-words text-xs leading-6 text-foreground/90">
+                      {contextPreview || "Preencha a ficha para ver como o Agent IA vai estruturar esse negócio internamente."}
+                    </pre>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </Card>
         </aside>
       </div>
@@ -2569,6 +2704,28 @@ function SectionHeader({
       <div>
         <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function AgentAccordionHeader({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-950">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
       </div>
     </div>
   );

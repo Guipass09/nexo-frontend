@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { shouldSendNgrokBrowserWarningHeader } from "./client";
+import { resolveApiBaseUrl, shouldSendNgrokBrowserWarningHeader } from "./client";
 
 const originalWindow = globalThis.window;
 
@@ -48,5 +48,25 @@ describe("shouldSendNgrokBrowserWarningHeader", () => {
     mockWindowLocation("http://localhost:8080/#/dashboard");
 
     expect(shouldSendNgrokBrowserWarningHeader("http://localhost:8080/api/flows")).toBe(false);
+  });
+});
+
+describe("resolveApiBaseUrl", () => {
+  afterEach(() => {
+    if (originalWindow) {
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: originalWindow,
+      });
+    }
+
+    vi.unstubAllEnvs();
+  });
+
+  it("uses configured backend URL on Vercel deployments", () => {
+    mockWindowLocation("https://nexo-frontend-xi.vercel.app/#/login");
+    vi.stubEnv("VITE_API_BASE_URL", "https://mossy-smugly-connector.ngrok-free.dev/api");
+
+    expect(resolveApiBaseUrl()).toBe("https://mossy-smugly-connector.ngrok-free.dev/api");
   });
 });

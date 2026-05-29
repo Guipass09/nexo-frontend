@@ -45,21 +45,22 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/70 bg-white/75 px-4 shadow-sm backdrop-blur-xl md:px-6">
-      <SidebarTrigger className="shrink-0 rounded-xl hover:bg-primary/10 hover:text-primary" />
+    <header className="sticky top-0 z-30 border-b border-white/55 bg-white/72 px-4 shadow-[0_16px_46px_-34px_rgba(5,10,43,0.48)] backdrop-blur-2xl md:px-6">
+      <div className="flex h-[4.5rem] items-center gap-3">
+      <SidebarTrigger className="shrink-0 rounded-2xl border border-transparent bg-white/60 shadow-sm hover:border-primary/15 hover:bg-primary/10 hover:text-primary" />
       <div className="hidden md:flex flex-col leading-tight min-w-0">
-        <h1 className="font-display text-base font-semibold tracking-tight truncate">{meta.title}</h1>
+        <h1 className="font-display text-base font-semibold tracking-tight text-slate-950 truncate">{meta.title}</h1>
         <p className="text-xs font-medium text-muted-foreground truncate">{meta.subtitle}</p>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar conversas, contatos ou mensagens..." className="h-11 w-64 border-border/70 bg-white/75 pl-9 lg:w-96" />
+          <Input placeholder="Buscar conversas, contatos ou mensagens..." className="h-11 w-64 border-white/70 bg-white/76 pl-9 shadow-[0_12px_34px_-28px_rgba(5,10,43,0.45)] lg:w-96" />
         </div>
-        <Button variant="ghost" size="icon" className="md:hidden rounded-xl">
+        <Button variant="ghost" size="icon" className="md:hidden rounded-2xl">
           <Search className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="relative rounded-xl">
+        <Button variant="ghost" size="icon" className="relative rounded-2xl border border-transparent bg-white/50 shadow-sm hover:border-primary/15">
           <Bell className="h-4 w-4" />
           <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-dot" />
         </Button>
@@ -67,19 +68,20 @@ export function AppHeader() {
           variant="soft"
           size="sm"
           onClick={openAiAssistant}
-          className="hidden lg:inline-flex gap-1.5 border-cyan-300/45 bg-cyan-50/80 text-primary hover:bg-cyan-50"
+          className="hidden lg:inline-flex gap-1.5 border-cyan-300/35 bg-white/70 text-primary shadow-sm hover:bg-cyan-50"
         >
           <Sparkles className="h-3.5 w-3.5" />
           Nexo IA
         </Button>
         <div className="hidden lg:flex flex-col items-end leading-tight mr-1">
-          <span className="text-sm font-medium">{user?.name ?? "Conta Nexo"}</span>
+          <span className="text-sm font-medium text-slate-950">{user?.name ?? "Conta Nexo"}</span>
           <span className="text-[11px] text-muted-foreground">{roleLabel}</span>
         </div>
-        <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-primary/15 shadow-sm">
+        <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/10 shadow-[0_12px_30px_-18px_rgba(13,91,255,0.55)]">
           {user?.avatarUrl ? <AvatarImage src={resolveMediaUrl(user.avatarUrl) ?? undefined} alt={user.name} className="object-cover" /> : null}
           <AvatarFallback className="gradient-primary text-primary-foreground text-xs font-semibold">{initials}</AvatarFallback>
         </Avatar>
+      </div>
       </div>
     </header>
   );

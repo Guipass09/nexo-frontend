@@ -27,7 +27,9 @@ export default function AppLayout() {
                 </div>
               )}
             >
-              <Outlet />
+              <div className="mx-auto w-full max-w-[1680px]">
+                <Outlet />
+              </div>
             </AppRenderBoundary>
           </main>
         </div>

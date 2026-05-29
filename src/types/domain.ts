@@ -424,6 +424,12 @@ export interface AiAgentSimulationTurn {
     model?: string;
     latencyMs?: number;
     errorType?: string | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    httpStatus?: number | null;
+    endpoint?: string | null;
+    exceptionClass?: string | null;
+    errorBody?: string | null;
     error?: string | null;
     conversationId?: string | number | null;
     userId?: string | number | null;

@@ -10,12 +10,12 @@ export function BrandMark({ className, letterClassName }: BrandMarkProps) {
     <div
       aria-hidden="true"
       className={cn(
-        "relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl gradient-primary shadow-glow",
+        "relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl gradient-primary shadow-[0_18px_40px_-24px_rgba(255,79,216,0.7)]",
         className,
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,hsl(0_0%_100%_/_0.36),transparent_42%)]" />
-      <div className="absolute -left-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full border border-white/30" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,hsl(0_0%_100%_/_0.38),transparent_42%)]" />
+      <div className="absolute -left-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full border border-white/25" />
       <span className={cn("relative z-10 font-display text-base font-black tracking-[-0.12em] text-primary-foreground", letterClassName)}>
         N
       </span>
