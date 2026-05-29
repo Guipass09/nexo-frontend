@@ -61,19 +61,19 @@ export function AppSidebar() {
             to={item.url}
             className={cn(
               "group relative flex items-center gap-3 rounded-2xl px-3 transition-smooth",
-              "text-sidebar-foreground/80 hover:bg-white/10 hover:text-white",
-              isActive && "bg-[linear-gradient(135deg,rgba(37,99,255,0.24),rgba(124,58,237,0.18))] text-white shadow-[inset_0_0_0_1px_rgba(103,232,249,0.16),0_20px_44px_-28px_rgba(37,99,255,0.7)] font-semibold",
+              "text-sidebar-foreground/80 hover:bg-white/8 hover:text-white",
+              isActive && "bg-white/10 text-white shadow-[inset_0_0_0_1px_hsl(190_93%_47%_/_0.22),0_18px_44px_-28px_hsl(190_93%_47%_/_0.65)] font-semibold",
             )}
           >
             <span
               className={cn(
                 "absolute inset-y-2 left-0 w-1 rounded-full bg-transparent transition-smooth",
-                isActive && "bg-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.75)]",
+                isActive && "bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.7)]",
               )}
             />
             <span className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sidebar-foreground/70 transition-smooth group-hover:bg-white/10 group-hover:text-cyan-200",
-              isActive && "bg-[linear-gradient(135deg,rgba(37,99,255,0.25),rgba(124,58,237,0.18))] text-cyan-200 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18),0_14px_30px_-24px_rgba(37,99,255,0.8)]",
+              isActive && "bg-cyan-400/10 text-cyan-200 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18)]",
             )}>
               <item.icon className="h-[18px] w-[18px]" />
             </span>
@@ -90,9 +90,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="relative border-r border-sidebar-border bg-sidebar [background:var(--gradient-sidebar)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,rgba(37,99,255,0.24),transparent_70%)]" />
-      <div className="pointer-events-none absolute -right-10 top-1/3 h-48 w-24 rounded-full bg-fuchsia-500/10 blur-3xl" />
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar [background:var(--gradient-sidebar)]">
       <SidebarHeader className="border-b border-sidebar-border/80 p-5">
         <Logo collapsed={collapsed} />
       </SidebarHeader>
@@ -138,7 +136,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border/80 p-4">
         {!collapsed ? (
-          <div className="rounded-[1.35rem] border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(37,99,255,0.06))] p-3.5 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08),0_18px_36px_-30px_rgba(0,0,0,0.8)] backdrop-blur">
+          <div className="rounded-[1.35rem] border border-white/12 bg-white/6 p-3.5 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08),0_18px_36px_-30px_rgba(0,0,0,0.8)] backdrop-blur">
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse-dot" />
               <span className="text-xs font-semibold text-white">Robô ativo</span>
