@@ -19,7 +19,7 @@ const mainItems = [
 
 const automationItems = [
   { title: "Fluxos", url: "/fluxos", icon: Workflow, permission: "flows" },
-  { title: "AGENT IA", url: "/agent-ia", icon: Bot, permission: "ai_agent" },
+  { title: "Agent IA", url: "/agent-ia", icon: Bot, permission: "ai_agent" },
   { title: "Sequências", url: "/sequencias", icon: ListOrdered, permission: "sequences" },
   { title: "Áudios", url: "/audios", icon: Mic, permission: "audios" },
   { title: "Templates", url: "/templates", icon: FileText, permission: "templates" },
@@ -56,19 +56,24 @@ export function AppSidebar() {
     const isActive = location.pathname === item.url;
     return (
       <SidebarMenuItem key={item.title}>
-        <SidebarMenuButton asChild tooltip={item.title} className="h-10">
+        <SidebarMenuButton asChild tooltip={item.title} className="h-11">
           <NavLink
             to={item.url}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 transition-smooth",
-              "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-              isActive && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground shadow-md font-medium",
+              "group flex items-center gap-3 rounded-xl px-3 transition-smooth",
+              "text-sidebar-foreground/75 hover:bg-white/10 hover:text-white",
+              isActive && "bg-white/10 text-white shadow-[inset_0_0_0_1px_hsl(190_93%_47%_/_0.28),0_14px_34px_-24px_hsl(190_93%_47%_/_0.8)] font-semibold",
             )}
           >
-            <item.icon className="h-[18px] w-[18px] shrink-0" />
+            <span className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-smooth group-hover:bg-white/10 group-hover:text-cyan-200",
+              isActive && "bg-cyan-400/10 text-cyan-200",
+            )}>
+              <item.icon className="h-[18px] w-[18px]" />
+            </span>
             {!collapsed && <span className="text-sm">{item.title}</span>}
             {!collapsed && "badge" in item && item.badge && (
-              <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-accent text-accent-foreground">
+              <span className="ml-auto rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-extrabold text-nexo-navy shadow-glow">
                 {item.badge}
               </span>
             )}
@@ -79,35 +84,35 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="border-b border-sidebar-border/80 p-4">
         <Logo collapsed={collapsed} />
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4 scrollbar-thin">
+      <SidebarContent className="scrollbar-thin px-2 py-4">
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3">Principal</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>{mainItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3 mt-2">Automação</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="mt-2 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Automação</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>{automationItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3 mt-2">Dados</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="mt-2 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Dados</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>{dataItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3 mt-2">Sistema</SidebarGroupLabel>}
+          {!collapsed && <SidebarGroupLabel className="mt-2 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Sistema</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>{settingsItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
@@ -115,7 +120,7 @@ export function AppSidebar() {
 
         {isAdmin && (
           <SidebarGroup>
-            {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 px-3 mt-2">Administração</SidebarGroupLabel>}
+            {!collapsed && <SidebarGroupLabel className="mt-2 px-3 text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/50">Administração</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>{adminItems.map(renderItem)}</SidebarMenu>
             </SidebarGroupContent>
@@ -123,14 +128,14 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border">
+      <SidebarFooter className="border-t border-sidebar-border/80 p-3">
         {!collapsed ? (
-          <div className="rounded-lg bg-sidebar-accent/50 p-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.08)]">
             <div className="flex items-center gap-2 mb-1">
               <span className="h-2 w-2 rounded-full bg-success animate-pulse-dot" />
-              <span className="text-xs font-medium text-sidebar-foreground">Robô ativo</span>
+              <span className="text-xs font-semibold text-white">Robô ativo</span>
             </div>
-            <p className="text-[10px] text-sidebar-foreground/60">Operando normalmente</p>
+            <p className="text-[10px] text-sidebar-foreground/58">Operando com inteligência conectada</p>
           </div>
         ) : (
           <div className="flex justify-center">

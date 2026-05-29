@@ -14,6 +14,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Manrope", "ui-sans-serif", "sans-serif"],
+        display: ["Sora", "Manrope", "ui-sans-serif", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -72,6 +76,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        nexo: {
+          navy: "hsl(var(--nexo-navy))",
+          "navy-soft": "hsl(var(--nexo-navy-soft))",
+          blue: "hsl(var(--nexo-blue))",
+          royal: "hsl(var(--nexo-royal))",
+          cyan: "hsl(var(--nexo-cyan))",
+          surface: "hsl(var(--nexo-surface))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,11 +107,21 @@ export default {
             height: "0",
           },
         },
+        "nexo-orbit": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "nexo-shimmer": {
+          "0%": { backgroundPosition: "-160% 0" },
+          "100%": { backgroundPosition: "160% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in-up": "fade-in-up 0.4s ease-out",
+        "nexo-orbit": "nexo-orbit 10s linear infinite",
+        "nexo-shimmer": "nexo-shimmer 1.55s ease-in-out infinite",
       },
     },
   },

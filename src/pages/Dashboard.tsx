@@ -12,6 +12,8 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getStoredAuthUser } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/nexo/EmptyState";
 
 const shortcuts = [
   { label: "Ver conversas", icon: MessageSquare, to: "/conversas", tone: "primary" },
@@ -52,7 +54,8 @@ export default function Dashboard() {
       ) : null}
 
       {/* Bot status banner */}
-      <Card className="p-5 border-border/60 bg-gradient-to-r from-card via-card to-accent/5 overflow-hidden relative">
+      <Card className="relative overflow-hidden border-border/60 p-5 gradient-card">
+        <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow shrink-0">
@@ -60,7 +63,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-semibold">{workspaceTitle}</h2>
+              <h2 className="font-display text-lg font-semibold">{workspaceTitle}</h2>
                 <StatusBadge status="ativo" withDot />
               </div>
               <p className="text-sm text-muted-foreground">{workspaceSummary}</p>
@@ -73,14 +76,18 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {isInitialLoading
           ? Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="h-[132px] animate-pulse border-border/60 bg-secondary/30" />
+            <Card key={index} className="h-[132px] border-border/60 p-5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="mt-4 h-8 w-20" />
+              <Skeleton className="mt-5 h-3 w-full" />
+            </Card>
           ))
           : dashboard.kpis.map((k) => <KpiCard key={k.label} {...k} />)}
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-5 lg:col-span-2 border-border/60">
+        <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold">Volume de mensagens</h3>
@@ -93,9 +100,7 @@ export default function Dashboard() {
           </div>
           <div className="h-64">
             {isInitialLoading ? (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/70 bg-secondary/20 text-sm text-muted-foreground">
-                Carregando volume de mensagens...
-              </div>
+              <Skeleton className="h-full w-full rounded-2xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dashboard.messagesChart}>
@@ -121,16 +126,14 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="p-5 border-border/60">
+        <Card className="p-5">
           <div className="mb-4">
             <h3 className="font-semibold">Funil de atendimento</h3>
             <p className="text-xs text-muted-foreground">Distribuição por etapa</p>
           </div>
           <div className="h-64">
             {isInitialLoading ? (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border/70 bg-secondary/20 text-sm text-muted-foreground">
-                Carregando funil...
-              </div>
+              <Skeleton className="h-full w-full rounded-2xl" />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dashboard.funnelData} layout="vertical" margin={{ left: 0 }}>
@@ -148,11 +151,11 @@ export default function Dashboard() {
 
       {/* Shortcuts + recent */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-5 border-border/60">
+        <Card className="p-5">
           <h3 className="font-semibold mb-4">Atalhos rápidos</h3>
           <div className="grid grid-cols-2 gap-3">
             {shortcuts.map((s) => (
-              <Link key={s.label} to={s.to} className="group p-4 rounded-lg border border-border hover:border-primary/40 hover:shadow-md transition-smooth bg-secondary/30">
+              <Link key={s.label} to={s.to} className="group rounded-2xl border border-border/70 bg-white/70 p-4 shadow-sm transition-smooth hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
                 <s.icon className="h-5 w-5 text-primary mb-2 group-hover:scale-110 transition-smooth" />
                 <div className="text-sm font-medium">{s.label}</div>
               </Link>
@@ -160,7 +163,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="p-5 lg:col-span-2 border-border/60">
+        <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Conversas recentes</h3>
             <Link to="/conversas">
@@ -171,22 +174,23 @@ export default function Dashboard() {
             {isInitialLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-14 animate-pulse rounded-lg border border-border/60 bg-secondary/30" />
+                  <Skeleton key={index} className="h-14 rounded-2xl" />
                 ))}
               </div>
             ) : dashboard.recentConversations.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border/70 p-6 text-center">
-                <p className="text-sm font-medium">Nenhuma conversa ainda</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Conecte seu WhatsApp no Perfil para comecar a receber mensagens neste painel.
-                </p>
-                <Link to="/perfil" className="mt-4 inline-flex">
+              <EmptyState
+                icon={MessageSquare}
+                title="Nenhuma conversa encontrada ainda."
+                description="Quando seus atendimentos começarem, eles aparecerão aqui. Conecte seu WhatsApp no Perfil para iniciar."
+                action={(
+                  <Link to="/perfil" className="inline-flex">
                   <Button size="sm" className="gap-2">
                     <Bot className="h-4 w-4" />
                     Conectar WhatsApp
                   </Button>
                 </Link>
-              </div>
+                )}
+              />
             ) : dashboard.recentConversations.slice(0, 5).map((c) => (
               <Link key={c.id} to="/conversas" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary/60 transition-smooth">
                 <Avatar className="h-9 w-9">

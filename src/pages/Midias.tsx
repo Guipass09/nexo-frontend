@@ -149,8 +149,8 @@ export default function Midias() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Biblioteca de Midia</h1>
-          <p className="text-sm text-muted-foreground">Assets cadastrados para envio manual e templates oficiais.</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Biblioteca de mídia</h1>
+          <p className="text-sm text-muted-foreground">Adicione áudios, imagens ou documentos para o agente usar quando fizer sentido.</p>
         </div>
         <div className="flex gap-2">
           <Badge variant="outline">{meta?.total ?? assets.length} assets</Badge>
@@ -158,7 +158,7 @@ export default function Midias() {
         </div>
       </div>
 
-      <Card className="p-4 border-border/60">
+      <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-3 md:items-end">
           <div className="space-y-2">
             <label htmlFor="upload-type" className="text-xs font-medium text-muted-foreground">Tipo do asset</label>
@@ -191,7 +191,7 @@ export default function Midias() {
         </div>
       </Card>
 
-      <Card className="p-4 border-border/60">
+      <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-2">
           <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={type} onChange={(event) => { setType(event.target.value as typeof type); setPage(1); }}>
             <option value="">Tipo</option>
@@ -232,7 +232,7 @@ export default function Midias() {
         </div>
       </Card>
 
-      <Card className="border-border/60 overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-secondary/40 text-xs text-muted-foreground">

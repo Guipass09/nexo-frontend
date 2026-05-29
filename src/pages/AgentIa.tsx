@@ -1123,21 +1123,23 @@ export default function AgentIa() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_32%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_55%,_#ecfdf5_100%)] p-6 shadow-sm md:p-8">
+      <section className="relative overflow-hidden rounded-[2rem] border border-border/70 p-6 shadow-elegant md:p-8 gradient-card">
+        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/25 blur-3xl" />
+        <div className="absolute -bottom-24 left-12 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <div className="relative max-w-3xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              Agent IA universal
+              Nexo IA premium
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              Estruture o agente por objetivo, regras, ações e contexto.
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+              Centro de inteligência do atendimento.
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Em vez de ensinar frases prontas, você define como a empresa funciona, o que o cliente busca no final e quais passos podem existir antes do avanço. O Nexo transforma isso em estratégia invisível.
+              Configure a persona, teste conversas reais e acompanhe como a IA conduz cada atendimento com contexto, memória e segurança.
             </p>
           </div>
-          <div className="flex min-w-[280px] flex-col gap-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm">
+          <div className="relative flex min-w-[280px] flex-col gap-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-950">Atendimento automático</p>
@@ -1426,11 +1428,11 @@ export default function AgentIa() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur">
                 <TestTube2 className="h-3.5 w-3.5" />
-                Laboratório RAG em tempo real
+                Simulador Nexo IA
               </div>
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                  Teste o Agent como se fosse um cliente no WhatsApp.
+                  Teste seu agente como se fosse um cliente real.
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
                   A simulação usa o perfil ativo, memória, RAG, boas maneiras, calendário, regras do Nexo bot e mídias disponíveis. Nada é enviado ao cliente real.
@@ -1497,7 +1499,7 @@ export default function AgentIa() {
                       <MessageSquareText className="h-8 w-8 text-cyan-200" />
                       <p className="mt-3 text-sm font-semibold text-slate-100">Comece a conversa de teste</p>
                       <p className="mt-1 max-w-sm text-xs leading-5 text-slate-400">
-                        Envie uma saudação, depois uma pergunta, depois uma confirmação. Assim analisamos a sequência inteira.
+                        Digite como o cliente falaria no WhatsApp e veja como a IA conduz a próxima etapa.
                       </p>
                     </div>
                   )}
@@ -1507,7 +1509,7 @@ export default function AgentIa() {
                 <Textarea
                   value={simulatorMessage}
                   onChange={(event) => setSimulatorMessage(event.target.value)}
-                  placeholder='Ex.: "já cadastrei" ou "quarta, 14h"'
+                  placeholder="Digite como o cliente falaria no WhatsApp..."
                   className="mt-3 min-h-[96px] resize-none border-white/10 bg-slate-950/45 text-base leading-7 text-white placeholder:text-slate-500 focus-visible:ring-cyan-300"
                   onKeyDown={(event) => {
                     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
@@ -1551,7 +1553,7 @@ export default function AgentIa() {
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
                     <WandSparkles className="h-8 w-8 animate-pulse" />
                   </div>
-                  <p className="mt-4 text-lg font-semibold">Rodando diagnóstico do atendimento</p>
+                  <p className="mt-4 text-lg font-semibold">Preparando atendimento inteligente</p>
                   <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
                     Buscando fontes, avaliando etapa, mídia e qualidade da resposta antes de mostrar o resultado.
                   </p>
@@ -1612,6 +1614,22 @@ export default function AgentIa() {
                             <div key={`${error.layer ?? "openai"}-${index}`} className="rounded-2xl border border-rose-200 bg-white px-3 py-2 text-sm leading-6 text-rose-900">
                               <strong>{humanizeLabel(error.layer ?? "OpenAI")}:</strong>{" "}
                               {humanizeLabel(error.errorType ?? "erro")} {error.model ? `• ${error.model}` : ""}
+                              <div className="mt-1 text-xs leading-5 text-rose-800">
+                                {error.httpStatus ? <span>HTTP {error.httpStatus} </span> : null}
+                                {error.errorCode ? <span>• código {error.errorCode} </span> : null}
+                                {error.endpoint ? <span>• endpoint {error.endpoint} </span> : null}
+                                {error.requestId ? <span>• request {error.requestId} </span> : null}
+                              </div>
+                              {error.errorMessage || error.error ? (
+                                <p className="mt-1 text-xs leading-5 text-rose-700">
+                                  {error.errorMessage || error.error}
+                                </p>
+                              ) : null}
+                              {error.exceptionClass ? (
+                                <p className="mt-1 text-[11px] leading-5 text-rose-500">
+                                  Classe: {error.exceptionClass}
+                                </p>
+                              ) : null}
                             </div>
                           ))}
                         </div>

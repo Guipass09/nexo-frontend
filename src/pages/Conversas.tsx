@@ -50,6 +50,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/nexo/EmptyState";
 
 type ConversationDraft = {
   contactId: string;
@@ -184,7 +186,7 @@ function realtimeStatusView(status: RealtimeStatus, idleLabel = "Aguardando") {
 function AiProcessingBubble() {
   return (
     <div className="flex gap-2.5 justify-start">
-      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
         <Bot className="h-4 w-4 text-white" />
       </div>
       <div className="max-w-[78%] rounded-[1.35rem] rounded-bl-md bg-card/95 px-4 py-3 text-foreground shadow-sm ring-1 ring-border/70 backdrop-blur">
@@ -289,7 +291,7 @@ function ContactAvatar({
     <div className="relative shrink-0">
       <Avatar className={cn(sizeClass, "border border-white/80 shadow-sm ring-1 ring-border/60")}>
         {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} className="object-cover" /> : null}
-        <AvatarFallback className="bg-gradient-to-br from-sky-100 via-blue-50 to-emerald-50 text-blue-700 text-xs font-semibold">
+        <AvatarFallback className="bg-gradient-to-br from-cyan-50 via-blue-50 to-white text-primary text-xs font-semibold">
           {fallback}
         </AvatarFallback>
       </Avatar>
@@ -1254,10 +1256,10 @@ export default function Conversas() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 h-[calc(100vh-9rem)]">
+    <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
       {/* List */}
-      <Card className="flex flex-col overflow-hidden border-border/60 bg-card/95 shadow-sm">
-        <div className="p-4 border-b border-border/70 space-y-3 bg-gradient-to-b from-card to-secondary/20">
+      <Card className="flex flex-col overflow-hidden">
+        <div className="space-y-3 border-b border-border/70 p-4 gradient-card">
           {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               Oscilacao de conexao detectada. Mantendo os dados carregados e tentando reconectar.
@@ -1271,25 +1273,25 @@ export default function Conversas() {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar contatos..." className="pl-9 bg-secondary/40" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <Input placeholder="Buscar conversas, contatos ou mensagens..." className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
           </div>
           <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
             {["Todos", "Ativos", "Aguardando", "Humano", "Finalizado"].map((f, i) => (
               <button key={f} onClick={() => setStatusFilter(f)} className={cn(
                 "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-smooth",
                 statusFilter === f || (i === 0 && statusFilter === "Todos")
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
+                  ? "gradient-primary text-primary-foreground shadow-sm"
+                  : "bg-white/75 text-muted-foreground hover:bg-white hover:text-foreground"
               )}>{f}</button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
+            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
               <option value="all">Todas</option>
               <option value="true">Nao lidas</option>
               <option value="false">Lidas</option>
             </select>
-            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
               <option value="">Envio</option>
               <option value="pending">pending</option>
               <option value="sent">sent</option>
@@ -1298,22 +1300,30 @@ export default function Conversas() {
               <option value="failed">failed</option>
               <option value="skipped">skipped</option>
             </select>
-            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
               <option value="">Tag</option>
               {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
             </select>
-            <select className="h-9 rounded-md border border-input bg-background px-3 text-xs" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
               <option value="">Fluxo</option>
               {availableFlows.map((flow) => <option key={flow} value={flow}>{flow}</option>)}
             </select>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-thin bg-gradient-to-b from-background to-secondary/20">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-gradient-to-b from-white/50 to-secondary/25">
           {isInitialConversationsLoading ? (
             <div className="space-y-3 p-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-24 animate-pulse rounded-2xl border border-border/60 bg-secondary/30" />
+                <Skeleton key={index} className="h-24 rounded-2xl" />
               ))}
+            </div>
+          ) : sidebarConversations.length === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                icon={MessageSquareIcon}
+                title="Nenhuma conversa encontrada ainda."
+                description="Quando seus atendimentos começarem, eles aparecerão aqui com histórico, status e contexto."
+              />
             </div>
           ) : (
             sidebarConversations.map((c) => (
@@ -1339,8 +1349,8 @@ export default function Conversas() {
                       setSelectedId(c.id);
                     }}
                     className={cn(
-                      "group w-full text-left px-4 py-3 border-b border-border/50 hover:bg-card transition-smooth flex items-start gap-3",
-                      selected?.id === c.id && "bg-card shadow-[inset_3px_0_0_hsl(var(--primary))]",
+                      "group flex w-full items-start gap-3 border-b border-border/50 px-4 py-3 text-left transition-smooth hover:bg-white/80",
+                      selected?.id === c.id && "bg-white shadow-[inset_3px_0_0_hsl(var(--primary))]",
                     )}
                   >
                     <ContactAvatar name={c.name} fallback={c.avatar} avatarUrl={c.avatarUrl} active={c.status === "ativo" || c.status === "humano"} />
@@ -1381,10 +1391,10 @@ export default function Conversas() {
       </Card>
 
       {/* Chat */}
-      <Card className="flex flex-col overflow-hidden border-border/60 bg-card/95 shadow-sm">
+      <Card className="flex flex-col overflow-hidden">
         {selected ? (
           <>
-            <div className="p-4 border-b border-border/70 flex items-center gap-3 bg-gradient-to-r from-card via-card to-secondary/30">
+            <div className="flex items-center gap-3 border-b border-border/70 p-4 gradient-card">
               <ContactAvatar name={selected.name} fallback={selected.avatar} avatarUrl={selected.avatarUrl} size="lg" active={selected.status === "ativo" || selected.status === "humano"} />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1433,7 +1443,7 @@ export default function Conversas() {
               onScroll={(event) => {
                 shouldStickToBottomRef.current = shouldAutoScrollToBottom(event.currentTarget);
               }}
-              className="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6 space-y-4 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_28%),linear-gradient(180deg,hsl(var(--secondary)/0.45),hsl(var(--background)))]"
+              className="flex-1 space-y-4 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_28%),linear-gradient(180deg,hsl(var(--secondary)/0.45),hsl(var(--background)))]"
             >
               {activeConversationError ? (
                 <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -1441,26 +1451,28 @@ export default function Conversas() {
                 </div>
               ) : null}
               {conversationMessagesQuery.isPending && conversationMessages.length === 0 ? (
-                <div className="flex h-full min-h-[320px] items-center justify-center text-sm text-muted-foreground">
-                  Carregando conversa...
+                <div className="space-y-4">
+                  <Skeleton className="h-16 w-2/3 rounded-[1.35rem]" />
+                  <Skeleton className="ml-auto h-16 w-1/2 rounded-[1.35rem]" />
+                  <Skeleton className="h-20 w-3/4 rounded-[1.35rem]" />
                 </div>
               ) : conversationMessages.length === 0 ? (
                 <div className="flex h-full min-h-[320px] items-center justify-center">
-                  <div className="max-w-sm rounded-md border border-border/70 bg-card/85 p-5 text-center shadow-sm backdrop-blur">
-                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <MessageSquareIcon className="h-5 w-5" />
-                    </div>
-                    <h4 className="text-sm font-semibold text-foreground">Contato cadastrado</h4>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {requiresTemplate
+                  <EmptyState
+                    icon={MessageSquareIcon}
+                    title="Contato cadastrado"
+                    description={
+                      requiresTemplate
                         ? "Use um template oficial para iniciar essa conversa fora da janela de 24h."
-                        : "Nenhuma mensagem registrada ainda. Envie uma mensagem para iniciar o atendimento."}
-                    </p>
-                    <div className="mt-3 inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-[11px] text-muted-foreground">
-                      <Phone className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{formatPhoneForDisplay(selected.phone)}</span>
-                    </div>
-                  </div>
+                        : "Nenhuma mensagem registrada ainda. Envie uma mensagem para iniciar o atendimento."
+                    }
+                    action={(
+                      <div className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-[11px] text-muted-foreground">
+                        <Phone className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{formatPhoneForDisplay(selected.phone)}</span>
+                      </div>
+                    )}
+                  />
                 </div>
               ) : null}
               {conversationMessages.map((m) => {
@@ -1480,14 +1492,14 @@ export default function Conversas() {
                 return (
                   <div key={m.id} className={cn("flex gap-2.5", isClient ? "justify-end" : "justify-start")}>
                     {!isClient && (
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-sm">
                         {isHumanAgent ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
                       </div>
                     )}
                     <div className={cn(
                       "max-w-[78%] rounded-[1.35rem] px-4 py-3 shadow-sm ring-1",
                       isClient
-                        ? "bg-blue-600 text-white rounded-br-md ring-blue-500/20"
+                        ? "gradient-primary text-white rounded-br-md ring-blue-500/20"
                         : "bg-card/95 text-foreground rounded-bl-md ring-border/70 backdrop-blur",
                       isFailed && "ring-destructive/30"
                     )}>
@@ -1523,7 +1535,7 @@ export default function Conversas() {
               {showAiProcessingBubble ? <AiProcessingBubble /> : null}
             </div>
 
-            <div className="p-3 border-t border-border/70 bg-card/95 shadow-[0_-12px_30px_hsl(var(--background)/0.55)]">
+            <div className="border-t border-border/70 bg-white/90 p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
               {requiresTemplate ? (
                 <div className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
@@ -1732,7 +1744,7 @@ export default function Conversas() {
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Input
-                  placeholder={requiresTemplate ? "Use um template oficial para esta conversa..." : "Digite uma mensagem ou intervir no atendimento..."}
+                  placeholder={requiresTemplate ? "Use um template oficial para esta conversa..." : "Digite uma mensagem ou intervenha no atendimento..."}
                   className="border-0 bg-transparent shadow-none focus-visible:ring-0"
                   value={draftMessage}
                   disabled={requiresTemplate}
@@ -1752,7 +1764,6 @@ export default function Conversas() {
                 />
                 <Button
                   size="icon"
-                  className="gradient-primary text-primary-foreground"
                   onClick={handleSendMessage}
                   disabled={sendMessageMutation.isPending || requiresTemplate || !draftMessage.trim()}
                   title={sendMessageMutation.isPending ? "Enviando mensagem..." : "Enviar mensagem"}
@@ -1763,32 +1774,24 @@ export default function Conversas() {
             </div>
           </>
         ) : isInitialConversationsLoading ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-              <MessageSquareIcon />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Carregando conversas...</h3>
-              <p className="text-sm text-muted-foreground">
-                Estamos restaurando sua lista e o contexto do atendimento.
-              </p>
-            </div>
+          <div className="flex flex-1 flex-col justify-center gap-4 p-8">
+            <Skeleton className="mx-auto h-16 w-16 rounded-full" />
+            <Skeleton className="mx-auto h-5 w-52" />
+            <Skeleton className="mx-auto h-4 w-72" />
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <MessageSquareIcon />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Nenhuma conversa ainda</h3>
-              <p className="text-sm text-muted-foreground">
-                Cadastre um contato novo ou selecione um existente para iniciar o envio real por aqui.
-              </p>
-            </div>
-            <Button className="gap-2" onClick={openCreateConversation}>
+            <EmptyState
+              icon={MessageSquareIcon}
+              title="Nenhuma conversa encontrada ainda."
+              description="Quando seus atendimentos começarem, eles aparecerão aqui."
+              action={(
+                <Button className="gap-2" onClick={openCreateConversation}>
               <Plus className="h-4 w-4" />
               Nova conversa
             </Button>
+              )}
+            />
           </div>
         )}
       </Card>

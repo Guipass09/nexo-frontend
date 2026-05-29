@@ -170,8 +170,8 @@ export default function Templates() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar template..."
-            className="pl-9 bg-secondary/40"
+            placeholder="Buscar templates, categorias ou variáveis..."
+            className="pl-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -195,7 +195,7 @@ export default function Templates() {
             onClick={() => setCategory(c)}
             className={cn(
               "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-smooth",
-              category === c ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground",
+              category === c ? "gradient-primary text-primary-foreground shadow-sm" : "bg-white/75 text-muted-foreground hover:bg-white hover:text-foreground",
             )}
           >
             {c}
@@ -207,7 +207,7 @@ export default function Templates() {
         {filteredTemplates.map((t) => {
           const Icon = t.type === "Áudio" ? Mic : FileText;
           return (
-            <Card key={t.id} className="p-5 border-border/60 hover:shadow-elegant transition-smooth group">
+            <Card key={t.id} className="group p-5 transition-smooth hover:-translate-y-0.5 hover:shadow-elegant">
               <div className="flex items-start justify-between mb-3">
                 <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.type === "Áudio" ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"}`}>
                   <Icon className="h-4 w-4" />
@@ -322,7 +322,12 @@ export default function Templates() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="template-content">Conteudo</Label>
-              <Textarea id="template-content" value={templateDraft.content} onChange={(event) => setTemplateDraft((draft) => ({ ...draft, content: event.target.value }))} />
+              <Textarea
+                id="template-content"
+                value={templateDraft.content}
+                onChange={(event) => setTemplateDraft((draft) => ({ ...draft, content: event.target.value }))}
+                placeholder="Ex.: Olá {{nome}}, sua avaliação está confirmada para {{data}}."
+              />
             </div>
           </div>
           <DialogFooter>

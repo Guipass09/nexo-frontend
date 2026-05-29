@@ -945,17 +945,18 @@ export default function Fluxos() {
         </Card>
       ) : null}
 
-      <Card className="border-border/70 bg-card/95 p-5">
+      <Card className="relative overflow-hidden border-border/70 p-5 gradient-card">
+        <div className="absolute -right-12 top-0 h-44 w-44 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="min-w-0 flex-1 space-y-4">
+          <div className="relative min-w-0 flex-1 space-y-4">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
                 <Workflow className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl font-semibold">Fluxos</h1>
+                <h1 className="font-display text-xl font-semibold">Fluxos inteligentes</h1>
                 <p className="text-sm text-muted-foreground">
-                  Builder visual conectado ao backend Laravel, sem mock e sem quebrar o executor atual.
+                  Monte jornadas automáticas para conduzir clientes com clareza, contexto e próximo passo.
                 </p>
               </div>
             </div>
@@ -966,7 +967,7 @@ export default function Fluxos() {
                 <Input
                   id="flow-name"
                   value={flowDraft.name}
-                  placeholder="Ex.: Qualificacao inicial"
+                  placeholder="Ex.: Boas-vindas, qualificação, cadastro e agendamento"
                   onChange={(event) => updateFlowDraft({ name: event.target.value })}
                 />
               </div>
@@ -1035,7 +1036,7 @@ export default function Fluxos() {
               <Textarea
                 id="flow-ai-company-prompt"
                 className="min-h-[160px]"
-                placeholder="Descreva a empresa, servicos, publico, diferenciais, faixa de preco, como abordar clientes, quais respostas evitar, como direcionar para proposta, demo, agendamento ou atendimento humano. Esse contexto sera usado por todos os blocos de Decisao IA deste fluxo."
+                placeholder="Ex.: descreva o que a empresa oferece, para quem atende, como conduz clientes e quais respostas devem evitar."
                 value={flowDraft.aiCompanyPrompt}
                 onChange={(event) => updateFlowDraft({ aiCompanyPrompt: event.target.value })}
               />
@@ -1093,7 +1094,7 @@ export default function Fluxos() {
               onClick={() => setIsAiGeneratorOpen(true)}
               disabled={isSaving || isDeleting || isGeneratingFlowWithAi}
             >
-              <Sparkles className="h-4 w-4" /> Criar fluxo com IA
+              <Sparkles className="h-4 w-4" /> Gerar fluxo inteligente
             </Button>
             <Button className="gap-2" onClick={() => saveFlow()} disabled={isSaving || isDeleting}>
               <Save className="h-4 w-4" /> {isSaving ? "Salvando..." : "Salvar"}
@@ -1163,7 +1164,7 @@ export default function Fluxos() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Buscar fluxo..."
+                placeholder="Buscar fluxos, gatilhos ou status..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -1182,8 +1183,8 @@ export default function Fluxos() {
 
           <div className="mt-4 space-y-2">
             {filteredFlows.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                Nenhum fluxo encontrado com esse filtro.
+              <div className="rounded-2xl border border-dashed border-border bg-white/60 p-4 text-sm text-muted-foreground">
+                Crie seu primeiro fluxo inteligente. Monte jornadas automáticas para conduzir seus clientes.
               </div>
             ) : null}
 
@@ -1195,8 +1196,8 @@ export default function Fluxos() {
                   key={flow.id}
                   type="button"
                   className={cn(
-                    "w-full rounded-lg border px-4 py-3 text-left transition-smooth",
-                    isSelected ? "border-primary/40 bg-primary/5 shadow-sm" : "border-border/70 bg-background hover:border-primary/20 hover:bg-secondary/20",
+                    "w-full rounded-2xl border px-4 py-3 text-left transition-smooth",
+                    isSelected ? "border-primary/40 bg-primary/10 shadow-sm" : "border-border/70 bg-white/70 hover:border-primary/20 hover:bg-white",
                   )}
                   onClick={() => requestOpenFlow(flow.id)}
                 >

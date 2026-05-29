@@ -43,27 +43,29 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex min-h-screen bg-background">
       {/* Left — brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 gradient-hero relative overflow-hidden p-12 flex-col justify-between text-primary-foreground">
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, hsl(217 91% 65% / 0.5), transparent 50%), radial-gradient(circle at 80% 70%, hsl(160 84% 45% / 0.4), transparent 50%)" }} />
+      <div className="relative hidden overflow-hidden p-12 text-primary-foreground lg:flex lg:w-1/2 lg:flex-col lg:justify-between gradient-hero">
+        <div className="absolute inset-0 nexo-grid-surface opacity-20" />
+        <div className="absolute -left-20 top-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute bottom-10 right-6 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-3">
             <BrandMark className="h-11 w-11" letterClassName="text-lg" />
             <div>
-              <div className="text-xl font-bold tracking-tight">Nexo</div>
-              <div className="text-[11px] uppercase tracking-widest text-primary-foreground/70">Central de conversas</div>
+              <div className="font-display text-xl font-bold tracking-tight">Nexo IA</div>
+              <div className="text-[11px] uppercase tracking-[0.22em] text-primary-foreground/70">Inteligência que conecta</div>
             </div>
           </div>
         </div>
 
         <div className="relative space-y-8">
           <div>
-            <h2 className="text-4xl font-bold tracking-tight leading-tight mb-3">
-              O cérebro do seu atendimento no WhatsApp.
+            <h2 className="mb-4 max-w-xl font-display text-5xl font-bold leading-tight tracking-tight text-balance">
+              Atendimento inteligente com cara de conversa real.
             </h2>
-            <p className="text-primary-foreground/70 text-lg max-w-md">
-              Gerencie conversas, fluxos e automações em um único painel inteligente.
+            <p className="max-w-md text-lg text-primary-foreground/70">
+              Una IA, automações e operação humana em uma central premium para vender, atender e acompanhar melhor.
             </p>
           </div>
 
@@ -74,7 +76,7 @@ export default function Login() {
               { icon: Shield, text: "Segurança corporativa e LGPD" },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-primary-foreground/10 backdrop-blur flex items-center justify-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur">
                   <f.icon className="h-4 w-4" />
                 </div>
                 <span className="text-primary-foreground/90">{f.text}</span>
@@ -84,29 +86,32 @@ export default function Login() {
         </div>
 
         <div className="relative text-xs text-primary-foreground/50">
-          © 2025 Nexo · Plataforma de atendimento inteligente
+          © 2025 Nexo IA · Inteligência que conecta
         </div>
       </div>
 
       {/* Right — form */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
-        <div className="w-full max-w-md space-y-8 animate-fade-in-up">
+      <div className="flex flex-1 items-center justify-center bg-gradient-subtle p-6 md:p-12">
+        <div className="w-full max-w-md animate-fade-in-up rounded-[1.75rem] border border-border/70 bg-white/85 p-7 shadow-elegant backdrop-blur-xl md:p-9">
           <div className="lg:hidden flex items-center gap-3">
             <BrandMark className="h-10 w-10" />
-            <span className="text-xl font-bold tracking-tight">Nexo</span>
+            <div>
+              <span className="font-display text-xl font-bold tracking-tight">Nexo IA</span>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Inteligência que conecta</p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Bem-vindo de volta 👋</h1>
-            <p className="text-muted-foreground mt-2">Entre na sua conta para gerenciar o robô.</p>
+          <div className="mt-8 lg:mt-0">
+            <h1 className="font-display text-3xl font-bold tracking-tight">Bem-vindo de volta</h1>
+            <p className="mt-2 text-muted-foreground">Entre para gerenciar conversas, automações e inteligência do atendimento.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail corporativo</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="voce@nexo.com.br" value={email} onChange={(event) => setEmail(event.target.value)} className="pl-10 h-11" />
+                <Input id="email" type="email" placeholder="seuemail@empresa.com.br" value={email} onChange={(event) => setEmail(event.target.value)} className="pl-10" />
               </div>
             </div>
 
@@ -117,13 +122,17 @@ export default function Login() {
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} className="pl-10 h-11" />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} className="pl-10" />
               </div>
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary text-primary-foreground font-medium shadow-md hover:shadow-glow transition-smooth gap-2">
+            <Button type="submit" disabled={loading} className="h-11 w-full gap-2">
               {loading ? "Entrando..." : "Entrar no painel"}
               <ArrowRight className="h-4 w-4" />
             </Button>

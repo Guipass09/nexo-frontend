@@ -1,5 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider, useIsFetching, useIsMutating } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { HashRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +29,7 @@ import TermosUso from "./pages/TermosUso";
 import NexoBot from "./pages/NexoBot";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PermissionGate from "./components/auth/PermissionGate";
+import { NexoLoadingOverlay } from "./components/nexo/NexoLoadingOverlay";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,12 +41,48 @@ export const queryClient = new QueryClient({
   },
 });
 
+function AppExperienceLayer() {
+  const location = useLocation();
+  const fetching = useIsFetching();
+  const mutating = useIsMutating();
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setRouteLoading(true);
+    const timeout = window.setTimeout(() => setRouteLoading(false), 420);
+    return () => window.clearTimeout(timeout);
+  }, [location.pathname]);
+
+  const isBusy = routeLoading || fetching > 0 || mutating > 0;
+
+  useEffect(() => {
+    if (!isBusy) {
+      setVisible(false);
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => setVisible(true), 360);
+    return () => window.clearTimeout(timeout);
+  }, [isBusy]);
+
+  const label = useMemo(() => {
+    if (mutating > 0) return "Salvando com segurança...";
+    if (location.pathname.includes("agent-ia")) return "Preparando atendimento...";
+    if (location.pathname.includes("conversas")) return "Conectando conversas...";
+    return "Carregando inteligência...";
+  }, [location.pathname, mutating]);
+
+  return <NexoLoadingOverlay active={visible} label={label} />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <HashRouter>
+        <AppExperienceLayer />
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
