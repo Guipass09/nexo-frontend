@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Bot, CheckCircle2, Lock, Mail, MessageCircle, Network, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,48 +11,118 @@ import { login } from "@/services/auth";
 
 const logoSrc = "/Nexo%20IA%20Logo%20v2.png";
 
-const trustPoints = [
+const highlights = [
   "Atendimento inteligente",
-  "Conversas em tempo real",
-  "Fluxos automatizados",
+  "Automações avançadas",
   "Memória contextual",
 ];
 
-const signalCards = [
-  { icon: MessageCircle, label: "WhatsApp", detail: "centralizado" },
-  { icon: Bot, label: "Agent IA", detail: "contextual" },
-  { icon: Network, label: "Fluxos", detail: "automatizados" },
+const particles = [
+  { top: "9%", left: "11%", size: "h-2 w-2", color: "bg-cyan-300/80" },
+  { top: "18%", left: "42%", size: "h-1.5 w-1.5", color: "bg-white/70" },
+  { top: "23%", right: "18%", size: "h-2.5 w-2.5", color: "bg-fuchsia-300/75" },
+  { top: "38%", left: "8%", size: "h-1.5 w-1.5", color: "bg-violet-300/70" },
+  { top: "44%", right: "36%", size: "h-2 w-2", color: "bg-cyan-200/75" },
+  { top: "62%", left: "47%", size: "h-2 w-2", color: "bg-fuchsia-300/75" },
+  { top: "71%", left: "14%", size: "h-1.5 w-1.5", color: "bg-white/60" },
+  { top: "79%", right: "20%", size: "h-2.5 w-2.5", color: "bg-violet-300/75" },
+  { top: "86%", left: "38%", size: "h-1.5 w-1.5", color: "bg-cyan-300/75" },
 ];
 
-function NeuralBackdrop() {
+function CircuitBackdrop() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <svg className="absolute left-[5%] top-[9%] h-[36rem] w-[36rem] opacity-[0.18]" viewBox="0 0 520 520" fill="none">
-        <path d="M82 294L145 188L236 252L318 151L421 222M145 188L219 86L318 151M236 252L304 351L421 222M82 294L171 407L304 351L426 429" stroke="url(#networkGradient)" strokeWidth="2" />
-        {[82, 145, 236, 318, 421, 219, 304, 171, 426].map((cx, index) => {
-          const cy = [294, 188, 252, 151, 222, 86, 351, 407, 429][index];
-          const r = [7, 5, 8, 6, 7, 5, 6, 7, 5][index];
-          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="url(#dotGradient)" />;
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(13,91,255,0.26),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(255,79,216,0.18),transparent_26%),radial-gradient(circle_at_52%_72%,rgba(122,60,255,0.22),transparent_30%),linear-gradient(135deg,#050A2B_0%,#081238_33%,#0C1C4A_58%,#130B34_78%,#20092D_100%)]" />
+      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.18)_1px,transparent_1px)] [background-size:88px_88px]" />
+      <div className="absolute -left-20 top-20 h-[26rem] w-[26rem] rounded-full bg-[#0D5BFF]/24 blur-3xl" />
+      <div className="absolute right-[-10rem] top-[-5rem] h-[28rem] w-[28rem] rounded-full bg-[#FF4FD8]/18 blur-3xl" />
+      <div className="absolute bottom-[-10rem] left-[28%] h-[24rem] w-[24rem] rounded-full bg-[#7A3CFF]/22 blur-3xl" />
+      <div className="absolute bottom-[8%] right-[8%] h-[14rem] w-[14rem] rounded-full bg-cyan-400/10 blur-3xl" />
+
+      <svg className="absolute left-[3%] top-[10%] h-[36rem] w-[36rem] opacity-[0.24]" viewBox="0 0 560 560" fill="none">
+        <path d="M86 322L162 208L250 264L354 138L456 222M162 208L238 112L354 138M250 264L324 372L456 222M86 322L184 430L324 372L438 462" stroke="url(#nexo-line-a)" strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M182 430L182 352L228 306M324 372L324 316L374 270M456 222L456 156" stroke="rgba(255,255,255,0.32)" strokeWidth="1.4" strokeLinecap="round" />
+        {[86, 162, 250, 354, 456, 238, 324, 184, 438].map((cx, index) => {
+          const cy = [322, 208, 264, 138, 222, 112, 372, 430, 462][index];
+          const radius = [6, 5, 7, 5, 6, 4.5, 5.5, 5, 4.5][index];
+          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={radius} fill="url(#nexo-dot-a)" />;
         })}
         <defs>
-          <linearGradient id="networkGradient" x1="74" y1="86" x2="430" y2="429" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#16D7FF" />
-            <stop offset="0.55" stopColor="#2878FF" />
-            <stop offset="1" stopColor="#0A2A6C" />
+          <linearGradient id="nexo-line-a" x1="84" y1="112" x2="456" y2="462" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#8DD8FF" />
+            <stop offset="0.37" stopColor="#0D5BFF" />
+            <stop offset="0.72" stopColor="#7A3CFF" />
+            <stop offset="1" stopColor="#FF4FD8" />
           </linearGradient>
-          <radialGradient id="dotGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 260) rotate(90) scale(185)">
-            <stop stopColor="#67E8F9" />
-            <stop offset="1" stopColor="#1D4ED8" />
+          <radialGradient id="nexo-dot-a" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(280 280) rotate(90) scale(220)">
+            <stop stopColor="#FFFFFF" />
+            <stop offset="0.4" stopColor="#C7B8FF" />
+            <stop offset="1" stopColor="#FF4FD8" />
           </radialGradient>
         </defs>
       </svg>
-      <svg className="absolute bottom-[6%] right-[7%] h-[24rem] w-[24rem] opacity-[0.12]" viewBox="0 0 360 360" fill="none">
-        <path d="M54 218L118 124L190 182L263 82L310 176M118 124L178 42M190 182L254 278L310 176M54 218L133 308L254 278" stroke="#49D9FF" strokeWidth="1.6" />
-        {[54, 118, 190, 263, 310, 178, 254, 133].map((cx, index) => {
-          const cy = [218, 124, 182, 82, 176, 42, 278, 308][index];
-          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4.5" fill="#49D9FF" />;
+
+      <svg className="absolute bottom-[8%] right-[6%] h-[24rem] w-[24rem] opacity-[0.18]" viewBox="0 0 360 360" fill="none">
+        <path d="M48 220L122 132L184 176L256 84L314 164M122 132L170 64M184 176L248 270L314 164M48 220L116 300L248 270" stroke="url(#nexo-line-b)" strokeWidth="1.7" strokeLinecap="round" />
+        {[48, 122, 184, 256, 314, 170, 248, 116].map((cx, index) => {
+          const cy = [220, 132, 176, 84, 164, 64, 270, 300][index];
+          return <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4.5" fill="url(#nexo-dot-b)" />;
         })}
+        <defs>
+          <linearGradient id="nexo-line-b" x1="48" y1="64" x2="314" y2="300" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#0D5BFF" />
+            <stop offset="0.58" stopColor="#7A3CFF" />
+            <stop offset="1" stopColor="#FF4FD8" />
+          </linearGradient>
+          <radialGradient id="nexo-dot-b" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 180) rotate(90) scale(144)">
+            <stop stopColor="#FFFFFF" />
+            <stop offset="1" stopColor="#A67AFF" />
+          </radialGradient>
+        </defs>
       </svg>
+
+      {particles.map((particle, index) => (
+        <span
+          key={`${particle.top}-${particle.left ?? particle.right}-${index}`}
+          className={`absolute rounded-full shadow-[0_0_18px_rgba(255,255,255,0.35)] ${particle.size} ${particle.color}`}
+          style={{
+            top: particle.top,
+            left: particle.left,
+            right: particle.right,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function BrandSignature() {
+  return (
+    <div className="space-y-6">
+      <div className="relative w-full max-w-[30rem]">
+        <div className="absolute inset-x-[10%] top-8 h-44 rounded-full bg-[radial-gradient(circle,rgba(122,60,255,0.32),transparent_66%)] blur-3xl" />
+        <div className="absolute inset-x-[22%] top-0 h-32 rounded-full bg-[radial-gradient(circle,rgba(255,79,216,0.18),transparent_72%)] blur-2xl" />
+        <div className="relative h-[17rem] overflow-hidden">
+          <img
+            src={logoSrc}
+            alt="Nexo IA"
+            className="absolute left-1/2 top-[-3.35rem] w-[38rem] max-w-none -translate-x-1/2 object-contain opacity-[0.98] saturate-[1.05] [filter:drop-shadow(0_36px_72px_rgba(122,60,255,0.3))]"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-end gap-4 text-[clamp(3.8rem,8vw,5.9rem)] font-light tracking-[-0.09em] text-white">
+          <span className="font-display">Ne</span>
+          <span className="bg-[linear-gradient(135deg,#FFFFFF_0%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">x</span>
+          <span className="font-display">o</span>
+          <span className="mb-3 hidden h-14 w-px bg-gradient-to-b from-white/0 via-white/35 to-white/0 md:block" />
+          <span className="bg-[linear-gradient(135deg,#D7C8FF_0%,#7A3CFF_46%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">IA</span>
+        </div>
+        <p className="pl-1 text-[11px] font-semibold uppercase tracking-[0.42em] text-violet-200/72">
+          Inteligência que conecta
+        </p>
+      </div>
     </div>
   );
 }
@@ -72,180 +142,154 @@ export default function Login() {
 
     try {
       const response = await login(email, password);
-      console.debug("[auth] login succeeded", {
-        email,
-        hasToken: Boolean(response.data.token),
-        expiresAt: response.data.expiresAt,
-        role: response.data.user.role,
-      });
       queryClient.clear();
       setAuthSession(response.data.token, response.data.user, response.data.expiresAt);
       navigate((location.state as { from?: string } | null)?.from ?? "/dashboard");
-    } catch (error) {
-      console.error("[auth] login failed", error);
-      setError(getApiErrorMessage(error, "Nao foi possivel entrar com essas credenciais."));
+    } catch (loginError) {
+      setError(getApiErrorMessage(loginError, "Nao foi possivel entrar com essas credenciais."));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#041027] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(22,215,255,0.26),transparent_28%),radial-gradient(circle_at_78%_22%,rgba(37,99,235,0.34),transparent_31%),linear-gradient(135deg,#041027_0%,#071C48_48%,#0A2A6C_100%)]" />
-      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-300/10 to-transparent" />
-      <div className="absolute -left-32 top-10 h-[34rem] w-[34rem] rounded-full bg-cyan-400/16 blur-3xl" />
-      <div className="absolute right-[-12rem] top-[-8rem] h-[40rem] w-[40rem] rounded-full bg-blue-600/28 blur-3xl" />
-      <div className="absolute bottom-[-12rem] left-1/2 h-[28rem] w-[52rem] -translate-x-1/2 rounded-full bg-cyan-300/12 blur-3xl" />
-      <div className="absolute inset-0 nexo-grid-surface opacity-[0.055]" />
-      <NeuralBackdrop />
+    <div className="relative min-h-screen overflow-hidden bg-[#050A2B] text-white">
+      <CircuitBackdrop />
 
-      <main className="relative mx-auto grid min-h-screen w-full max-w-[1480px] items-center gap-10 px-5 py-8 md:px-8 lg:grid-cols-[minmax(0,1fr)_500px] lg:px-12 xl:px-16">
-        <section className="animate-fade-in-up space-y-10">
-          <div className="relative inline-flex">
-            <div className="absolute -inset-8 rounded-full bg-cyan-300/20 blur-3xl" />
-            <img src={logoSrc} alt="Nexo IA - Inteligência que conecta" className="relative h-auto w-[300px] max-w-[72vw] object-contain drop-shadow-[0_24px_50px_rgba(34,211,238,0.22)] md:w-[390px]" />
+      <main className="relative mx-auto grid min-h-screen w-full max-w-[1540px] items-center gap-12 px-5 py-8 md:px-8 lg:grid-cols-[minmax(0,1.06fr)_minmax(420px,0.94fr)] lg:px-12 xl:px-16">
+        <section className="flex flex-col justify-center space-y-9 lg:pr-10">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-100/82 backdrop-blur-xl">
+            <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.9)]" />
+            Plataforma Nexo IA
           </div>
 
-          <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-white/[0.07] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-cyan-100 shadow-[0_18px_60px_-40px_rgba(34,211,238,0.8)] backdrop-blur-xl">
-              <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,0.9)]" />
-              IA Conversacional
-            </div>
+          <BrandSignature />
 
-            <div className="space-y-5">
-              <h1 className="max-w-4xl font-display text-5xl font-extrabold leading-[0.98] tracking-[-0.055em] text-white text-balance md:text-6xl xl:text-7xl">
-                Inteligência artificial para empresas que querem atender melhor.
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-blue-50/76 md:text-xl">
-                Automações, contexto, memória e IA conversacional em um único lugar.
-              </p>
-            </div>
-
-            <div className="grid max-w-2xl gap-3 sm:grid-cols-2">
-              {trustPoints.map((point) => (
-                <div key={point} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-semibold text-blue-50/88 backdrop-blur-xl">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-200" />
-                  {point}
-                </div>
-              ))}
-            </div>
+          <div className="max-w-2xl space-y-5">
+            <h1 className="font-display text-5xl font-semibold leading-[0.98] tracking-[-0.06em] text-white md:text-6xl xl:text-7xl">
+              Inteligência artificial para empresas que querem atender melhor.
+            </h1>
+            <p className="max-w-xl text-lg leading-8 text-white/68 md:text-xl">
+              Conversas, contexto, automações e memória em uma única plataforma.
+            </p>
           </div>
 
-          <div className="hidden max-w-3xl gap-3 lg:grid lg:grid-cols-3">
-            {signalCards.map(({ icon: Icon, label, detail }) => (
-              <div key={label} className="group rounded-[1.35rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition-smooth hover:-translate-y-1 hover:border-cyan-200/30 hover:bg-white/[0.09]">
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300/12 text-cyan-100 shadow-[0_20px_48px_-30px_rgba(34,211,238,0.9)] transition-smooth group-hover:scale-105">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-100/64">{label}</p>
-                <p className="mt-2 text-sm font-semibold text-white">{detail}</p>
+          <div className="grid max-w-xl gap-4 pt-2">
+            {highlights.map((item) => (
+              <div key={item} className="flex items-center gap-3 text-sm font-medium text-white/82 md:text-base">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.08] backdrop-blur">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-200" />
+                </span>
+                <span>{item}</span>
               </div>
             ))}
           </div>
         </section>
 
         <section className="flex items-center justify-center lg:justify-end">
-          <div className="w-full max-w-[500px] animate-fade-in-up [animation-delay:90ms]">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/18 bg-white/[0.84] p-6 text-foreground shadow-[0_42px_130px_-56px_rgba(0,0,0,0.9)] backdrop-blur-2xl md:p-8">
-              <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
-              <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-cyan-300/24 blur-3xl" />
-              <div className="absolute -bottom-24 left-8 h-56 w-56 rounded-full bg-blue-500/12 blur-3xl" />
+          <div className="relative w-full max-w-[31rem]">
+            <div className="absolute inset-x-12 top-4 h-24 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.24),transparent_70%)] blur-3xl" />
+            <div className="absolute -right-10 top-10 h-40 w-40 rounded-full bg-[#FF4FD8]/16 blur-3xl" />
+            <div className="absolute -left-12 bottom-6 h-36 w-36 rounded-full bg-[#7A3CFF]/14 blur-3xl" />
+
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/[0.08] p-6 shadow-[0_44px_120px_-56px_rgba(0,0,0,0.92)] backdrop-blur-[22px] md:p-8">
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05)_24%,rgba(255,255,255,0.03)_100%)]" />
+              <div className="absolute inset-[1px] rounded-[1.95rem] border border-white/8" />
+              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/65 to-transparent" />
 
               <div className="relative">
-                <div className="mb-7 flex items-start justify-between gap-5">
+                <div className="mb-8 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-100/84">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Acesso seguro
+                  </div>
+
                   <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#0A2A6C]/10 bg-[#0A2A6C]/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#0A2A6C]">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      Acesso seguro
-                    </div>
-                    <h2 className="font-display text-3xl font-extrabold tracking-[-0.04em] text-[#07152F] md:text-4xl">
+                    <h2 className="font-display text-3xl font-semibold tracking-[-0.05em] text-white md:text-[2.6rem]">
                       Entrar no painel
                     </h2>
-                    <p className="max-w-sm text-sm leading-6 text-slate-600">
+                    <p className="max-w-sm text-sm leading-6 text-white/62">
                       Entre para operar atendimento, fluxos e inteligência em tempo real.
                     </p>
-                  </div>
-                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#07152F] via-[#0A2A6C] to-cyan-400 text-white shadow-glow sm:flex">
-                    <Sparkles className="h-5 w-5" />
                   </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-semibold text-[#07152F]">
+                  <div className="space-y-2.5">
+                    <Label htmlFor="email" className="text-sm font-medium text-white/86">
                       E-mail corporativo
                     </Label>
                     <div className="group relative">
-                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-500" />
+                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34 transition-colors group-focus-within:text-cyan-300 group-hover:text-white/48" />
                       <Input
                         id="email"
                         type="email"
-                        placeholder="seuemail@empresa.com.br"
+                        placeholder="nome@empresa.com"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        className="h-13 rounded-2xl border-slate-200/90 bg-white/78 pl-12 shadow-[0_14px_28px_-24px_rgba(5,10,43,0.55)] transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                        className="h-14 rounded-2xl border-white/10 bg-white/[0.06] pl-12 text-[15px] text-white shadow-none placeholder:text-white/30 hover:border-white/18 hover:bg-white/[0.075] focus-visible:border-[#7A3CFF] focus-visible:ring-[rgba(13,91,255,0.55)]"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-4">
-                      <Label htmlFor="password" className="text-sm font-semibold text-[#07152F]">
+                      <Label htmlFor="password" className="text-sm font-medium text-white/86">
                         Senha
                       </Label>
-                      <button type="button" className="text-xs font-bold text-[#0A2A6C] transition-colors hover:text-cyan-600">
+                      <button type="button" className="text-xs font-semibold text-white/52 transition-colors hover:text-cyan-200">
                         Esqueci minha senha
                       </button>
                     </div>
                     <div className="group relative">
-                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-500" />
+                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34 transition-colors group-focus-within:text-cyan-300 group-hover:text-white/48" />
                       <Input
                         id="password"
                         type="password"
                         placeholder="Digite sua senha"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
-                        className="h-13 rounded-2xl border-slate-200/90 bg-white/78 pl-12 shadow-[0_14px_28px_-24px_rgba(5,10,43,0.55)] transition-smooth hover:border-cyan-200 focus-visible:border-cyan-300 focus-visible:ring-cyan-300"
+                        className="h-14 rounded-2xl border-white/10 bg-white/[0.06] pl-12 text-[15px] text-white shadow-none placeholder:text-white/30 hover:border-white/18 hover:bg-white/[0.075] focus-visible:border-[#7A3CFF] focus-visible:ring-[rgba(13,91,255,0.55)]"
                       />
                     </div>
                   </div>
 
-                  {error && (
-                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+                  {error ? (
+                    <div className="rounded-2xl border border-rose-300/18 bg-rose-400/12 px-4 py-3 text-sm font-medium text-rose-100">
                       {error}
                     </div>
-                  )}
+                  ) : null}
 
-                  <Button type="submit" disabled={loading} className="h-13 w-full rounded-2xl bg-[linear-gradient(135deg,#050A2B_0%,#0D5BFF_45%,#7A3CFF_75%,#FF4FD8_100%)] text-[15px] shadow-[0_22px_56px_-24px_rgba(122,60,255,0.78)] hover:scale-[1.01] hover:shadow-[0_28px_70px_-22px_rgba(255,79,216,0.92)]">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="h-14 w-full rounded-2xl bg-[linear-gradient(135deg,#0D5BFF_0%,#7A3CFF_52%,#FF4FD8_100%)] text-[15px] text-white shadow-[0_26px_72px_-28px_rgba(122,60,255,0.88)] hover:scale-[1.01] hover:shadow-[0_34px_90px_-22px_rgba(255,79,216,0.95)]"
+                  >
                     {loading ? "Entrando..." : "Entrar no painel"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
-                  <div className="rounded-2xl border border-slate-200/80 bg-white/55 p-4 text-xs leading-5 text-slate-500">
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs leading-6 text-white/46">
                     Ao continuar, você concorda com os{" "}
-                    <Link to="/termos" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                    <Link to="/termos" className="font-semibold text-white/78 transition-colors hover:text-cyan-200">
                       Termos
                     </Link>{" "}
                     e a{" "}
-                    <Link to="/politica-de-privacidade" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                    <Link to="/politica-de-privacidade" className="font-semibold text-white/78 transition-colors hover:text-cyan-200">
                       Política de privacidade
                     </Link>
                     .
                   </div>
 
-                  <p className="text-center text-sm text-slate-500">
+                  <p className="text-center text-sm text-white/56">
                     Ainda não tem conta?{" "}
-                    <Link to="/cadastro" className="font-bold text-[#07152F] transition-colors hover:text-cyan-600">
+                    <Link to="/cadastro" className="font-semibold text-white transition-colors hover:text-cyan-200">
                       Criar acesso
                     </Link>
                   </p>
                 </form>
               </div>
             </div>
-
-            <p className="mt-5 text-center text-xs font-semibold text-blue-50/52">
-              Nexo IA · Inteligência que conecta
-            </p>
           </div>
         </section>
       </main>
