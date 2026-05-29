@@ -43,30 +43,44 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {isError && (
-        <Card className="p-4 border-destructive/40 text-sm text-destructive">
+        <Card className="nexo-premium-surface border-destructive/30 p-4 text-sm text-destructive">
           Erro ao carregar /dashboard: {getApiErrorMessage(error)}
         </Card>
       )}
       {isRefreshing ? (
-        <Card className="p-3 border-border/60 text-xs text-muted-foreground">
+        <Card className="nexo-premium-surface p-3 text-xs text-muted-foreground">
           Atualizando dados do painel...
         </Card>
       ) : null}
 
-      {/* Bot status banner */}
-      <Card className="relative overflow-hidden border-border/60 p-5 gradient-card">
+      <Card className="nexo-premium-surface relative overflow-hidden p-5 md:p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.12),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(236,72,153,0.1),transparent_22%)]" />
         <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow shrink-0">
+            <div className="h-12 w-12 rounded-[1.1rem] gradient-primary flex items-center justify-center shadow-glow shrink-0 ring-1 ring-white/40">
               <Bot className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="mb-1 flex items-center gap-2">
               <h2 className="font-display text-lg font-semibold">{workspaceTitle}</h2>
                 <StatusBadge status="ativo" withDot />
               </div>
               <p className="text-sm text-muted-foreground">{workspaceSummary}</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(37,99,255,0.4)] backdrop-blur">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Operação</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">Visão em tempo real</p>
+            </div>
+            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(124,58,237,0.35)] backdrop-blur">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Fluxos</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">Automações alinhadas</p>
+            </div>
+            <div className="rounded-2xl border border-white/55 bg-white/55 px-4 py-3 shadow-[0_18px_36px_-28px_rgba(236,72,153,0.3)] backdrop-blur">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">IA</p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">Contexto e memória ativos</p>
             </div>
           </div>
         </div>
@@ -76,7 +90,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {isInitialLoading
           ? Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="h-[132px] border-border/60 p-5">
+            <Card key={index} className="nexo-premium-surface h-[132px] p-5">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="mt-4 h-8 w-20" />
               <Skeleton className="mt-5 h-3 w-full" />
@@ -87,7 +101,7 @@ export default function Dashboard() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-5 lg:col-span-2">
+        <Card className="nexo-premium-surface p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold">Volume de mensagens</h3>
@@ -117,7 +131,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
                   <Area type="monotone" dataKey="mensagens" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#gMsg)" />
                   <Area type="monotone" dataKey="audios" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#gAud)" />
                 </AreaChart>
@@ -126,7 +140,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="nexo-premium-surface p-5">
           <div className="mb-4">
             <h3 className="font-semibold">Funil de atendimento</h3>
             <p className="text-xs text-muted-foreground">Distribuição por etapa</p>
@@ -140,7 +154,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis type="category" dataKey="stage" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={110} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -151,19 +165,21 @@ export default function Dashboard() {
 
       {/* Shortcuts + recent */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-5">
+        <Card className="nexo-premium-surface p-5">
           <h3 className="font-semibold mb-4">Atalhos rápidos</h3>
           <div className="grid grid-cols-2 gap-3">
             {shortcuts.map((s) => (
-              <Link key={s.label} to={s.to} className="group rounded-2xl border border-border/70 bg-white/70 p-4 shadow-sm transition-smooth hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
-                <s.icon className="h-5 w-5 text-primary mb-2 group-hover:scale-110 transition-smooth" />
-                <div className="text-sm font-medium">{s.label}</div>
+              <Link key={s.label} to={s.to} className="group rounded-[1.35rem] border border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(241,245,255,0.72))] p-4 shadow-[0_18px_40px_-32px_rgba(5,11,46,0.32)] transition-smooth hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_26px_50px_-34px_rgba(37,99,255,0.42)]">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,255,0.18),rgba(124,58,237,0.16))] text-primary shadow-[0_14px_34px_-24px_rgba(37,99,255,0.65)] transition-smooth group-hover:scale-110">
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <div className="text-sm font-medium text-slate-950">{s.label}</div>
               </Link>
             ))}
           </div>
         </Card>
 
-        <Card className="p-5 lg:col-span-2">
+        <Card className="nexo-premium-surface p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Conversas recentes</h3>
             <Link to="/conversas">
@@ -192,7 +208,7 @@ export default function Dashboard() {
                 )}
               />
             ) : dashboard.recentConversations.slice(0, 5).map((c) => (
-              <Link key={c.id} to="/conversas" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary/60 transition-smooth">
+              <Link key={c.id} to="/conversas" className="flex items-center gap-3 rounded-[1.1rem] border border-transparent p-3 hover:border-primary/10 hover:bg-white/55 transition-smooth">
                 <Avatar className="h-9 w-9">
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{c.avatar}</AvatarFallback>
                 </Avatar>
@@ -212,18 +228,18 @@ export default function Dashboard() {
 
       {isAdmin && dashboard.auditSummary && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <Card className="p-5 border-border/60">
+          <Card className="nexo-premium-surface p-5">
             <h3 className="font-semibold mb-4">Resumo operacional</h3>
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-secondary/40 p-3">
+              <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Erros</p>
                 <p className="text-xl font-bold">{dashboard.auditSummary.errorEvents}</p>
               </div>
-              <div className="rounded-lg bg-secondary/40 p-3">
+              <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Falhas envio</p>
                 <p className="text-xl font-bold">{dashboard.auditSummary.failedMessages}</p>
               </div>
-              <div className="rounded-lg bg-secondary/40 p-3">
+              <div className="rounded-2xl border border-white/50 bg-white/55 p-3 backdrop-blur">
                 <p className="text-xs text-muted-foreground mb-1">Manuais hoje</p>
                 <p className="text-xl font-bold">{dashboard.auditSummary.manualMessagesToday}</p>
               </div>
@@ -241,7 +257,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card className="p-5 border-border/60">
+          <Card className="nexo-premium-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold">Mensagens manuais</h3>
@@ -257,14 +273,14 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(203,213,225,0.65)", borderRadius: 16, fontSize: 12, boxShadow: "0 18px 44px -30px rgba(5,11,46,0.35)" }} />
                   <Bar dataKey="sent" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
-          <Card className="p-5 border-border/60">
+          <Card className="nexo-premium-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Últimos eventos operacionais</h3>
               <Link to="/auditoria">
@@ -273,7 +289,7 @@ export default function Dashboard() {
             </div>
             <div className="space-y-2">
               {dashboard.auditSummary.recentEvents.map((event) => (
-                <div key={event.id} className="rounded-lg border border-border/60 p-3">
+                <div key={event.id} className="rounded-2xl border border-white/55 bg-white/55 p-3 backdrop-blur">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <p className="text-sm font-medium">{event.title}</p>
                     <StatusBadge status={event.status} className="text-[10px] py-0" />

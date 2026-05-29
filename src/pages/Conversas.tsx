@@ -188,10 +188,10 @@ function realtimeStatusView(status: RealtimeStatus, idleLabel = "Aguardando") {
 function AiProcessingBubble() {
   return (
     <div className="flex gap-2.5 justify-start">
-      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_65%,#EC4899_100%)] shadow-[0_18px_40px_-24px_rgba(37,99,255,0.72)]">
         <Bot className="h-4 w-4 text-white" />
       </div>
-      <div className="max-w-[78%] rounded-[1.35rem] rounded-bl-md bg-card/95 px-4 py-3 text-foreground shadow-sm ring-1 ring-border/70 backdrop-blur">
+      <div className="max-w-[78%] rounded-[1.35rem] rounded-bl-md border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(243,246,255,0.88))] px-4 py-3 text-foreground shadow-[0_20px_44px_-34px_rgba(5,11,46,0.28)] backdrop-blur">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Nexo IA analisando o atendimento</span>
           <span className="inline-flex gap-1">
@@ -430,13 +430,13 @@ function ConversationImageContent({
             className="max-h-72 w-full max-w-[320px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
             loading="lazy"
           />
-          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
+          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-slate-100/90 text-slate-600" : "bg-white/10 text-white/80")}>
             <ImageIcon className="h-3.5 w-3.5" />
             Abrir imagem
           </span>
         </button>
       ) : (
-        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-slate-200 bg-slate-100/80 text-slate-600" : "border-white/20 bg-white/10 text-white/80")}>
           <ImageIcon className="h-4 w-4" />
           Imagem recebida, mas o arquivo ainda nao esta disponivel.
         </div>
@@ -482,13 +482,13 @@ function ConversationVideoContent({
             muted
             playsInline
           />
-          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-white/10 text-white/80" : "bg-secondary/60 text-muted-foreground")}>
+          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-slate-100/90 text-slate-600" : "bg-white/10 text-white/80")}>
             <Film className="h-3.5 w-3.5" />
             Abrir video
           </span>
         </button>
       ) : (
-        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-slate-200 bg-slate-100/80 text-slate-600" : "border-white/20 bg-white/10 text-white/80")}>
           <Film className="h-4 w-4" />
           Video recebido, mas o arquivo ainda nao esta disponivel.
         </div>
@@ -518,12 +518,12 @@ function ConversationAudioContent({
 
   return (
     <div className="space-y-2 min-w-[220px]" translate="no">
-      <div className={cn("rounded-xl border p-2", isClient ? "border-white/20 bg-white/10" : "border-border bg-secondary/50")}>
+      <div className={cn("rounded-xl border p-2", isClient ? "border-slate-200 bg-slate-100/80" : "border-white/20 bg-white/10")}>
         {mediaUrl ? (
           <audio src={mediaUrl} controls preload="metadata" className="h-9 w-full max-w-[320px]" />
         ) : (
           <div className="flex items-center gap-2 text-xs opacity-80">
-            <div className={cn("h-8 px-2 rounded-full flex items-center justify-center text-[10px] font-medium", isClient ? "bg-primary-foreground/20" : "bg-primary/10 text-primary")}>
+            <div className={cn("h-8 px-2 rounded-full flex items-center justify-center text-[10px] font-medium", isClient ? "bg-white text-primary shadow-sm" : "bg-primary-foreground/20")}>
               Audio
             </div>
             <span>Audio recebido, mas o arquivo ainda nao esta disponivel.</span>
@@ -561,14 +561,14 @@ function ConversationDocumentContent({
           href={mediaUrl}
           target="_blank"
           rel="noreferrer"
-          className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors", isClient ? "border-white/20 bg-white/10 text-white hover:bg-white/15" : "border-border bg-secondary/50 text-foreground hover:bg-secondary")}
+          className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors", isClient ? "border-slate-200 bg-slate-100/85 text-slate-700 hover:bg-slate-100" : "border-white/20 bg-white/10 text-white hover:bg-white/15")}
         >
           <FileText className="h-4 w-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate">{mediaName || "Documento recebido"}</span>
           <ExternalLink className="h-3.5 w-3.5 shrink-0" />
         </a>
       ) : (
-        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-white/20 bg-white/10 text-white/80" : "border-border bg-secondary/50 text-muted-foreground")}>
+        <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-slate-200 bg-slate-100/80 text-slate-600" : "border-white/20 bg-white/10 text-white/80")}>
           <FileText className="h-4 w-4" />
           Documento recebido, mas o arquivo ainda nao esta disponivel.
         </div>
@@ -1297,7 +1297,7 @@ export default function Conversas() {
   return (
     <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
       {/* List */}
-      <Card className="flex flex-col overflow-hidden border-white/60 bg-white/78 shadow-[0_28px_70px_-42px_rgba(5,10,43,0.32)] backdrop-blur-xl">
+      <Card className="nexo-premium-surface flex flex-col overflow-hidden">
         <div className="space-y-3 border-b border-border/70 p-4 gradient-card">
           {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
@@ -1306,31 +1306,31 @@ export default function Conversas() {
           ) : null}
           <div className="flex items-center justify-between gap-2">
             {listRealtime.enabled ? <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} /> : <span />}
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={openCreateConversation}>
+            <Button variant="outline" size="sm" className="gap-1.5 border-white/60 bg-white/68 shadow-sm" onClick={openCreateConversation}>
               <Plus className="h-3.5 w-3.5" /> Nova conversa
             </Button>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar conversas, contatos ou mensagens..." className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
+            <Input placeholder="Buscar conversas, contatos ou mensagens..." className="nexo-soft-input rounded-[1.15rem] pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
           </div>
           <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
             {["Todos", "Ativos", "Aguardando", "Humano", "Finalizado"].map((f, i) => (
               <button key={f} onClick={() => setStatusFilter(f)} className={cn(
                 "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-smooth",
                 statusFilter === f || (i === 0 && statusFilter === "Todos")
-                  ? "gradient-primary text-primary-foreground shadow-sm"
+                  ? "bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] text-primary-foreground shadow-[0_16px_36px_-24px_rgba(37,99,255,0.7)]"
                   : "bg-white/75 text-muted-foreground hover:bg-white hover:text-foreground"
               )}>{f}</button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
+            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
               <option value="all">Todas</option>
               <option value="true">Nao lidas</option>
               <option value="false">Lidas</option>
             </select>
-            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
               <option value="">Envio</option>
               <option value="pending">pending</option>
               <option value="sent">sent</option>
@@ -1339,17 +1339,17 @@ export default function Conversas() {
               <option value="failed">failed</option>
               <option value="skipped">skipped</option>
             </select>
-            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
               <option value="">Tag</option>
               {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
             </select>
-            <select className="h-9 rounded-xl border border-input bg-white/80 px-3 text-xs shadow-sm" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
+            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
               <option value="">Fluxo</option>
               {availableFlows.map((flow) => <option key={flow} value={flow}>{flow}</option>)}
             </select>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-thin bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,247,250,0.82))]">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-[linear-gradient(180deg,rgba(248,250,255,0.62),rgba(240,244,252,0.82))]">
           {isInitialConversationsLoading ? (
             <div className="space-y-3 p-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -1388,8 +1388,8 @@ export default function Conversas() {
                       setSelectedId(c.id);
                     }}
                     className={cn(
-                      "group mx-2 my-1 flex w-[calc(100%-1rem)] items-start gap-3 rounded-[1.35rem] border border-transparent px-4 py-3 text-left transition-smooth hover:border-primary/10 hover:bg-white/88",
-                      selected?.id === c.id && "border-primary/10 bg-white shadow-[inset_3px_0_0_hsl(var(--primary)),0_18px_40px_-34px_rgba(13,91,255,0.4)]",
+                      "group mx-2 my-1 flex w-[calc(100%-1rem)] items-start gap-3 rounded-[1.45rem] border border-transparent px-4 py-3 text-left transition-smooth hover:border-primary/10 hover:bg-white/88",
+                      selected?.id === c.id && "border-primary/15 bg-[linear-gradient(155deg,rgba(255,255,255,0.92),rgba(239,244,255,0.86))] shadow-[inset_3px_0_0_hsl(var(--primary)),0_24px_52px_-34px_rgba(37,99,255,0.5)]",
                     )}
                   >
                     <ContactAvatar name={c.name} fallback={c.avatar} avatarUrl={c.avatarUrl} active={c.status === "ativo" || c.status === "humano"} />
@@ -1430,10 +1430,10 @@ export default function Conversas() {
       </Card>
 
       {/* Chat */}
-      <Card className="flex flex-col overflow-hidden border-white/60 bg-white/76 shadow-[0_28px_70px_-42px_rgba(5,10,43,0.32)] backdrop-blur-xl">
+      <Card className="nexo-premium-surface flex flex-col overflow-hidden">
         {selected ? (
           <>
-            <div className="flex items-center gap-3 border-b border-border/70 p-5 gradient-card">
+            <div className="flex items-center gap-3 border-b border-border/70 p-5 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(236,72,153,0.06),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,247,255,0.76))]">
               <ContactAvatar name={selected.name} fallback={selected.avatar} avatarUrl={selected.avatarUrl} size="lg" active={selected.status === "ativo" || selected.status === "humano"} />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1482,7 +1482,7 @@ export default function Conversas() {
               onScroll={(event) => {
                 shouldStickToBottomRef.current = shouldAutoScrollToBottom(event.currentTarget);
               }}
-              className="flex-1 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,79,216,0.06),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,247,250,0.86))]"
+              className="flex-1 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,79,216,0.06),transparent_22%),linear-gradient(180deg,rgba(248,250,255,0.62),rgba(240,244,252,0.86))]"
             >
               <div className="mx-auto max-w-4xl space-y-5">
               {activeConversationError ? (
@@ -1519,7 +1519,7 @@ export default function Conversas() {
                 if (m.type === "event") {
                   return (
                     <div key={m.id} className="flex justify-center my-2">
-                      <div className="px-3 py-1 rounded-full bg-card/80 text-muted-foreground text-[11px] font-medium border border-border/70 shadow-sm inline-flex items-center gap-1.5 backdrop-blur">
+                      <div className="px-3 py-1 rounded-full border border-white/60 bg-white/72 text-muted-foreground text-[11px] font-medium shadow-sm inline-flex items-center gap-1.5 backdrop-blur">
                         <Workflow className="h-3 w-3" /> {m.text}
                       </div>
                     </div>
@@ -1542,22 +1542,22 @@ export default function Conversas() {
                           />
                         </div>
                       ) : (
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl gradient-primary shadow-sm">
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] shadow-[0_16px_34px_-22px_rgba(37,99,255,0.72)]">
                           <Bot className="h-4 w-4 text-white" />
                         </div>
                       )
                     )}
                     <div className={cn(
-                      "max-w-[78%] rounded-[1.35rem] px-4 py-3 shadow-sm ring-1",
+                      "max-w-[78%] rounded-[1.35rem] px-4 py-3 shadow-sm ring-1 backdrop-blur",
                       isClient
-                        ? "gradient-primary text-white rounded-br-md ring-blue-500/20"
+                        ? "border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(243,246,255,0.9))] text-foreground rounded-br-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(148,163,184,0.34)]"
                         : isHumanAgent
-                          ? "bg-white/95 text-foreground rounded-bl-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(13,91,255,0.4)] backdrop-blur"
-                          : "bg-card/95 text-foreground rounded-bl-md ring-border/70 backdrop-blur",
+                          ? "border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(241,245,255,0.9))] text-foreground rounded-bl-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(13,91,255,0.4)]"
+                          : "bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] text-white rounded-bl-md ring-blue-500/15 shadow-[0_24px_52px_-34px_rgba(37,99,255,0.72)]",
                       isFailed && "ring-destructive/30"
                     )}>
                       {!isClient ? (
-                        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                        <div className={cn("mb-2 text-[10px] font-semibold uppercase tracking-[0.2em]", isHumanAgent ? "text-muted-foreground/80" : "text-white/70")}>
                           {isHumanAgent ? (operatorUser?.name ?? "Humano") : "Nexo IA"}
                         </div>
                       ) : null}
@@ -1568,18 +1568,18 @@ export default function Conversas() {
                         handleSaveConversationMedia,
                         saveMediaToLibraryMutation.isPending,
                       )}
-                      <div className={cn("mt-2 flex items-center gap-1.5 text-[10px]", isClient ? "text-white/70" : "text-muted-foreground")}>
+                      <div className={cn("mt-2 flex items-center gap-1.5 text-[10px]", !isClient && !isHumanAgent ? "text-white/72" : "text-muted-foreground")}>
                         <span>{m.time}</span>
                         {deliveryStatusLabel(m.deliveryStatus) ? <span>· {deliveryStatusLabel(m.deliveryStatus)}</span> : null}
                         {m.isOptimistic ? <Sparkles className="h-3 w-3 animate-pulse" /> : null}
                       </div>
                       {m.canRetry ? (
-                        <div className={cn("mt-1 text-[10px]", isClient ? "text-white/70" : "text-muted-foreground")}>
+                        <div className={cn("mt-1 text-[10px]", !isClient && !isHumanAgent ? "text-white/72" : "text-muted-foreground")}>
                           Pronta para reenvio quando esse fluxo for habilitado.
                         </div>
                       ) : null}
                       {m.deliveryError ? (
-                        <div className={cn("mt-2 rounded-lg px-2 py-1 text-[10px]", isClient ? "bg-white/10 text-white/80" : "bg-destructive/10 text-destructive")}>
+                        <div className={cn("mt-2 rounded-lg px-2 py-1 text-[10px]", !isClient && !isHumanAgent ? "bg-white/12 text-white/85" : "bg-destructive/10 text-destructive")}>
                           {m.deliveryError}
                         </div>
                       ) : null}
@@ -1594,14 +1594,14 @@ export default function Conversas() {
               </div>
             </div>
 
-            <div className="border-t border-border/70 bg-white/88 p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
+            <div className="border-t border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.82))] p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
               {requiresTemplate ? (
                 <div className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
                   <span>Fora da janela de 24h. Use um template oficial aprovado para reabrir o atendimento.</span>
                 </div>
               ) : null}
-              <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border/60 bg-white/76 px-3 py-2 shadow-sm">
+              <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/60 bg-white/72 px-3 py-2 shadow-[0_18px_38px_-30px_rgba(5,11,46,0.24)]">
                 <OperatorAvatar
                   name={operatorUser?.name ?? "Voce"}
                   fallback={operatorInitials}

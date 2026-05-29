@@ -1129,12 +1129,13 @@ export default function AgentIa() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <section className="relative overflow-hidden rounded-[2rem] border border-border/70 p-6 shadow-elegant md:p-8 gradient-card">
+      <section className="nexo-premium-surface relative overflow-hidden rounded-[2rem] p-6 md:p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.14),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(236,72,153,0.1),transparent_22%)]" />
         <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/25 blur-3xl" />
         <div className="absolute -bottom-24 left-12 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-200/60 bg-white/70 px-3 py-1 text-xs font-semibold text-primary shadow-[0_14px_30px_-24px_rgba(37,99,255,0.45)]">
               <Sparkles className="h-3.5 w-3.5" />
               Nexo IA premium
             </div>
@@ -1145,7 +1146,7 @@ export default function AgentIa() {
               Configure a persona, teste conversas reais e acompanhe como a IA conduz cada atendimento com contexto, memória e segurança.
             </p>
           </div>
-          <div className="relative flex min-w-[280px] flex-col gap-3 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur">
+          <div className="relative flex min-w-[280px] flex-col gap-3 rounded-[1.65rem] border border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(242,246,255,0.7))] p-4 shadow-[0_24px_56px_-36px_rgba(5,11,46,0.34)] backdrop-blur">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-slate-950">Atendimento automático</p>
@@ -1153,7 +1154,7 @@ export default function AgentIa() {
               </div>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+            <div className="rounded-2xl border border-white/55 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-slate-950">Responder contatos salvos</p>
@@ -1223,14 +1224,14 @@ export default function AgentIa() {
       </section>
 
       {isError && (
-        <Card className="border-destructive/40 p-4 text-sm text-destructive">
+        <Card className="nexo-premium-surface border-destructive/30 p-4 text-sm text-destructive">
           Erro ao carregar Agent IA: {getApiErrorMessage(error)}
         </Card>
       )}
 
       <section id="agent-treino" className="scroll-mt-24">
         {activeTrainingReport ? (
-          <Card className="border-border/60 bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
+          <Card className="nexo-premium-surface bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
@@ -1268,7 +1269,7 @@ export default function AgentIa() {
 
           {(activeTrainingReport.critic?.strengths?.length || activeTrainingReport.critic?.priorities?.length || activeTrainingReport.appliedAdjustments.length > 0 || activeTrainingReport.issues.length > 0 || (activeTrainingReport.progression?.nextFocus?.length ?? 0) > 0) && (
             <Accordion type="single" collapsible className="mt-5">
-              <AccordionItem value="training-insights" className="border-primary/10 bg-white/70">
+              <AccordionItem value="training-insights" className="rounded-[1.5rem] border-primary/10 bg-white/62">
                 <AccordionTrigger className="px-4 py-4 hover:text-slate-950">
                   <div className="text-left">
                     <p className="text-sm font-semibold text-slate-950">Abrir leitura detalhada do treino</p>
@@ -1367,7 +1368,7 @@ export default function AgentIa() {
           )}
           </Card>
         ) : (
-          <Card className="border-border/60 p-5 md:p-6">
+          <Card className="nexo-premium-surface p-5 md:p-6">
             <SectionHeader
               icon={Gauge}
               title="Treino e progresso"
@@ -1382,7 +1383,7 @@ export default function AgentIa() {
       </section>
 
       <section id="agent-conhecimento" className="scroll-mt-24">
-        <Card className="border-border/60 p-5 md:p-6">
+        <Card className="nexo-premium-surface p-5 md:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <SectionHeader
               icon={Database}
@@ -1454,13 +1455,13 @@ export default function AgentIa() {
       </section>
 
       <section id="agent-teste" className="scroll-mt-24">
-        <Card className="overflow-hidden border-slate-200 bg-slate-950 p-0 text-white shadow-xl shadow-slate-900/10">
+        <Card className="nexo-premium-dark overflow-hidden p-0 text-white">
         <div className="relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(20,184,166,0.34),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(37,99,235,0.36),transparent_26%),linear-gradient(135deg,#020617_0%,#0f172a_48%,#082f49_100%)]" />
           <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.15)_1px,transparent_1px)] [background-size:34px_34px]" />
           <div className="relative grid gap-6 p-5 md:p-7 xl:grid-cols-[0.95fr_1.05fr]">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-white/10 px-3 py-1 text-xs font-semibold text-cyan-100 backdrop-blur">
+              <div className="nexo-premium-chip">
                 <TestTube2 className="h-3.5 w-3.5" />
                 Simulador Nexo IA
               </div>
@@ -1473,7 +1474,7 @@ export default function AgentIa() {
                 </p>
               </div>
 
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/8 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-100">Conversa simulada</p>
@@ -1494,16 +1495,16 @@ export default function AgentIa() {
                   </Button>
                 </div>
 
-                <div className="mt-4 max-h-[390px] space-y-3 overflow-y-auto rounded-[1.35rem] border border-white/10 bg-slate-950/35 p-3">
+                <div className="mt-4 max-h-[390px] space-y-3 overflow-y-auto rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(5,11,46,0.44),rgba(10,19,58,0.54))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                   {simulatorChatTurns.length > 0 ? simulatorChatTurns.map((turn, turnIndex) => (
                     <div key={`${turn.incoming}-${turnIndex}`} className="space-y-2">
                       <div className="flex justify-end">
-                        <div className="max-w-[86%] rounded-2xl rounded-tr-sm bg-blue-500 px-4 py-3 text-sm leading-6 text-white shadow-lg shadow-blue-950/20">
+                        <div className="max-w-[86%] rounded-2xl rounded-tr-sm bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_65%,#EC4899_100%)] px-4 py-3 text-sm leading-6 text-white shadow-[0_22px_50px_-30px_rgba(37,99,255,0.7)]">
                           {turn.incoming}
                         </div>
                       </div>
                       <div className="flex justify-start">
-                        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-white/10 bg-white px-4 py-3 text-sm leading-6 text-slate-900 shadow-lg shadow-slate-950/15">
+                        <div className="max-w-[88%] rounded-2xl rounded-tl-sm border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,255,0.95))] px-4 py-3 text-sm leading-6 text-slate-900 shadow-[0_24px_52px_-34px_rgba(5,11,46,0.5)]">
                           {turn.capturedMessages.length > 0 ? (
                             <div className="space-y-2">
                               {turn.capturedMessages.map((message, messageIndex) => (
@@ -1572,7 +1573,7 @@ export default function AgentIa() {
                     type="button"
                     onClick={() => handleSimulate()}
                     disabled={simulateMutation.isPending || !activeProfileId || simulatorMessage.trim() === ""}
-                    className="rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                    className="rounded-full bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] text-white shadow-[0_24px_52px_-28px_rgba(37,99,255,0.72)] hover:opacity-95"
                   >
                     {simulateMutation.isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                     Enviar no simulador
@@ -1581,7 +1582,7 @@ export default function AgentIa() {
               </div>
             </div>
 
-            <div className="rounded-[1.9rem] border border-white/10 bg-white/95 p-4 text-slate-950 shadow-2xl shadow-cyan-950/20 md:p-5">
+            <div className="rounded-[1.9rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(246,248,255,0.92))] p-4 text-slate-950 shadow-[0_30px_70px_-36px_rgba(8,47,73,0.42)] md:p-5">
               {simulateMutation.isPending ? (
                 <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
@@ -1597,11 +1598,11 @@ export default function AgentIa() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Resposta da IA</p>
-                      <div className="mt-3 rounded-[1.35rem] rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-900">
+                      <div className="mt-3 rounded-[1.35rem] rounded-tl-md border border-blue-100/80 bg-[linear-gradient(135deg,rgba(239,246,255,0.9),rgba(245,243,255,0.86))] px-4 py-3 text-sm leading-7 text-slate-900 shadow-[0_20px_44px_-34px_rgba(37,99,255,0.35)]">
                         {latestSimulationTurn.reply || "A IA não respondeu neste cenário."}
                       </div>
                     </div>
-                    <div className="shrink-0 rounded-3xl border border-slate-200 bg-white px-5 py-4 text-center shadow-sm">
+                    <div className="shrink-0 rounded-3xl border border-blue-100/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(239,246,255,0.9))] px-5 py-4 text-center shadow-[0_24px_54px_-36px_rgba(37,99,255,0.45)]">
                       <Gauge className={`mx-auto h-5 w-5 ${scoreTone(latestSimulationTurn.score)}`} />
                       <p className={`mt-2 text-3xl font-semibold ${scoreTone(latestSimulationTurn.score)}`}>
                         {latestSimulationTurn.score.toFixed(0)}
@@ -1616,7 +1617,7 @@ export default function AgentIa() {
                     <SimulatorMetric icon={ArrowRight} label="Estratégia" value={simulatorStrategyLabel(latestSimulationTurn.responseStrategy)} />
                   </div>
 
-                  <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
+                  <div className="rounded-3xl border border-blue-100/80 bg-[linear-gradient(135deg,rgba(239,246,255,0.9),rgba(245,243,255,0.82))] p-4 shadow-[0_20px_44px_-34px_rgba(37,99,255,0.32)]">
                     <p className="flex items-center gap-2 text-sm font-semibold text-blue-950">
                       <Target className="h-4 w-4 text-blue-600" />
                       Motivo da decisão
@@ -2016,7 +2017,7 @@ export default function AgentIa() {
       </section>
 
       <section id="agent-midias" className="scroll-mt-24 grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/60 p-5 md:p-6">
+        <Card className="nexo-premium-surface p-5 md:p-6">
           <SectionHeader
             icon={Image}
             title="Mídias conectadas"
@@ -2043,7 +2044,7 @@ export default function AgentIa() {
           </div>
         </Card>
 
-        <Card id="agent-ajustes" className="scroll-mt-24 border-border/60 p-5 md:p-6">
+        <Card id="agent-ajustes" className="nexo-premium-surface scroll-mt-24 p-5 md:p-6">
           <SectionHeader
             icon={Settings2}
             title="Ajustes do Nexo bot"
@@ -2698,7 +2699,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1rem] bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.14))] text-primary shadow-[0_16px_36px_-28px_rgba(37,99,255,0.68)]">
         <Icon className="h-5 w-5" />
       </div>
       <div>
@@ -2720,7 +2721,7 @@ function AgentAccordionHeader({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.14))] text-primary shadow-[0_16px_36px_-28px_rgba(37,99,255,0.68)]">
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
@@ -2752,20 +2753,21 @@ function PanelAreaCard({
     <button
       type="button"
       onClick={handleClick}
-      className="group rounded-[1.35rem] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+      className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-[linear-gradient(160deg,rgba(255,255,255,0.78),rgba(241,245,255,0.72))] p-4 text-left shadow-[0_24px_56px_-42px_rgba(5,11,46,0.34)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_30px_60px_-36px_rgba(37,99,255,0.38)]"
     >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.1),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(236,72,153,0.08),transparent_26%)] opacity-70" />
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
+        <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-[1.15rem] bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.16))] text-primary shadow-[0_18px_36px_-28px_rgba(37,99,255,0.7)] transition group-hover:scale-105 group-hover:text-white">
           <Icon className="h-5 w-5" />
         </div>
         {status ? (
-          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+          <Badge variant="secondary" className="relative z-10 border-white/60 bg-white/72 text-slate-700">
             {status}
           </Badge>
         ) : null}
       </div>
-      <p className="mt-4 text-sm font-semibold text-slate-950">{title}</p>
-      <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">{description}</p>
+      <p className="relative z-10 mt-4 text-sm font-semibold text-slate-950">{title}</p>
+      <p className="relative z-10 mt-2 line-clamp-3 text-xs leading-5 text-slate-500">{description}</p>
     </button>
   );
 }
@@ -2782,11 +2784,11 @@ function AdjustmentGroup({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <div className="rounded-2xl border border-white/55 bg-[linear-gradient(160deg,rgba(255,255,255,0.74),rgba(241,245,255,0.68))] p-4 shadow-[0_18px_36px_-30px_rgba(5,11,46,0.22)]">
       <p className="text-sm font-semibold text-slate-950">{title}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.slice(0, 8).map((item) => (
-          <Badge key={item} variant="secondary" className="bg-white text-slate-700">
+          <Badge key={item} variant="secondary" className="border-white/55 bg-white/76 text-slate-700">
             {item}
           </Badge>
         ))}
@@ -2865,7 +2867,7 @@ function InfoBlock({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+    <div className="rounded-xl border border-white/50 bg-[linear-gradient(160deg,rgba(255,255,255,0.7),rgba(241,245,255,0.66))] px-4 py-3 backdrop-blur">
       <p className="font-medium text-slate-950">{title}</p>
       <p className="mt-1 text-muted-foreground">{children}</p>
     </div>
@@ -2880,7 +2882,7 @@ function PreviewPill({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-white/85 px-4 py-3">
+    <div className="rounded-2xl border border-white/60 bg-[linear-gradient(160deg,rgba(255,255,255,0.76),rgba(243,246,255,0.72))] px-4 py-3 shadow-[0_16px_34px_-28px_rgba(37,99,255,0.28)]">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-slate-950">{value}</p>
     </div>
@@ -2897,7 +2899,7 @@ function SimulatorMetric({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm">
+    <div className="rounded-2xl border border-white/60 bg-[linear-gradient(160deg,rgba(255,255,255,0.82),rgba(244,247,255,0.78))] px-3 py-3 shadow-[0_18px_40px_-32px_rgba(5,11,46,0.24)]">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         <Icon className="h-3.5 w-3.5 text-cyan-600" />
         {label}
@@ -2909,7 +2911,7 @@ function SimulatorMetric({
 
 function QualityIndicatorCard({ indicator }: { indicator: AiAgentQualityIndicator }) {
   return (
-    <div className={`rounded-2xl border px-3 py-3 ${qualityStatusClass(indicator.status)}`}>
+    <div className={`rounded-2xl border px-3 py-3 shadow-[0_18px_38px_-30px_rgba(5,11,46,0.16)] ${qualityStatusClass(indicator.status)}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wide">{indicator.label}</p>
         <Badge variant="outline" className="shrink-0 border-current/25 bg-white/50 text-[10px]">
