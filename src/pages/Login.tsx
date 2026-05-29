@@ -31,12 +31,15 @@ const particles = [
 function CircuitBackdrop() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(13,91,255,0.26),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(255,79,216,0.18),transparent_26%),radial-gradient(circle_at_52%_72%,rgba(122,60,255,0.22),transparent_30%),linear-gradient(135deg,#050A2B_0%,#081238_33%,#0C1C4A_58%,#130B34_78%,#20092D_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(13,91,255,0.28),transparent_22%),radial-gradient(circle_at_82%_14%,rgba(255,79,216,0.22),transparent_24%),radial-gradient(circle_at_58%_76%,rgba(122,60,255,0.24),transparent_30%),radial-gradient(circle_at_74%_52%,rgba(13,91,255,0.12),transparent_20%),linear-gradient(135deg,#050A2B_0%,#081238_29%,#0C1C4A_54%,#130B34_76%,#20092D_100%)]" />
       <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.18)_1px,transparent_1px)] [background-size:88px_88px]" />
-      <div className="absolute -left-20 top-20 h-[26rem] w-[26rem] rounded-full bg-[#0D5BFF]/24 blur-3xl" />
-      <div className="absolute right-[-10rem] top-[-5rem] h-[28rem] w-[28rem] rounded-full bg-[#FF4FD8]/18 blur-3xl" />
-      <div className="absolute bottom-[-10rem] left-[28%] h-[24rem] w-[24rem] rounded-full bg-[#7A3CFF]/22 blur-3xl" />
-      <div className="absolute bottom-[8%] right-[8%] h-[14rem] w-[14rem] rounded-full bg-cyan-400/10 blur-3xl" />
+      <div className="absolute left-[10%] top-[8%] h-[24rem] w-[32rem] rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.2),transparent_62%)] blur-3xl" />
+      <div className="absolute right-[-8rem] top-[-4rem] h-[30rem] w-[30rem] rounded-full bg-[#FF4FD8]/20 blur-3xl" />
+      <div className="absolute bottom-[-10rem] left-[24%] h-[26rem] w-[26rem] rounded-full bg-[#7A3CFF]/24 blur-3xl" />
+      <div className="absolute bottom-[10%] right-[9%] h-[16rem] w-[16rem] rounded-full bg-cyan-400/12 blur-3xl" />
+      <div className="absolute right-[22%] top-[22%] h-[28rem] w-[14rem] rotate-[18deg] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0))] blur-3xl" />
+      <div className="absolute bottom-[12%] left-[6%] h-px w-[24rem] bg-gradient-to-r from-transparent via-cyan-300/35 to-transparent" />
+      <div className="absolute top-[18%] right-[12%] h-px w-[18rem] bg-gradient-to-r from-transparent via-fuchsia-300/25 to-transparent" />
 
       <svg className="absolute left-[3%] top-[10%] h-[36rem] w-[36rem] opacity-[0.24]" viewBox="0 0 560 560" fill="none">
         <path d="M86 322L162 208L250 264L354 138L456 222M162 208L238 112L354 138M250 264L324 372L456 222M86 322L184 430L324 372L438 462" stroke="url(#nexo-line-a)" strokeWidth="2.4" strokeLinecap="round" />
@@ -97,11 +100,13 @@ function CircuitBackdrop() {
 
 function BrandSignature() {
   return (
-    <div className="relative flex max-w-[34rem] flex-col gap-6 sm:flex-row sm:items-center sm:gap-7">
-      <div className="relative flex h-[8.5rem] w-[8.5rem] shrink-0 items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.22),transparent_62%)] blur-3xl" />
-        <div className="absolute inset-[14%] rounded-full border border-white/12 bg-white/[0.03] backdrop-blur" />
-        <svg className="absolute -inset-8 opacity-[0.72]" viewBox="0 0 180 180" fill="none">
+    <div className="relative max-w-[38rem] space-y-6">
+      <div className="relative flex items-center gap-7">
+        <div className="relative flex h-[9.25rem] w-[9.25rem] shrink-0 items-center justify-center">
+          <div className="absolute inset-[-8%] rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.18),transparent_62%)] blur-3xl" />
+          <div className="absolute inset-0 rounded-[2.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur" />
+          <div className="absolute inset-[12%] rounded-[2rem] border border-white/8" />
+          <svg className="absolute -inset-8 opacity-[0.78]" viewBox="0 0 180 180" fill="none">
           <path d="M26 108L58 66L92 86L124 46L154 76" stroke="url(#hero-line-a)" strokeWidth="2.2" strokeLinecap="round" />
           <path d="M58 66L58 124L88 150M92 86L116 118L146 108" stroke="rgba(255,255,255,0.24)" strokeWidth="1.2" strokeLinecap="round" />
           {[26, 58, 92, 124, 154, 88, 146].map((cx, index) => {
@@ -121,20 +126,29 @@ function BrandSignature() {
             </radialGradient>
           </defs>
         </svg>
-        <BrandMark className="relative h-[5.4rem] w-[5.4rem] rounded-[1.9rem] shadow-[0_26px_70px_-28px_rgba(255,79,216,0.7)]" letterClassName="text-[2.3rem]" />
+          <BrandMark className="relative h-[5.75rem] w-[5.75rem] rounded-[2.1rem] shadow-[0_28px_84px_-30px_rgba(255,79,216,0.72)]" letterClassName="text-[2.45rem]" />
+        </div>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3 text-[clamp(2.9rem,7vw,4.8rem)] font-light leading-none tracking-[-0.085em] text-white">
+            <span className="font-display">Ne</span>
+            <span className="bg-[linear-gradient(135deg,#FFFFFF_0%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">x</span>
+            <span className="font-display">o</span>
+            <span className="hidden h-11 w-px self-center bg-gradient-to-b from-white/0 via-white/35 to-white/0 sm:block" />
+            <span className="bg-[linear-gradient(135deg,#D7C8FF_0%,#7A3CFF_46%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">IA</span>
+          </div>
+          <p className="pl-1 text-[11px] font-semibold uppercase tracking-[0.42em] text-violet-200/72">
+            Inteligência que conecta
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-end gap-3 text-[clamp(2.7rem,7vw,4.4rem)] font-light leading-none tracking-[-0.08em] text-white">
-          <span className="font-display">Ne</span>
-          <span className="bg-[linear-gradient(135deg,#FFFFFF_0%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">x</span>
-          <span className="font-display">o</span>
-          <span className="hidden h-10 w-px self-center bg-gradient-to-b from-white/0 via-white/35 to-white/0 sm:block" />
-          <span className="bg-[linear-gradient(135deg,#D7C8FF_0%,#7A3CFF_46%,#FF4FD8_100%)] bg-clip-text font-display text-transparent">IA</span>
+      <div className="flex flex-wrap gap-3">
+        <div className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-100/80 backdrop-blur">
+          Conversas em tempo real
         </div>
-        <p className="pl-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-violet-200/72">
-          Inteligência que conecta
-        </p>
+        <div className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/78 backdrop-blur">
+          IA contextual
+        </div>
       </div>
     </div>
   );
@@ -171,7 +185,7 @@ export default function Login() {
 
       <main className="relative mx-auto grid min-h-screen w-full max-w-[1540px] items-center gap-12 px-5 py-8 md:px-8 lg:grid-cols-[minmax(0,1.06fr)_minmax(420px,0.94fr)] lg:px-12 xl:px-16">
         <section className="flex flex-col justify-center space-y-9 lg:pr-10">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-100/82 backdrop-blur-xl">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-100/82 shadow-[0_18px_60px_-42px_rgba(34,211,238,0.78)] backdrop-blur-xl">
             <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.9)]" />
             Plataforma Nexo IA
           </div>
@@ -189,8 +203,8 @@ export default function Login() {
 
           <div className="grid max-w-xl gap-4 pt-2">
             {highlights.map((item) => (
-              <div key={item} className="flex items-center gap-3 text-sm font-medium text-white/82 md:text-base">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.08] backdrop-blur">
+              <div key={item} className="group flex items-center gap-3 text-sm font-medium text-white/82 transition-transform hover:translate-x-1 md:text-base">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.08] shadow-[0_16px_40px_-28px_rgba(255,79,216,0.7)] backdrop-blur">
                   <CheckCircle2 className="h-4 w-4 text-cyan-200" />
                 </span>
                 <span>{item}</span>
@@ -201,14 +215,17 @@ export default function Login() {
 
         <section className="flex items-center justify-center lg:justify-end">
           <div className="relative w-full max-w-[31rem]">
-            <div className="absolute inset-x-12 top-4 h-24 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.24),transparent_70%)] blur-3xl" />
+            <div className="absolute inset-x-10 top-2 h-28 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.28),transparent_70%)] blur-3xl" />
             <div className="absolute -right-10 top-10 h-40 w-40 rounded-full bg-[#FF4FD8]/16 blur-3xl" />
-            <div className="absolute -left-12 bottom-6 h-36 w-36 rounded-full bg-[#7A3CFF]/14 blur-3xl" />
+            <div className="absolute -left-12 bottom-6 h-36 w-36 rounded-full bg-[#7A3CFF]/16 blur-3xl" />
+            <div className="absolute inset-y-12 right-[-2rem] w-px bg-gradient-to-b from-transparent via-white/18 to-transparent" />
+            <div className="absolute inset-x-[12%] bottom-[-1.25rem] h-10 rounded-full bg-[radial-gradient(circle,rgba(13,91,255,0.18),transparent_68%)] blur-2xl" />
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/[0.08] p-6 shadow-[0_44px_120px_-56px_rgba(0,0,0,0.92)] backdrop-blur-[22px] md:p-8">
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05)_24%,rgba(255,255,255,0.03)_100%)]" />
-              <div className="absolute inset-[1px] rounded-[1.95rem] border border-white/8" />
-              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/65 to-transparent" />
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.06)_26%,rgba(255,255,255,0.04)_100%)] p-6 shadow-[0_52px_140px_-58px_rgba(0,0,0,0.96)] backdrop-blur-[24px] md:p-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(255,79,216,0.08),transparent_24%),radial-gradient(circle_at_16%_24%,rgba(13,91,255,0.12),transparent_24%)]" />
+              <div className="absolute inset-[1px] rounded-[1.95rem] border border-white/10" />
+              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/72 to-transparent" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/12 to-transparent" />
 
               <div className="relative">
                 <div className="mb-8 space-y-4">
