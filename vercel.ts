@@ -7,7 +7,13 @@ const apiRewrite = routes.rewrite("/api/(.*)", `${backendApiBaseUrl}/$1`, {
     "ngrok-skip-browser-warning": "true",
   },
 }) as NonNullable<VercelConfig["rewrites"]>[number];
+const backendStorageBaseUrl = backendApiBaseUrl.replace(/\/api$/, "");
+const storageRewrite = routes.rewrite("/storage/(.*)", `${backendStorageBaseUrl}/storage/$1`, {
+  requestHeaders: {
+    "ngrok-skip-browser-warning": "true",
+  },
+}) as NonNullable<VercelConfig["rewrites"]>[number];
 
 export const config: VercelConfig = {
-  rewrites: [apiRewrite],
+  rewrites: [apiRewrite, storageRewrite],
 };
