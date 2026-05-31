@@ -125,7 +125,7 @@ function buildHashLoginUrl() {
     return "/";
   }
 
-  return `${window.location.origin}${window.location.pathname}${window.location.search}#/`;
+  return `${window.location.origin}${window.location.pathname}${window.location.search}#/login`;
 }
 
 function maskToken(token: string | null) {

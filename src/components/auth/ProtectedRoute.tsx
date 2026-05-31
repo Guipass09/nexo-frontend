@@ -107,7 +107,7 @@ export default function ProtectedRoute() {
   }, [token, authQuery.data?.tokenExpiresAt]);
 
   if (!token) {
-    return <Navigate to="/" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (token && authQuery.isPending && !authQuery.data) {
