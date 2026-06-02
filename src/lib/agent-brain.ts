@@ -17,7 +17,11 @@ export type ServiceMode = "online" | "in_person" | "both";
 
 export type FallbackChoice = "confirm_team" | "ask_details" | "handoff" | "ficha_only";
 
+export type PresentationStyle = "assistant_name" | "company_only" | "virtual_assistant" | "natural";
+
 export type AgentBrainForm = {
+  presentationStyle: PresentationStyle | "";
+  mentionAi: boolean;
   businessType: BusinessType | "";
   mainGoal: MainGoal | "";
   advanceStep: AdvanceStep | "";
@@ -30,6 +34,8 @@ export type AgentBrainForm = {
 };
 
 export const emptyAgentBrainForm: AgentBrainForm = {
+  presentationStyle: "",
+  mentionAi: true,
   businessType: "",
   mainGoal: "",
   advanceStep: "",
@@ -40,6 +46,13 @@ export const emptyAgentBrainForm: AgentBrainForm = {
   handoffTriggers: [],
   fallbackBehavior: "",
 };
+
+export const PRESENTATION_OPTIONS: { value: PresentationStyle; label: string }[] = [
+  { value: "assistant_name", label: "Usar nome do assistente" },
+  { value: "company_only", label: "Usar apenas o nome da empresa" },
+  { value: "virtual_assistant", label: "Dizer que é assistente virtual" },
+  { value: "natural", label: "Atender de forma natural, sem mencionar IA" },
+];
 
 export const BUSINESS_TYPE_OPTIONS: { value: BusinessType; label: string }[] = [
   { value: "clinic", label: "Clínica / consultório" },
@@ -154,6 +167,36 @@ const FALLBACK_TO_CANONICAL: Record<FallbackChoice, string> = {
   ficha_only: "rag",
 };
 
+/**
+ * Real-time greeting preview ("Assim o cliente verá sua primeira mensagem").
+ * Derived from the presentation style + names. Never exposes technical terms.
+ */
+export function buildGreetingPreview(
+  form: AgentBrainForm,
+  companyName: string,
+  assistantName: string,
+): string {
+  const company = companyName.trim() || "nossa empresa";
+  const name = assistantName.trim();
+
+  switch (form.presentationStyle) {
+    case "assistant_name":
+      return name
+        ? `Olá, eu sou ${name}, assistente da ${company}. Como posso ajudar?`
+        : `Olá! Sou o atendimento da ${company}. Como posso ajudar?`;
+    case "company_only":
+      return `Olá, aqui é da ${company}. Como posso ajudar?`;
+    case "virtual_assistant":
+      return `Olá, sou o assistente virtual da ${company}. Como posso ajudar?`;
+    case "natural":
+      return "Olá! Como posso ajudar?";
+    default:
+      return name
+        ? `Olá, eu sou ${name}, da ${company}. Como posso ajudar?`
+        : `Olá! Como posso ajudar?`;
+  }
+}
+
 /** Suggested completion signals for the current step (used by the UI preview). */
 export function completionSignalsForStep(step: AdvanceStep | ""): string[] {
   return step && step !== "none" ? COMPLETION_SIGNAL_PRESETS[step] ?? [] : [];
@@ -193,6 +236,8 @@ export function deriveAgentBrainPayload(form: AgentBrainForm): {
 
   const tenantBrain: Record<string, unknown> = {
     businessType: form.businessType || "other",
+    presentationStyle: form.presentationStyle || "natural",
+    mentionAi: form.mentionAi,
     primaryActionLabel: PRIMARY_ACTION_LABEL[step],
     completionSignals: COMPLETION_SIGNAL_PRESETS[step] ?? [],
     supportedDomains,
@@ -271,7 +316,15 @@ export function agentBrainFormFromProfile(
   const fallbackBehavior: FallbackChoice | "" =
     fallbackRaw === "rag" ? "ficha_only" : fallbackRaw === "human" ? "handoff" : fallbackRaw === "planner" ? "ask_details" : "";
 
+  const presentationRaw = String((brain.presentation_style ?? "") as string);
+  const presentationStyle = PRESENTATION_OPTIONS.some((option) => option.value === presentationRaw)
+    ? (presentationRaw as PresentationStyle)
+    : "";
+  const mentionAi = brain.mention_ai === undefined ? true : Boolean(brain.mention_ai);
+
   return {
+    presentationStyle,
+    mentionAi,
     businessType,
     mainGoal: "",
     advanceStep,

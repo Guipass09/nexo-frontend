@@ -38,6 +38,7 @@ import { AgentTabsNav, type AgentTabItem } from "@/components/ai-agent/AgentTabs
 import { AgentBrainSection } from "@/components/ai-agent/AgentBrainSection";
 import { AgentExecutivePreview } from "@/components/ai-agent/AgentExecutivePreview";
 import {
+  ADVANCE_STEP_OPTIONS,
   agentBrainFormFromProfile,
   deriveAgentBrainPayload,
   emptyAgentBrainForm,
@@ -2347,6 +2348,11 @@ export default function AgentIa() {
           setAgentBrain(next);
           setAgentBrainDirty(true);
         }}
+        companyName={virtualAgent.businessName}
+        assistantName={virtualAgent.agentName}
+        onIdentityChange={(field, fieldValue) =>
+          updateField(field === "companyName" ? "businessName" : "agentName", fieldValue)
+        }
       />
 
       <AgentExecutivePreview value={agentBrain} />
@@ -2507,25 +2513,14 @@ export default function AgentIa() {
               description="Quem é essa pessoa virtual, o tipo de negócio e como ela deve soar no WhatsApp."
             />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Nome da pessoa virtual" help={FIELD_HELP.agentName}>
-                <Input
-                  value={virtualAgent.agentName}
-                  onChange={(event) => updateField("agentName", event.target.value)}
-                  placeholder="Ex.: Iris, Nexo IA, Time de atendimento"
-                />
-              </Field>
+              <div className="md:col-span-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-3 py-2 text-xs text-slate-500">
+                Nome do assistente e nome da empresa são configurados no <strong className="text-slate-700">Cérebro do atendimento</strong> acima.
+              </div>
               <Field label="Papel no atendimento" help={FIELD_HELP.roleTitle}>
                 <Input
                   value={virtualAgent.roleTitle}
                   onChange={(event) => updateField("roleTitle", event.target.value)}
                   placeholder="Ex.: Especialista de atendimento"
-                />
-              </Field>
-              <Field label="Empresa ou profissional" help={FIELD_HELP.businessName}>
-                <Input
-                  value={virtualAgent.businessName}
-                  onChange={(event) => updateField("businessName", event.target.value)}
-                  placeholder="Ex.: Nome da empresa"
                 />
               </Field>
               <Field label="Segmento" help={FIELD_HELP.segment}>
@@ -2669,16 +2664,35 @@ export default function AgentIa() {
                 <AccordionContent className="px-4 pb-4">
                   <div className="grid gap-6 lg:grid-cols-2">
                     <div className="space-y-3">
-                      <Label>Requisitos antes de avançar</Label>
-                      <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
-                        {REQUIRED_STEP_OPTIONS.map((option) => (
-                          <ChecklistOption
-                            key={option.value}
-                            checked={virtualAgent.requiredSteps.includes(option.value)}
-                            label={option.label}
-                            onCheckedChange={() => toggleListField("requiredSteps", option.value)}
-                          />
-                        ))}
+                      <Label>Etapa principal do cliente</Label>
+                      <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                        {agentBrain.advanceStep ? (
+                          <p className="text-sm text-slate-700">
+                            Etapa principal definida pelo <strong>Cérebro</strong>:{" "}
+                            <span className="font-semibold text-slate-950">
+                              {ADVANCE_STEP_OPTIONS.find((option) => option.value === agentBrain.advanceStep)?.label ?? "—"}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-500">
+                            Defina “Como o cliente avança?” no Cérebro do atendimento acima.
+                          </p>
+                        )}
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-xs font-medium text-primary">
+                            Detalhes avançados da jornada (exceções)
+                          </summary>
+                          <div className="mt-3 space-y-3 rounded-2xl border border-border/70 bg-muted/15 p-4">
+                            {REQUIRED_STEP_OPTIONS.map((option) => (
+                              <ChecklistOption
+                                key={option.value}
+                                checked={virtualAgent.requiredSteps.includes(option.value)}
+                                label={option.label}
+                                onCheckedChange={() => toggleListField("requiredSteps", option.value)}
+                              />
+                            ))}
+                          </div>
+                        </details>
                       </div>
                     </div>
 

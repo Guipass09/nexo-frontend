@@ -1,6 +1,7 @@
-import { Brain, Building2, Globe2, HelpCircle, ListChecks, ShieldAlert, Sparkles, Target, UserCog } from "lucide-react";
+import { Brain, Building2, Globe2, HelpCircle, IdCard, ListChecks, MessageCircle, ShieldAlert, Sparkles, Target, UserCog } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ADVANCE_STEP_OPTIONS,
@@ -9,9 +10,11 @@ import {
   FORBIDDEN_CLAIM_OPTIONS,
   HANDOFF_TRIGGER_OPTIONS,
   MAIN_GOAL_OPTIONS,
+  PRESENTATION_OPTIONS,
   SERVICE_MODE_OPTIONS,
   SUPPORTED_TOPIC_OPTIONS,
   buildAgentBrainPreview,
+  buildGreetingPreview,
   completionSignalsForStep,
   type AgentBrainForm,
 } from "@/lib/agent-brain";
@@ -79,9 +82,15 @@ function Question({
 export function AgentBrainSection({
   value,
   onChange,
+  companyName,
+  assistantName,
+  onIdentityChange,
 }: {
   value: AgentBrainForm;
   onChange: (next: AgentBrainForm) => void;
+  companyName: string;
+  assistantName: string;
+  onIdentityChange: (field: "companyName" | "assistantName", value: string) => void;
 }) {
   const set = (patch: Partial<AgentBrainForm>) => onChange({ ...value, ...patch });
 
@@ -125,7 +134,78 @@ export function AgentBrainSection({
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3">
+      <div className="mt-5 rounded-2xl border border-white/55 bg-white/55 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.14))] text-primary">
+            <IdCard className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-950">Identidade do atendente</p>
+            <p className="mt-0.5 text-xs leading-5 text-slate-500">Como ele se chama e como deve se apresentar ao cliente.</p>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="text-xs font-medium text-slate-600">Nome da empresa</label>
+                <Input
+                  value={companyName}
+                  onChange={(event) => onIdentityChange("companyName", event.target.value)}
+                  placeholder="Ex.: Sementes da Fala"
+                  className="mt-1 bg-white/80"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600">Nome do assistente</label>
+                <Input
+                  value={assistantName}
+                  onChange={(event) => onIdentityChange("assistantName", event.target.value)}
+                  placeholder="Ex.: Nina, Sofia, Atendimento"
+                  className="mt-1 bg-white/80"
+                />
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs font-medium text-slate-600">Como o assistente deve se apresentar?</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PRESENTATION_OPTIONS.map((option) => (
+                <Chip
+                  key={option.value}
+                  label={option.label}
+                  active={value.presentationStyle === option.value}
+                  onClick={() =>
+                    set({
+                      presentationStyle: value.presentationStyle === option.value ? "" : option.value,
+                      mentionAi: option.value === "natural" ? false : option.value === "virtual_assistant" ? true : value.mentionAi,
+                    })
+                  }
+                />
+              ))}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Chip
+                label="Pode dizer que é assistente virtual"
+                active={value.mentionAi}
+                onClick={() => set({ mentionAi: true })}
+              />
+              <Chip
+                label="Não mencionar IA/robô, atender naturalmente"
+                active={!value.mentionAi}
+                onClick={() => set({ mentionAi: false })}
+              />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-cyan-200/50 bg-cyan-50/40 px-4 py-3">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <MessageCircle className="h-3.5 w-3.5" />
+                Assim o cliente verá sua primeira mensagem:
+              </p>
+              <p className="mt-1.5 text-sm leading-6 text-slate-700">{buildGreetingPreview(value, companyName, assistantName)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-3">
         <Question icon={Building2} index={1} title="Que tipo de negócio é o seu?">
           {single(BUSINESS_TYPE_OPTIONS, value.businessType, (next) => set({ businessType: next as AgentBrainForm["businessType"] }))}
         </Question>

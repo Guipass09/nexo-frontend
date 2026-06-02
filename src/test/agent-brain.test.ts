@@ -1,5 +1,6 @@
 import {
   agentBrainFormFromProfile,
+  buildGreetingPreview,
   completionSignalsForStep,
   deriveAgentBrainPayload,
   emptyAgentBrainForm,
@@ -111,6 +112,57 @@ describe("agent brain composition", () => {
     expect(form.advanceStep).toBe("matricula");
     expect(form.serviceMode).toBe("in_person");
     expect(form.forbiddenClaims).toContain("resultado garantido");
+  });
+
+  it("greeting changes with presentation style: assistant name", () => {
+    const greeting = buildGreetingPreview(
+      { ...emptyAgentBrainForm, presentationStyle: "assistant_name" },
+      "Sementes da Fala",
+      "Nina",
+    );
+    expect(greeting).toContain("Nina");
+    expect(greeting).toContain("Sementes da Fala");
+  });
+
+  it("greeting for 'virtual_assistant' says assistente virtual", () => {
+    const greeting = buildGreetingPreview(
+      { ...emptyAgentBrainForm, presentationStyle: "virtual_assistant" },
+      "Sementes da Fala",
+      "Nina",
+    );
+    expect(greeting.toLowerCase()).toContain("assistente virtual");
+  });
+
+  it("greeting for 'natural' does not mention IA/assistente virtual", () => {
+    const greeting = buildGreetingPreview(
+      { ...emptyAgentBrainForm, presentationStyle: "natural" },
+      "Sementes da Fala",
+      "Nina",
+    );
+    expect(greeting).toBe("Olá! Como posso ajudar?");
+    expect(greeting.toLowerCase()).not.toContain("assistente virtual");
+    expect(greeting.toLowerCase()).not.toContain("ia");
+  });
+
+  it("greeting for 'company_only' uses only the company name", () => {
+    const greeting = buildGreetingPreview(
+      { ...emptyAgentBrainForm, presentationStyle: "company_only" },
+      "Sementes da Fala",
+      "Nina",
+    );
+    expect(greeting).toContain("Sementes da Fala");
+    expect(greeting).not.toContain("Nina");
+  });
+
+  it("persists presentationStyle and mentionAi into tenantBrain", () => {
+    const { tenantBrain } = deriveAgentBrainPayload({
+      ...emptyAgentBrainForm,
+      presentationStyle: "virtual_assistant",
+      mentionAi: true,
+      advanceStep: "cadastro",
+    });
+    expect(tenantBrain.presentationStyle).toBe("virtual_assistant");
+    expect(tenantBrain.mentionAi).toBe(true);
   });
 
   it("leaves Sementes da Fala (platform) businessType empty so the form stays untouched", () => {
