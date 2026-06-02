@@ -8,17 +8,21 @@ import {
   Building2,
   Clock,
   Database,
+  CheckCircle2,
   Gauge,
   HelpCircle,
   Image,
+  LayoutDashboard,
   LoaderCircle,
   MessageSquareText,
   Plus,
+  Power,
   Radio,
   Save,
   Send,
   Settings2,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Target,
   TestTube2,
@@ -29,6 +33,8 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { AgentTabsNav, type AgentTabItem } from "@/components/ai-agent/AgentTabsNav";
+import { useWhatsAppConnection } from "@/hooks/use-whatsapp-connection";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -364,6 +370,16 @@ const panelAreaItems = [
     title: "Ajustes",
     description: "Aprendizados do Nexo bot aplicados ao cérebro.",
   },
+];
+
+type AgentTabKey = "overview" | "agent" | "test" | "activation" | "advanced";
+
+const AGENT_TABS: AgentTabItem[] = [
+  { key: "overview", label: "Visão geral", icon: LayoutDashboard },
+  { key: "agent", label: "Meu atendente", icon: UserRound },
+  { key: "test", label: "Testar", icon: TestTube2 },
+  { key: "activation", label: "Ativação", icon: Power },
+  { key: "advanced", label: "Avançado", icon: Settings2 },
 ];
 
 const emptyAttendanceMap: AiAgentAttendanceMap = {
@@ -731,6 +747,8 @@ export default function AgentIa() {
   const [simulatorMessage, setSimulatorMessage] = useState("boa noite, como funciona?");
   const [simulatorConversationMessages, setSimulatorConversationMessages] = useState<string[]>([]);
   const [simulatorResult, setSimulatorResult] = useState<AiAgentSimulationResult | null>(null);
+  const [activeTab, setActiveTab] = useState<AgentTabKey>("overview");
+  const { connection: whatsappConnection } = useWhatsAppConnection();
   const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
     { profileId: activeProfileId },
     Boolean(activeProfileId),
@@ -824,6 +842,29 @@ export default function AgentIa() {
 
     return stringCount + arrayCount + attendanceStringCount + attendanceListCount;
   }, [virtualAgent]);
+
+  const readiness = useMemo(() => {
+    const checks = [
+      virtualAgent.agentName,
+      virtualAgent.businessName || virtualAgent.businessDescription,
+      virtualAgent.services,
+      virtualAgent.audienceDescription,
+      virtualAgent.businessDescription,
+      virtualAgent.pricingPolicy,
+      virtualAgent.operatingHours,
+      virtualAgent.faq,
+      virtualAgent.handoffRules,
+      virtualAgent.boundaries,
+    ];
+    const filled = checks.filter((value) => typeof value === "string" && value.trim() !== "").length;
+    const total = checks.length;
+    const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+
+    return { filled, total, pct, ready: pct >= 70 };
+  }, [virtualAgent]);
+
+  const whatsappKnown = Boolean(whatsappConnection);
+  const whatsappConnected = (whatsappConnection?.status ?? "") === "connected";
 
   const contextPreview = useMemo(() => {
     const attendanceMap = virtualAgent.attendanceMap ?? emptyAttendanceMap;
@@ -1140,11 +1181,54 @@ export default function AgentIa() {
               Nexo IA premium
             </div>
             <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-              Centro de inteligência do atendimento.
+              Seu atendente inteligente.
             </h1>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Configure a persona, teste conversas reais e acompanhe como a IA conduz cada atendimento com contexto, memória e segurança.
+              {readiness.ready
+                ? "Tudo certo por aqui. Teste uma conversa e ative o atendimento automático quando quiser."
+                : "Responda algumas perguntas simples e deixe seu atendente pronto para conversar com seus clientes."}
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span
+                className={[
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+                  enabled
+                    ? "border-emerald-200 bg-emerald-50/80 text-emerald-700"
+                    : "border-slate-200 bg-white/70 text-slate-500",
+                ].join(" ")}
+              >
+                <span className={enabled ? "h-2 w-2 rounded-full bg-emerald-500" : "h-2 w-2 rounded-full bg-slate-400"} />
+                {enabled ? "Ativo" : "Pausado"}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/70 bg-white/70 px-3 py-1 text-xs font-semibold text-primary">
+                <Gauge className="h-3.5 w-3.5" />
+                Configuração {readiness.pct}%
+              </span>
+              {whatsappKnown && (
+                <span
+                  className={[
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+                    whatsappConnected
+                      ? "border-emerald-200 bg-emerald-50/80 text-emerald-700"
+                      : "border-amber-200 bg-amber-50/80 text-amber-700",
+                  ].join(" ")}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  {whatsappConnected ? "WhatsApp conectado" : "WhatsApp desconectado"}
+                </span>
+              )}
+              <span
+                className={[
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+                  readiness.ready
+                    ? "border-emerald-200 bg-emerald-50/80 text-emerald-700"
+                    : "border-amber-200 bg-amber-50/80 text-amber-700",
+                ].join(" ")}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {readiness.ready ? "Pronto para atender" : "Faltam informações"}
+              </span>
+            </div>
           </div>
           <div className="relative flex min-w-[280px] flex-col gap-3 rounded-[1.65rem] border border-white/60 bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(242,246,255,0.7))] p-4 shadow-[0_24px_56px_-36px_rgba(5,11,46,0.34)] backdrop-blur">
             <div className="flex items-center justify-between gap-4">
@@ -1210,18 +1294,163 @@ export default function AgentIa() {
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        {panelAreaItems.map((item) => (
-          <PanelAreaCard
-            key={item.id}
-            icon={item.icon}
-            targetId={item.id}
-            title={item.title}
-            description={item.description}
-            status={panelAreaStats[item.id]}
-          />
-        ))}
-      </section>
+      <AgentTabsNav tabs={AGENT_TABS} active={activeTab} onChange={(key) => setActiveTab(key as AgentTabKey)} />
+
+      {activeTab === "overview" && (
+        <section className="space-y-4">
+          <Card className="nexo-premium-surface relative overflow-hidden p-6 md:p-7">
+            <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/60 bg-white/70 px-3 py-1 text-xs font-semibold text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {readiness.ready ? "Atendente pronto" : "Quase lá"}
+                </div>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                  {readiness.ready
+                    ? "Seu atendente está pronto para atender"
+                    : "Faltam algumas informações para deixar seu atendente mais inteligente"}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {readiness.ready
+                    ? "Você pode testar uma conversa real no simulador e ativar o atendimento automático quando quiser."
+                    : `Você já preencheu ${readiness.filled} de ${readiness.total} blocos essenciais. Complete a ficha para respostas mais precisas.`}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button className="gap-2" onClick={() => setActiveTab("test")}>
+                    <TestTube2 className="h-4 w-4" />
+                    Testar atendente
+                  </Button>
+                  <Button variant="outline" className="gap-2" onClick={() => setActiveTab("agent")}>
+                    <UserRound className="h-4 w-4" />
+                    Editar ficha
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleTrain}
+                    disabled={trainMutation.isPending || isLoading}
+                  >
+                    {trainMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                    Treinar conhecimento
+                  </Button>
+                </div>
+              </div>
+              <div className="flex w-full max-w-xs flex-col gap-3 rounded-[1.5rem] border border-white/60 bg-white/55 p-4 backdrop-blur lg:w-[300px]">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-950">Prontidão</p>
+                  <span className="text-sm font-semibold text-primary">{readiness.pct}%</span>
+                </div>
+                <Progress value={readiness.pct} className="h-2.5" />
+                <div className="flex items-center justify-between rounded-2xl border border-white/55 bg-white/60 px-3 py-2">
+                  <p className="text-sm font-semibold text-slate-950">Atendimento automático</p>
+                  <Switch checked={enabled} onCheckedChange={setEnabled} />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <Card className="nexo-premium-surface p-5">
+              <div className="flex items-center gap-2 text-slate-500">
+                <TestTube2 className="h-4 w-4" />
+                <span className="text-xs font-semibold uppercase tracking-wide">Último teste</span>
+              </div>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">
+                {simulatorResult ? `Nota ${simulatorResult.summary.averageScore.toFixed(0)}` : "Ainda não testado"}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {simulatorResult
+                  ? `${simulatorResult.summary.respondedTurns} resposta(s) avaliada(s)`
+                  : "Faça um teste no simulador para ver como ele responde."}
+              </p>
+            </Card>
+            <Card className="nexo-premium-surface p-5">
+              <div className="flex items-center gap-2 text-slate-500">
+                <Gauge className="h-4 w-4" />
+                <span className="text-xs font-semibold uppercase tracking-wide">Treino</span>
+              </div>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">
+                {activeTrainingReport ? `Nota ${activeTrainingReport.averageScore.toFixed(0)}` : "Sem treino"}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {activeTrainingReport
+                  ? `${activeTrainingReport.passedScenarios}/${activeTrainingReport.scenarioCount} cenários ok`
+                  : "Treine para o agente aprender o contexto da empresa."}
+              </p>
+            </Card>
+            <Card className="nexo-premium-surface p-5">
+              <div className="flex items-center gap-2 text-slate-500">
+                <Database className="h-4 w-4" />
+                <span className="text-xs font-semibold uppercase tracking-wide">Conhecimento</span>
+              </div>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">
+                {(knowledgeSummary?.activeBlocks ?? knowledgeItems.length)} blocos
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {filledFieldsCount} informações configuradas na ficha.
+              </p>
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {activeTab === "activation" && (
+        <section className="space-y-4">
+          <Card className="nexo-premium-surface p-5 md:p-6">
+            <SectionHeader
+              icon={Power}
+              title="Ativação do atendimento"
+              description="Defina quando o seu atendente deve responder automaticamente no WhatsApp."
+            />
+            <div className="mt-5 grid gap-3">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/60 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Agent IA ativo</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Quando ligado, o atendente assume a conversa antes dos fluxos automáticos.
+                  </p>
+                </div>
+                <Switch checked={enabled} onCheckedChange={setEnabled} />
+              </div>
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/60 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Responder contatos já salvos</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Desligue para atender apenas números novos no WhatsApp conectado.
+                  </p>
+                </div>
+                <Switch
+                  checked={allowSavedContacts}
+                  onCheckedChange={(checked) => {
+                    setAllowSavedContacts(checked);
+
+                    if (checked && triggerType === "unsaved_contacts") {
+                      setTriggerType("all_contacts");
+                    }
+
+                    if (!checked && triggerType === "all_contacts") {
+                      setTriggerType("unsaved_contacts");
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/40 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Chamar humano quando não souber</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Configure as situações de transferência na ficha do atendente.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setActiveTab("agent")}>
+                  <ArrowRight className="h-4 w-4" />
+                  Configurar
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </section>
+      )}
 
       {isError && (
         <Card className="nexo-premium-surface border-destructive/30 p-4 text-sm text-destructive">
@@ -1229,7 +1458,7 @@ export default function AgentIa() {
         </Card>
       )}
 
-      <section id="agent-treino" className="scroll-mt-24">
+      <section id="agent-treino" hidden={activeTab !== "advanced"} className="scroll-mt-24">
         {activeTrainingReport ? (
           <Card className="nexo-premium-surface bg-[linear-gradient(135deg,_rgba(37,99,235,0.08),_rgba(16,185,129,0.06))] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1382,7 +1611,7 @@ export default function AgentIa() {
         )}
       </section>
 
-      <section id="agent-conhecimento" className="scroll-mt-24">
+      <section id="agent-conhecimento" hidden={activeTab !== "advanced"} className="scroll-mt-24">
         <Card className="nexo-premium-surface p-5 md:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <SectionHeader
@@ -1454,7 +1683,7 @@ export default function AgentIa() {
         </Card>
       </section>
 
-      <section id="agent-teste" className="scroll-mt-24">
+      <section id="agent-teste" hidden={activeTab !== "test"} className="scroll-mt-24">
         <Card className="nexo-premium-dark overflow-hidden p-0 text-white">
         <div className="relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(20,184,166,0.34),transparent_28%),radial-gradient(circle_at_82%_8%,rgba(37,99,235,0.36),transparent_26%),linear-gradient(135deg,#020617_0%,#0f172a_48%,#082f49_100%)]" />
@@ -2016,7 +2245,7 @@ export default function AgentIa() {
         </Card>
       </section>
 
-      <section id="agent-midias" className="scroll-mt-24 grid gap-6 lg:grid-cols-2">
+      <section id="agent-midias" hidden={activeTab !== "advanced"} className="scroll-mt-24 grid gap-6 lg:grid-cols-2">
         <Card className="nexo-premium-surface p-5 md:p-6">
           <SectionHeader
             icon={Image}
@@ -2071,7 +2300,25 @@ export default function AgentIa() {
         </Card>
       </section>
 
-      <section id="agent-ficha" className="scroll-mt-24 space-y-6">
+      <section id="agent-ficha" hidden={activeTab !== "agent"} className="scroll-mt-24 space-y-6">
+      <Card className="nexo-premium-surface p-5 md:p-6">
+        <SectionHeader
+          icon={UserRound}
+          title="Meu atendente"
+          description="Responda em linguagem simples sobre o seu negócio. Quanto mais completo, mais inteligente o atendente fica."
+        />
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <Progress value={readiness.pct} className="h-2" />
+          </div>
+          <span className="text-sm font-semibold text-primary">{readiness.pct}% preenchido</span>
+          <Button className="gap-2" onClick={handleSave} disabled={updateMutation.isPending || isLoading}>
+            <Save className="h-4 w-4" />
+            Salvar
+          </Button>
+        </div>
+      </Card>
+
       <Card className="border-border/60 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 flex-1">
