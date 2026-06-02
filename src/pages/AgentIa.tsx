@@ -34,6 +34,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AgentTabsNav, type AgentTabItem } from "@/components/ai-agent/AgentTabsNav";
+import { AgentBrainSection } from "@/components/ai-agent/AgentBrainSection";
+import {
+  agentBrainFormFromProfile,
+  deriveAgentBrainPayload,
+  emptyAgentBrainForm,
+  type AgentBrainForm,
+} from "@/lib/agent-brain";
 import { useWhatsAppConnection } from "@/hooks/use-whatsapp-connection";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -748,6 +755,8 @@ export default function AgentIa() {
   const [simulatorConversationMessages, setSimulatorConversationMessages] = useState<string[]>([]);
   const [simulatorResult, setSimulatorResult] = useState<AiAgentSimulationResult | null>(null);
   const [activeTab, setActiveTab] = useState<AgentTabKey>("overview");
+  const [agentBrain, setAgentBrain] = useState<AgentBrainForm>(emptyAgentBrainForm);
+  const [agentBrainDirty, setAgentBrainDirty] = useState(false);
   const { connection: whatsappConnection } = useWhatsAppConnection();
   const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
     { profileId: activeProfileId },
@@ -762,6 +771,8 @@ export default function AgentIa() {
     setEnabled(profile.enabled);
     setAllowSavedContacts(profile.triggerType === "unsaved_contacts" ? false : (profile.allowSavedContacts ?? true));
     setVirtualAgent(mergeVirtualAgent(profile.virtualAgent));
+    setAgentBrain(agentBrainFormFromProfile(profile.tenantBrain, profile.operationalContext));
+    setAgentBrainDirty(false);
   };
 
   useEffect(() => {
@@ -958,6 +969,11 @@ export default function AgentIa() {
           ? "all_contacts"
           : triggerType;
 
+    // Only send tenantBrain/operationalContext when the user actually edited the
+    // "Cérebro do atendimento" section. Untouched → not sent → backend preserves
+    // existing metadata (and rich defaults like Sementes da Fala) intact.
+    const brainPayload = agentBrainDirty ? deriveAgentBrainPayload(agentBrain) : null;
+
     updateMutation.mutate({
       profileId: activeProfileId,
       name: profileName,
@@ -966,6 +982,9 @@ export default function AgentIa() {
       triggerType: normalizedTriggerType,
       triggerKeywords: parseKeywords(triggerKeywordsText),
       virtualAgent,
+      ...(brainPayload
+        ? { tenantBrain: brainPayload.tenantBrain, operationalContext: brainPayload.operationalContext }
+        : {}),
     }, {
       onSuccess: () => {
         toast({
@@ -2318,6 +2337,14 @@ export default function AgentIa() {
           </Button>
         </div>
       </Card>
+
+      <AgentBrainSection
+        value={agentBrain}
+        onChange={(next) => {
+          setAgentBrain(next);
+          setAgentBrainDirty(true);
+        }}
+      />
 
       <Card className="border-border/60 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">

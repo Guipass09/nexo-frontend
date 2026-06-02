@@ -29,6 +29,8 @@ export type UpdateAiAgentProfilePayload = {
   triggerKeywords?: string[];
   prompts?: AiAgentPromptPayload[];
   virtualAgent?: AiAgentVirtualAgent;
+  tenantBrain?: Record<string, unknown>;
+  operationalContext?: Record<string, unknown>;
 };
 
 export type CreateAiAgentProfilePayload = {

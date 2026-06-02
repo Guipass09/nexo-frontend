@@ -622,6 +622,30 @@ export interface AiAgentKnowledgeItem {
   metadata?: Record<string, unknown>;
 }
 
+export interface AiAgentTenantBrain {
+  business_type?: string;
+  primary_action_label?: string;
+  completion_signals?: string[];
+  supported_domains?: string[];
+  forbidden_claims?: string[];
+  fallback_behavior?: string;
+  handoff_rules?: { triggers?: string[]; auto_escalate_on_confusion?: boolean };
+  service_access?: { has_session_link?: boolean; delivery_mode?: string };
+  location?: { online_only?: boolean; has_physical_address?: boolean };
+  [key: string]: unknown;
+}
+
+export interface AiAgentOperationalContext {
+  business_type?: string;
+  conversion_flow_type?: string;
+  requires_registration?: boolean;
+  requires_scheduling?: boolean;
+  has_session_link?: boolean;
+  service_delivery_mode?: string;
+  primary_action?: string;
+  [key: string]: unknown;
+}
+
 export interface AiAgentProfile {
   id?: string | number;
   name?: string;
@@ -634,6 +658,8 @@ export interface AiAgentProfile {
   combinedPromptPreview?: string;
   prompts: AiAgentPrompt[];
   virtualAgent?: AiAgentVirtualAgent;
+  tenantBrain?: AiAgentTenantBrain;
+  operationalContext?: AiAgentOperationalContext;
   trainingReport?: AiAgentTrainingReport | null;
   knowledgeSummary?: {
     activeBlocks: number;
