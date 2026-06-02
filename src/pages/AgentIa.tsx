@@ -9,6 +9,7 @@ import {
   Clock,
   Database,
   CheckCircle2,
+  ChevronDown,
   Gauge,
   HelpCircle,
   Image,
@@ -35,6 +36,7 @@ import {
 } from "lucide-react";
 import { AgentTabsNav, type AgentTabItem } from "@/components/ai-agent/AgentTabsNav";
 import { AgentBrainSection } from "@/components/ai-agent/AgentBrainSection";
+import { AgentExecutivePreview } from "@/components/ai-agent/AgentExecutivePreview";
 import {
   agentBrainFormFromProfile,
   deriveAgentBrainPayload,
@@ -757,6 +759,7 @@ export default function AgentIa() {
   const [activeTab, setActiveTab] = useState<AgentTabKey>("overview");
   const [agentBrain, setAgentBrain] = useState<AgentBrainForm>(emptyAgentBrainForm);
   const [agentBrainDirty, setAgentBrainDirty] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const { connection: whatsappConnection } = useWhatsAppConnection();
   const assistantWorkspaceQuery = useAiAgentAssistantWorkspace(
     { profileId: activeProfileId },
@@ -2346,6 +2349,23 @@ export default function AgentIa() {
         }}
       />
 
+      <AgentExecutivePreview value={agentBrain} />
+
+      <button
+        type="button"
+        onClick={() => setAdvancedOpen((open) => !open)}
+        aria-expanded={advancedOpen}
+        className="flex w-full items-center justify-between rounded-2xl border border-border/60 bg-white/55 px-4 py-3 text-left transition hover:border-primary/30"
+      >
+        <span className="flex items-center gap-2.5">
+          <Settings2 className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-slate-950">Personalização avançada</span>
+          <span className="text-xs text-slate-500">Ficha tradicional, mapa de atendimento, conhecimento e limites (opcional)</span>
+        </span>
+        <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${advancedOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      <div hidden={!advancedOpen} className="space-y-6">
       <Card className="border-border/60 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 flex-1">
@@ -2933,6 +2953,7 @@ export default function AgentIa() {
             </Accordion>
           </Card>
         </aside>
+      </div>
       </div>
       </section>
 

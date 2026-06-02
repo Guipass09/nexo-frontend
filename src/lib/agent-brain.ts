@@ -284,6 +284,56 @@ export function agentBrainFormFromProfile(
   };
 }
 
+/**
+ * Executive summary "Como seu atendente irá trabalhar" — bullet lines in plain
+ * language, generated from the brain answers (which mirror tenantBrain /
+ * operationalContext). Never exposes technical terms.
+ */
+export function buildExecutiveSummary(form: AgentBrainForm): { headline: string; lines: string[] } {
+  const lines: string[] = [];
+  const step = form.advanceStep;
+  const stepLabel = ADVANCE_STEP_OPTIONS.find((option) => option.value === step)?.label.toLowerCase();
+  const signals = completionSignalsForStep(step);
+  const modeLabel = SERVICE_MODE_OPTIONS.find((option) => option.value === form.serviceMode)?.label.toLowerCase();
+  const fallbackLabel = FALLBACK_OPTIONS.find((option) => option.value === form.fallbackBehavior)?.label.toLowerCase();
+  const forbiddenCount = form.forbiddenClaims.length + (form.forbiddenClaimsExtra.trim() ? 1 : 0);
+
+  if (step && step !== "none" && stepLabel) {
+    lines.push(`Conduz cada conversa até o cliente concluir ${stepLabel}.`);
+  } else {
+    lines.push("Atende e orienta o cliente sem exigir uma etapa obrigatória.");
+  }
+
+  if (signals.length > 0) {
+    lines.push(`Reconhece a conclusão por frases como “${signals[0]}”.`);
+  }
+
+  if (modeLabel) {
+    lines.push(`Atende ${modeLabel}.`);
+  }
+
+  if (form.supportedTopics.length > 0) {
+    lines.push(`Responde sobre ${form.supportedTopics.length} assunto(s) do seu negócio.`);
+  }
+
+  if (forbiddenCount > 0) {
+    lines.push(`Nunca promete ${forbiddenCount} coisa(s) que você marcou como proibidas.`);
+  }
+
+  if (form.handoffTriggers.length > 0) {
+    lines.push(`Chama uma pessoa de verdade em ${form.handoffTriggers.length} situação(ões).`);
+  }
+
+  if (fallbackLabel) {
+    lines.push(`Quando não sabe a resposta: ${fallbackLabel}.`);
+  }
+
+  return {
+    headline: "Como seu atendente irá trabalhar",
+    lines,
+  };
+}
+
 /** Human-language preview shown to the user (never exposes technical terms). */
 export function buildAgentBrainPreview(form: AgentBrainForm): string {
   const parts: string[] = [];
