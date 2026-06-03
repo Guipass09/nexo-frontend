@@ -859,24 +859,22 @@ export default function AgentIa() {
   }, [virtualAgent]);
 
   const readiness = useMemo(() => {
+    const has = (value?: string) => typeof value === "string" && value.trim() !== "";
+    // Prontidão real: o atendente só está "pronto" quando sabe quem é, o que conduzir,
+    // o que oferece, o horário e como falar de preço.
     const checks = [
-      virtualAgent.agentName,
-      virtualAgent.businessName || virtualAgent.businessDescription,
-      virtualAgent.services,
-      virtualAgent.audienceDescription,
-      virtualAgent.businessDescription,
-      virtualAgent.pricingPolicy,
-      virtualAgent.operatingHours,
-      virtualAgent.faq,
-      virtualAgent.handoffRules,
-      virtualAgent.boundaries,
+      has(virtualAgent.businessName) || has(virtualAgent.agentName), // identidade
+      Boolean(agentBrain.advanceStep) || virtualAgent.requiredSteps.length > 0, // ação principal
+      has(virtualAgent.services), // oferta/serviço
+      has(virtualAgent.operatingHours), // horário/disponibilidade
+      has(virtualAgent.pricingPolicy), // preço (ou "sob consulta")
     ];
-    const filled = checks.filter((value) => typeof value === "string" && value.trim() !== "").length;
+    const filled = checks.filter(Boolean).length;
     const total = checks.length;
     const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
 
-    return { filled, total, pct, ready: pct >= 70 };
-  }, [virtualAgent]);
+    return { filled, total, pct, ready: filled === total };
+  }, [virtualAgent, agentBrain]);
 
   const whatsappKnown = Boolean(whatsappConnection);
   const whatsappConnected = (whatsappConnection?.status ?? "") === "connected";
@@ -2353,9 +2351,27 @@ export default function AgentIa() {
         onIdentityChange={(field, fieldValue) =>
           updateField(field === "companyName" ? "businessName" : "agentName", fieldValue)
         }
+        facts={{
+          services: virtualAgent.services,
+          pricing: virtualAgent.pricingPolicy,
+          hours: virtualAgent.operatingHours,
+          faq: virtualAgent.faq,
+        }}
+        onFactChange={(field, fieldValue) => {
+          const map = { services: "services", pricing: "pricingPolicy", hours: "operatingHours", faq: "faq" } as const;
+          updateField(map[field], fieldValue);
+        }}
       />
 
-      <AgentExecutivePreview value={agentBrain} />
+      <AgentExecutivePreview
+        value={agentBrain}
+        facts={{
+          services: virtualAgent.services,
+          pricing: virtualAgent.pricingPolicy,
+          hours: virtualAgent.operatingHours,
+          faq: virtualAgent.faq,
+        }}
+      />
 
       <button
         type="button"
@@ -2633,14 +2649,21 @@ export default function AgentIa() {
                   placeholder="Quais perfis chegam mais aqui, o que costumam buscar e como chegam."
                 />
               </Field>
-              <Field label="Ofertas, serviços ou soluções" className="md:col-span-2" help={FIELD_HELP.services}>
-                <Textarea
-                  rows={6}
-                  value={virtualAgent.services}
-                  onChange={(event) => updateField("services", event.target.value)}
-                  placeholder="Liste o que a empresa entrega, quais opções existem e o que pode ser explicado ao cliente."
-                />
-              </Field>
+              <details className="md:col-span-2 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-3 py-2">
+                <summary className="cursor-pointer text-xs font-medium text-slate-600">
+                  Oferta e serviços — <span className="text-primary">configurado no Cérebro</span> (abrir para ajuste fino)
+                </summary>
+                <div className="mt-3">
+                  <Field label="Ofertas, serviços ou soluções" help={FIELD_HELP.services}>
+                    <Textarea
+                      rows={6}
+                      value={virtualAgent.services}
+                      onChange={(event) => updateField("services", event.target.value)}
+                      placeholder="Liste o que a empresa entrega, quais opções existem e o que pode ser explicado ao cliente."
+                    />
+                  </Field>
+                </div>
+              </details>
             </div>
           </Card>
 
@@ -2840,30 +2863,37 @@ export default function AgentIa() {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Perguntas frequentes" className="md:col-span-2" help={FIELD_HELP.faq}>
-                      <Textarea
-                        rows={7}
-                        value={virtualAgent.faq}
-                        onChange={(event) => updateField("faq", event.target.value)}
-                        placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
-                      />
-                    </Field>
-                    <Field label="Preço, planos e políticas" help={FIELD_HELP.pricingPolicy}>
-                      <Textarea
-                        rows={5}
-                        value={virtualAgent.pricingPolicy}
-                        onChange={(event) => updateField("pricingPolicy", event.target.value)}
-                        placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
-                      />
-                    </Field>
-                    <Field label="Horário e disponibilidade" help={FIELD_HELP.operatingHours}>
-                      <Textarea
-                        rows={5}
-                        value={virtualAgent.operatingHours}
-                        onChange={(event) => updateField("operatingHours", event.target.value)}
-                        placeholder="Dias, horários, exceções e como agir fora do horário."
-                      />
-                    </Field>
+                    <details className="md:col-span-2 rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-slate-600">
+                        Dúvidas, preço e horários — <span className="text-primary">configurado no Cérebro</span> (abrir para ajuste fino)
+                      </summary>
+                      <div className="mt-3 grid gap-4 md:grid-cols-2">
+                        <Field label="Perguntas frequentes" className="md:col-span-2" help={FIELD_HELP.faq}>
+                          <Textarea
+                            rows={7}
+                            value={virtualAgent.faq}
+                            onChange={(event) => updateField("faq", event.target.value)}
+                            placeholder="Quais perguntas aparecem sempre e o que o Agent precisa saber para responder bem."
+                          />
+                        </Field>
+                        <Field label="Preço, planos e políticas" help={FIELD_HELP.pricingPolicy}>
+                          <Textarea
+                            rows={5}
+                            value={virtualAgent.pricingPolicy}
+                            onChange={(event) => updateField("pricingPolicy", event.target.value)}
+                            placeholder="O que pode falar sobre preço, quando pode falar, se existe orçamento, pacote, mensalidade etc."
+                          />
+                        </Field>
+                        <Field label="Horário e disponibilidade" help={FIELD_HELP.operatingHours}>
+                          <Textarea
+                            rows={5}
+                            value={virtualAgent.operatingHours}
+                            onChange={(event) => updateField("operatingHours", event.target.value)}
+                            placeholder="Dias, horários, exceções e como agir fora do horário."
+                          />
+                        </Field>
+                      </div>
+                    </details>
                     <Field label="Links e recursos liberados" className="md:col-span-2" help={FIELD_HELP.linksAndResources}>
                       <Textarea
                         rows={5}

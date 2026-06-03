@@ -19,6 +19,18 @@ export type FallbackChoice = "confirm_team" | "ask_details" | "handoff" | "ficha
 
 export type PresentationStyle = "assistant_name" | "company_only" | "virtual_assistant" | "natural";
 
+/** Factual knowledge fields ("O que seu atendente precisa saber").
+ *  Reusa campos existentes do virtualAgent — sem novo contrato. */
+export type BrainFacts = {
+  services: string;
+  pricing: string;
+  hours: string;
+  faq: string;
+};
+
+/** Texto padrão para "preço sob consulta" (reusa virtualAgent.pricingPolicy). */
+export const PRICE_ON_REQUEST_TEXT = "Os valores são informados após o contato inicial.";
+
 export type AgentBrainForm = {
   presentationStyle: PresentationStyle | "";
   mentionAi: boolean;
@@ -342,7 +354,10 @@ export function agentBrainFormFromProfile(
  * language, generated from the brain answers (which mirror tenantBrain /
  * operationalContext). Never exposes technical terms.
  */
-export function buildExecutiveSummary(form: AgentBrainForm): { headline: string; lines: string[] } {
+export function buildExecutiveSummary(
+  form: AgentBrainForm,
+  facts?: BrainFacts,
+): { headline: string; lines: string[] } {
   const lines: string[] = [];
   const step = form.advanceStep;
   const stepLabel = ADVANCE_STEP_OPTIONS.find((option) => option.value === step)?.label.toLowerCase();
@@ -379,6 +394,20 @@ export function buildExecutiveSummary(form: AgentBrainForm): { headline: string;
 
   if (fallbackLabel) {
     lines.push(`Quando não sabe a resposta: ${fallbackLabel}.`);
+  }
+
+  const hasText = (value?: string) => typeof value === "string" && value.trim() !== "";
+  if (hasText(facts?.services)) {
+    lines.push("Sabe explicar o que a empresa oferece.");
+  }
+  if (hasText(facts?.pricing)) {
+    lines.push("Sabe orientar sobre preços e pagamento.");
+  }
+  if (hasText(facts?.hours)) {
+    lines.push("Conhece os horários e a disponibilidade.");
+  }
+  if (hasText(facts?.faq)) {
+    lines.push("Responde as dúvidas mais comuns dos clientes.");
   }
 
   return {

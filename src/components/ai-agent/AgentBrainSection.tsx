@@ -1,4 +1,4 @@
-import { Brain, Building2, Globe2, HelpCircle, IdCard, ListChecks, MessageCircle, ShieldAlert, Sparkles, Target, UserCog } from "lucide-react";
+import { BookOpenText, Brain, Building2, Globe2, HelpCircle, IdCard, ListChecks, MessageCircle, ShieldAlert, Sparkles, Target, UserCog } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,14 @@ import {
   HANDOFF_TRIGGER_OPTIONS,
   MAIN_GOAL_OPTIONS,
   PRESENTATION_OPTIONS,
+  PRICE_ON_REQUEST_TEXT,
   SERVICE_MODE_OPTIONS,
   SUPPORTED_TOPIC_OPTIONS,
   buildAgentBrainPreview,
   buildGreetingPreview,
   completionSignalsForStep,
   type AgentBrainForm,
+  type BrainFacts,
 } from "@/lib/agent-brain";
 
 type Option = { value: string; label: string };
@@ -91,6 +93,8 @@ export function AgentBrainSection({
   companyName: string;
   assistantName: string;
   onIdentityChange: (field: "companyName" | "assistantName", value: string) => void;
+  facts: BrainFacts;
+  onFactChange: (field: keyof BrainFacts, value: string) => void;
 }) {
   const set = (patch: Partial<AgentBrainForm>) => onChange({ ...value, ...patch });
 
@@ -263,6 +267,68 @@ export function AgentBrainSection({
         <Question icon={HelpCircle} index={8} title="O que a IA deve fazer quando não souber?">
           {single(FALLBACK_OPTIONS, value.fallbackBehavior, (next) => set({ fallbackBehavior: next as AgentBrainForm["fallbackBehavior"] }))}
         </Question>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-white/55 bg-white/55 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,rgba(37,99,255,0.16),rgba(124,58,237,0.14))] text-primary">
+            <BookOpenText className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-950">O que seu atendente precisa saber</p>
+            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+              Os fatos que ele usa para responder com segurança. Quanto melhor aqui, menos ele inventa.
+            </p>
+
+            <div className="mt-3 grid gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600">O que sua empresa oferece?</label>
+                <Textarea
+                  value={facts.services}
+                  onChange={(event) => onFactChange("services", event.target.value)}
+                  placeholder="Ex.: avaliação inicial, sessões online, pacotes mensais, relatórios."
+                  className="mt-1 min-h-[64px] bg-white/80"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-medium text-slate-600">Como funcionam preços, planos ou pagamentos?</label>
+                  <button
+                    type="button"
+                    onClick={() => onFactChange("pricing", PRICE_ON_REQUEST_TEXT)}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Preço sob consulta
+                  </button>
+                </div>
+                <Textarea
+                  value={facts.pricing}
+                  onChange={(event) => onFactChange("pricing", event.target.value)}
+                  placeholder="Ex.: a avaliação é gratuita; os planos são apresentados depois."
+                  className="mt-1 min-h-[64px] bg-white/80"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600">Quais são os horários ou disponibilidade?</label>
+                <Textarea
+                  value={facts.hours}
+                  onChange={(event) => onFactChange("hours", event.target.value)}
+                  placeholder="Ex.: segunda a sexta, das 8h às 19h."
+                  className="mt-1 min-h-[56px] bg-white/80"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600">Quais dúvidas os clientes mais fazem?</label>
+                <Textarea
+                  value={facts.faq}
+                  onChange={(event) => onFactChange("faq", event.target.value)}
+                  placeholder="Ex.: atende a partir de que idade? é online? como começa?"
+                  className="mt-1 min-h-[64px] bg-white/80"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="mt-4 rounded-2xl border border-primary/15 bg-[linear-gradient(135deg,rgba(37,99,255,0.06),rgba(124,58,237,0.05))] px-4 py-3">

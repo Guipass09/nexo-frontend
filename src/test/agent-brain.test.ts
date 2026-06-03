@@ -1,5 +1,6 @@
 import {
   agentBrainFormFromProfile,
+  buildExecutiveSummary,
   buildGreetingPreview,
   completionSignalsForStep,
   deriveAgentBrainPayload,
@@ -112,6 +113,28 @@ describe("agent brain composition", () => {
     expect(form.advanceStep).toBe("matricula");
     expect(form.serviceMode).toBe("in_person");
     expect(form.forbiddenClaims).toContain("resultado garantido");
+  });
+
+  it("executive summary includes factual lines when facts are provided", () => {
+    const summary = buildExecutiveSummary(
+      { ...emptyAgentBrainForm, advanceStep: "cadastro" },
+      { services: "avaliação e sessões", pricing: "sob consulta", hours: "seg a sex", faq: "atende crianças?" },
+    );
+    const joined = summary.lines.join(" ");
+    expect(joined).toContain("oferece");
+    expect(joined).toContain("preços");
+    expect(joined).toContain("horários");
+    expect(joined).toContain("dúvidas");
+  });
+
+  it("executive summary omits factual lines when facts are empty", () => {
+    const summary = buildExecutiveSummary(
+      { ...emptyAgentBrainForm, advanceStep: "cadastro" },
+      { services: "", pricing: "", hours: "", faq: "" },
+    );
+    const joined = summary.lines.join(" ");
+    expect(joined).not.toContain("oferece");
+    expect(joined).not.toContain("preços");
   });
 
   it("greeting changes with presentation style: assistant name", () => {

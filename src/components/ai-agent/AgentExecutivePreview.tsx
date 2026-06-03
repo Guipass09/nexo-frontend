@@ -1,9 +1,9 @@
 import { CheckCircle2, Rocket } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { buildExecutiveSummary, type AgentBrainForm } from "@/lib/agent-brain";
+import { buildExecutiveSummary, type AgentBrainForm, type BrainFacts } from "@/lib/agent-brain";
 
-export function AgentExecutivePreview({ value }: { value: AgentBrainForm }) {
-  const summary = buildExecutiveSummary(value);
+export function AgentExecutivePreview({ value, facts }: { value: AgentBrainForm; facts?: BrainFacts }) {
+  const summary = buildExecutiveSummary(value, facts);
 
   return (
     <Card className="nexo-premium-surface relative overflow-hidden p-5 md:p-6">
