@@ -87,6 +87,8 @@ export function AgentBrainSection({
   companyName,
   assistantName,
   onIdentityChange,
+  facts,
+  onFactChange,
 }: {
   value: AgentBrainForm;
   onChange: (next: AgentBrainForm) => void;
