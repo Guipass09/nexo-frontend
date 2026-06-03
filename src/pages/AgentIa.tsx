@@ -1047,6 +1047,10 @@ export default function AgentIa() {
 
   const handleSelectProfile = (profile: AiAgentProfile) => {
     applyProfileToForm(profile);
+    // Isolamento: ao trocar de empresa/perfil, descarta o histórico simulado
+    // anterior para não reaproveitar a conversa de outro perfil.
+    setSimulatorConversationMessages([]);
+    setSimulatorResult(null);
   };
 
   const handleCreateProfile = () => {
@@ -1061,6 +1065,8 @@ export default function AgentIa() {
 
         if (created) {
           applyProfileToForm(created);
+          setSimulatorConversationMessages([]);
+          setSimulatorResult(null);
         }
 
         toast({
