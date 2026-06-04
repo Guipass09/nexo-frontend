@@ -43,6 +43,7 @@ export type AgentBrainForm = {
   forbiddenClaimsExtra: string;
   handoffTriggers: string[];
   fallbackBehavior: FallbackChoice | "";
+  farewellMessage: string;
 };
 
 export const emptyAgentBrainForm: AgentBrainForm = {
@@ -57,6 +58,7 @@ export const emptyAgentBrainForm: AgentBrainForm = {
   forbiddenClaimsExtra: "",
   handoffTriggers: [],
   fallbackBehavior: "",
+  farewellMessage: "",
 };
 
 export const PRESENTATION_OPTIONS: { value: PresentationStyle; label: string }[] = [
@@ -252,6 +254,8 @@ export function deriveAgentBrainPayload(form: AgentBrainForm): {
     mentionAi: form.mentionAi,
     // Persist the selected objective so it can be re-populated on reload.
     mainGoal: form.mainGoal,
+    // Custom farewell used by the agent to close the conversation.
+    farewellMessage: form.farewellMessage,
     primaryActionLabel: PRIMARY_ACTION_LABEL[step],
     completionSignals: COMPLETION_SIGNAL_PRESETS[step] ?? [],
     supportedDomains,
@@ -341,6 +345,8 @@ export function agentBrainFormFromProfile(
     ? (mainGoalRaw as MainGoal)
     : "";
 
+  const farewellMessage = String((brain.farewell_message ?? "") as string);
+
   return {
     presentationStyle,
     mentionAi,
@@ -353,6 +359,7 @@ export function agentBrainFormFromProfile(
     forbiddenClaimsExtra,
     handoffTriggers,
     fallbackBehavior,
+    farewellMessage,
   };
 }
 

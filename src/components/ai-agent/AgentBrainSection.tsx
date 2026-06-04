@@ -212,11 +212,21 @@ export function AgentBrainSection({
       </div>
 
       <div className="mt-3 grid gap-3">
-        <Question icon={Building2} index={1} title="Que tipo de negócio é o seu?">
+        <Question
+          icon={Building2}
+          index={1}
+          title="Que tipo de negócio é o seu?"
+          hint="Saiba mais: define seu segmento. O Nexo usa isto para adaptar o vocabulário e o fluxo ao seu tipo de negócio."
+        >
           {single(BUSINESS_TYPE_OPTIONS, value.businessType, (next) => set({ businessType: next as AgentBrainForm["businessType"] }))}
         </Question>
 
-        <Question icon={Target} index={2} title="Qual o objetivo principal do atendimento?">
+        <Question
+          icon={Target}
+          index={2}
+          title="Qual o objetivo principal do atendimento?"
+          hint="Saiba mais: é o que guia a conversa inteira. Ex.: 'Atendimento geral' = só tirar dúvidas, sem agendar nem pedir cadastro."
+        >
           {single(MAIN_GOAL_OPTIONS, value.mainGoal, (next) => set({ mainGoal: next as AgentBrainForm["mainGoal"] }))}
         </Question>
 
@@ -224,7 +234,7 @@ export function AgentBrainSection({
           icon={Sparkles}
           index={3}
           title="Como o cliente avança?"
-          hint="O Nexo usa isto para reconhecer quando o cliente concluiu a etapa."
+          hint="Saiba mais: define a etapa de conversão (cadastro, reserva, matrícula…) e ajuda o Nexo a reconhecer quando o cliente concluiu a etapa."
         >
           {single(ADVANCE_STEP_OPTIONS, value.advanceStep, (next) => set({ advanceStep: next as AgentBrainForm["advanceStep"] }))}
         </Question>
@@ -242,15 +252,30 @@ export function AgentBrainSection({
           </div>
         )}
 
-        <Question icon={Globe2} index={4} title="Como é o atendimento?">
+        <Question
+          icon={Globe2}
+          index={4}
+          title="Como é o atendimento?"
+          hint="Saiba mais: online, presencial ou os dois — ajusta como a IA fala de acesso, localização e link."
+        >
           {single(SERVICE_MODE_OPTIONS, value.serviceMode, (next) => set({ serviceMode: next as AgentBrainForm["serviceMode"] }))}
         </Question>
 
-        <Question icon={ListChecks} index={5} title="Sobre quais assuntos a IA pode responder?">
+        <Question
+          icon={ListChecks}
+          index={5}
+          title="Sobre quais assuntos a IA pode responder?"
+          hint="Saiba mais: são os temas liberados. Fora deles, a IA encaminha em vez de inventar."
+        >
           {multi(SUPPORTED_TOPIC_OPTIONS, value.supportedTopics, "supportedTopics")}
         </Question>
 
-        <Question icon={ShieldAlert} index={6} title="O que a IA nunca deve prometer?">
+        <Question
+          icon={ShieldAlert}
+          index={6}
+          title="O que a IA nunca deve prometer?"
+          hint="Saiba mais: o que a IA NUNCA pode afirmar/prometer. Use o campo aberto para regras suas (ex.: 'não garantir prazo', 'não dar diagnóstico')."
+        >
           {multi(FORBIDDEN_CLAIM_OPTIONS, value.forbiddenClaims, "forbiddenClaims")}
           <div className="mt-2 w-full">
             <Textarea
@@ -262,12 +287,38 @@ export function AgentBrainSection({
           </div>
         </Question>
 
-        <Question icon={UserCog} index={7} title="Quando a IA deve chamar uma pessoa?">
+        <Question
+          icon={UserCog}
+          index={7}
+          title="Quando a IA deve chamar uma pessoa?"
+          hint="Saiba mais: situações em que a IA transfere para um humano (ex.: caso sensível, pedido explícito, fora do escopo)."
+        >
           {multi(HANDOFF_TRIGGER_OPTIONS, value.handoffTriggers, "handoffTriggers")}
         </Question>
 
-        <Question icon={HelpCircle} index={8} title="O que a IA deve fazer quando não souber?">
+        <Question
+          icon={HelpCircle}
+          index={8}
+          title="O que a IA deve fazer quando não souber?"
+          hint="Saiba mais: o comportamento quando a resposta não está na ficha (perguntar mais, responder só com a ficha, ou chamar uma pessoa)."
+        >
           {single(FALLBACK_OPTIONS, value.fallbackBehavior, (next) => set({ fallbackBehavior: next as AgentBrainForm["fallbackBehavior"] }))}
+        </Question>
+
+        <Question
+          icon={Sparkles}
+          index={9}
+          title="Como a IA deve se despedir?"
+          hint="Saiba mais: a mensagem que a IA usa para encerrar quando o cliente agradece ou se despede. Deixe vazio para usar a despedida padrão."
+        >
+          <div className="mt-1 w-full">
+            <Textarea
+              value={value.farewellMessage}
+              onChange={(event) => set({ farewellMessage: event.target.value })}
+              placeholder="Ex.: Foi um prazer falar com você! Qualquer coisa, é só chamar. Até logo 💙"
+              className="min-h-[64px] bg-white/70"
+            />
+          </div>
         </Question>
       </div>
 
@@ -285,6 +336,7 @@ export function AgentBrainSection({
             <div className="mt-3 grid gap-3">
               <div>
                 <label className="text-xs font-medium text-slate-600">O que sua empresa oferece?</label>
+                <p className="text-[11px] leading-4 text-slate-400">Saiba mais: serviços, soluções e o que você entrega. A IA usa para explicar o negócio.</p>
                 <Textarea
                   value={facts.services}
                   onChange={(event) => onFactChange("services", event.target.value)}
@@ -303,6 +355,7 @@ export function AgentBrainSection({
                     Preço sob consulta
                   </button>
                 </div>
+                <p className="text-[11px] leading-4 text-slate-400">Saiba mais: a IA usa para responder "quanto custa?". Pode ser "sob consulta" se preferir não fixar valores.</p>
                 <Textarea
                   value={facts.pricing}
                   onChange={(event) => onFactChange("pricing", event.target.value)}
@@ -312,6 +365,7 @@ export function AgentBrainSection({
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-600">Quais são os horários ou disponibilidade?</label>
+                <p className="text-[11px] leading-4 text-slate-400">Saiba mais: a IA responde "que horas funciona?" a partir daqui.</p>
                 <Textarea
                   value={facts.hours}
                   onChange={(event) => onFactChange("hours", event.target.value)}
@@ -321,6 +375,10 @@ export function AgentBrainSection({
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-600">Quais dúvidas os clientes mais fazem?</label>
+                <p className="text-[11px] leading-4 text-slate-400">
+                  Saiba mais: <strong>é AQUI</strong> que você coloca uma pergunta importante + a resposta certa. Se houver
+                  algo que a IA precisa responder de um jeito específico durante a conversa, escreva como pergunta e resposta.
+                </p>
                 <Textarea
                   value={facts.faq}
                   onChange={(event) => onFactChange("faq", event.target.value)}
