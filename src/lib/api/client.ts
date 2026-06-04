@@ -10,6 +10,8 @@ export interface ApiClientConfig {
 
 export interface ApiRequestConfig extends RequestInit {
   query?: Record<string, QueryValue>;
+  /** Per-request timeout override (ms). Use for slow endpoints like the AI simulator. */
+  timeoutMs?: number;
 }
 
 const API_REQUEST_TIMEOUT_MS = 15_000;
@@ -135,7 +137,7 @@ function shouldSkipNgrokBrowserWarning(url: string) {
   return shouldSendNgrokBrowserWarningHeader(url);
 }
 
-function buildRequestSignal(signal?: AbortSignal | null) {
+function buildRequestSignal(signal?: AbortSignal | null, timeoutMs: number = API_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
   let timeoutId: number | null = null;
 
@@ -155,7 +157,7 @@ function buildRequestSignal(signal?: AbortSignal | null) {
 
   timeoutId = window.setTimeout(() => {
     abortWithReason(new Error("API request timed out."));
-  }, API_REQUEST_TIMEOUT_MS);
+  }, timeoutMs);
 
   return {
     signal: controller.signal,
@@ -171,13 +173,13 @@ export class ApiClient {
   constructor(private readonly config: ApiClientConfig = {}) {}
 
   async request<T>(path: string, init: ApiRequestConfig = {}): Promise<T> {
-    const { query, headers, ...requestInit } = init;
+    const { query, headers, timeoutMs, ...requestInit } = init;
     const isFormData = typeof FormData !== "undefined" && requestInit.body instanceof FormData;
     const token = getAuthToken();
     const url = buildUrl(path, this.config.baseURL, query);
     const method = requestInit.method ?? "GET";
     const skipNgrokBrowserWarning = shouldSkipNgrokBrowserWarning(url);
-    const requestSignal = buildRequestSignal(requestInit.signal);
+    const requestSignal = buildRequestSignal(requestInit.signal, timeoutMs);
 
     console.debug("[api] request", {
       method,

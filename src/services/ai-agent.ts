@@ -403,7 +403,9 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
 
 export async function simulateAiAgent(payload: SimulateAiAgentPayload) {
   const response = normalizeResourceResponse<Record<string, unknown>>(
-    await apiClient.post<unknown>("/ai-agent/simulate", payload),
+    // The simulator runs every message through the full gpt-5 pipeline, so a
+    // multi-turn conversation can take a couple of minutes. Allow a long timeout.
+    await apiClient.post<unknown>("/ai-agent/simulate", payload, { timeoutMs: 240_000 }),
   );
   const data = response.data;
   const summary = isRecord(data.summary) ? data.summary : {};

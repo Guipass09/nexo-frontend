@@ -250,6 +250,8 @@ export function deriveAgentBrainPayload(form: AgentBrainForm): {
     businessType: form.businessType || "other",
     presentationStyle: form.presentationStyle || "natural",
     mentionAi: form.mentionAi,
+    // Persist the selected objective so it can be re-populated on reload.
+    mainGoal: form.mainGoal,
     primaryActionLabel: PRIMARY_ACTION_LABEL[step],
     completionSignals: COMPLETION_SIGNAL_PRESETS[step] ?? [],
     supportedDomains,
@@ -334,11 +336,16 @@ export function agentBrainFormFromProfile(
     : "";
   const mentionAi = brain.mention_ai === undefined ? true : Boolean(brain.mention_ai);
 
+  const mainGoalRaw = String((brain.main_goal ?? "") as string);
+  const mainGoal: MainGoal | "" = MAIN_GOAL_OPTIONS.some((option) => option.value === mainGoalRaw)
+    ? (mainGoalRaw as MainGoal)
+    : "";
+
   return {
     presentationStyle,
     mentionAi,
     businessType,
-    mainGoal: "",
+    mainGoal,
     advanceStep,
     serviceMode,
     supportedTopics: Array.from(new Set(supportedTopics)),
