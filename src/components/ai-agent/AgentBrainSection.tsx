@@ -10,6 +10,7 @@ import {
   FORBIDDEN_CLAIM_OPTIONS,
   HANDOFF_TRIGGER_OPTIONS,
   MAIN_GOAL_OPTIONS,
+  PACING_OPTIONS,
   PRESENTATION_OPTIONS,
   PRICE_ON_REQUEST_TEXT,
   SERVICE_MODE_OPTIONS,
@@ -319,6 +320,31 @@ export function AgentBrainSection({
               className="min-h-[64px] bg-white/70"
             />
           </div>
+        </Question>
+
+        <Question
+          icon={MessageCircle}
+          index={10}
+          title="Quanto a IA deve perguntar antes de avançar?"
+          hint="Saiba mais: controla o ritmo da conversa. O GPT-5 segue isto — direto ao objetivo com poucas perguntas, equilibrado, ou coletando mais contexto antes de avançar."
+        >
+          <div className="mt-1 flex flex-wrap gap-2">
+            {PACING_OPTIONS.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                active={value.conversationPacing === option.value}
+                onClick={() =>
+                  set({ conversationPacing: value.conversationPacing === option.value ? "" : option.value })
+                }
+              />
+            ))}
+          </div>
+          {value.conversationPacing ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {PACING_OPTIONS.find((option) => option.value === value.conversationPacing)?.hint}
+            </p>
+          ) : null}
         </Question>
       </div>
 

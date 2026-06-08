@@ -19,6 +19,9 @@ export type FallbackChoice = "confirm_team" | "ask_details" | "handoff" | "ficha
 
 export type PresentationStyle = "assistant_name" | "company_only" | "virtual_assistant" | "natural";
 
+/** Ritmo de condução: quanto o agente coleta antes de avançar ao objetivo. */
+export type ConversationPacing = "direct" | "balanced" | "consultative";
+
 /** Factual knowledge fields ("O que seu atendente precisa saber").
  *  Reusa campos existentes do virtualAgent — sem novo contrato. */
 export type BrainFacts = {
@@ -44,6 +47,7 @@ export type AgentBrainForm = {
   handoffTriggers: string[];
   fallbackBehavior: FallbackChoice | "";
   farewellMessage: string;
+  conversationPacing: ConversationPacing | "";
 };
 
 export const emptyAgentBrainForm: AgentBrainForm = {
@@ -59,6 +63,7 @@ export const emptyAgentBrainForm: AgentBrainForm = {
   handoffTriggers: [],
   fallbackBehavior: "",
   farewellMessage: "",
+  conversationPacing: "",
 };
 
 export const PRESENTATION_OPTIONS: { value: PresentationStyle; label: string }[] = [
@@ -66,6 +71,12 @@ export const PRESENTATION_OPTIONS: { value: PresentationStyle; label: string }[]
   { value: "company_only", label: "Usar apenas o nome da empresa" },
   { value: "virtual_assistant", label: "Dizer que é assistente virtual" },
   { value: "natural", label: "Atender de forma natural, sem mencionar IA" },
+];
+
+export const PACING_OPTIONS: { value: ConversationPacing; label: string; hint: string }[] = [
+  { value: "direct", label: "Direto ao objetivo", hint: "Mínimo de perguntas — vai direto ao próximo passo (cadastro, agenda, orçamento)." },
+  { value: "balanced", label: "Equilibrado (padrão)", hint: "Uma pergunta por vez e avança assim que tiver o essencial." },
+  { value: "consultative", label: "Consultivo", hint: "Coleta mais contexto antes de avançar (ainda uma pergunta por vez)." },
 ];
 
 export const BUSINESS_TYPE_OPTIONS: { value: BusinessType; label: string }[] = [
@@ -256,6 +267,7 @@ export function deriveAgentBrainPayload(form: AgentBrainForm): {
     mainGoal: form.mainGoal,
     // Custom farewell used by the agent to close the conversation.
     farewellMessage: form.farewellMessage,
+    conversationPacing: form.conversationPacing || "balanced",
     primaryActionLabel: PRIMARY_ACTION_LABEL[step],
     completionSignals: COMPLETION_SIGNAL_PRESETS[step] ?? [],
     supportedDomains,
@@ -346,6 +358,10 @@ export function agentBrainFormFromProfile(
     : "";
 
   const farewellMessage = String((brain.farewell_message ?? "") as string);
+  const pacingRaw = String((brain.conversation_pacing ?? "") as string);
+  const conversationPacing: ConversationPacing | "" = PACING_OPTIONS.some((option) => option.value === pacingRaw)
+    ? (pacingRaw as ConversationPacing)
+    : "";
 
   return {
     presentationStyle,
@@ -360,6 +376,7 @@ export function agentBrainFormFromProfile(
     handoffTriggers,
     fallbackBehavior,
     farewellMessage,
+    conversationPacing,
   };
 }
 
