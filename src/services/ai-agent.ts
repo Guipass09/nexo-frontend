@@ -401,6 +401,14 @@ function normalizeSimulationTurn(value: unknown): AiAgentSimulationTurn {
   };
 }
 
+export async function clearAiAgentSimulator() {
+  try {
+    await apiClient.post<unknown>("/ai-agent/simulate/clear", {});
+  } catch {
+    // best-effort: limpar o espelho do transcript no servidor nunca pode travar a UI.
+  }
+}
+
 export async function simulateAiAgent(payload: SimulateAiAgentPayload) {
   const response = normalizeResourceResponse<Record<string, unknown>>(
     // The simulator runs every message through the full gpt-5 pipeline, so a

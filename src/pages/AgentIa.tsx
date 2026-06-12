@@ -87,6 +87,7 @@ import {
   useTrainAiAgent,
   useUpdateAiAgentProfile,
 } from "@/hooks/use-app-data";
+import { clearAiAgentSimulator } from "@/services/ai-agent";
 import type {
   AiAgentAttendanceMap,
   AiAgentProfile,
@@ -1163,6 +1164,8 @@ export default function AgentIa() {
     setSimulatorConversationMessages([]);
     setSimulatorResult(null);
     setSimulatorMessage("boa noite, como funciona?");
+    // Limpa tambem o espelho do transcript no servidor (best-effort).
+    void clearAiAgentSimulator();
   };
 
   const handleCorrectWithNexoBot = (turn: AiAgentSimulationTurn) => {
