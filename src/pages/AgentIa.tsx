@@ -1913,7 +1913,7 @@ export default function AgentIa() {
                                 {qualityStatusLabel(latestSimulationTurn.qualityMetrics.status)} • {latestSimulationTurn.qualityMetrics.overallScore.toFixed(0)}
                               </Badge>
                             </div>
-                            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                               {latestSimulationTurn.qualityMetrics.indicators.map((indicator) => (
                                 <QualityIndicatorCard key={indicator.key} indicator={indicator} />
                               ))}
@@ -3259,10 +3259,12 @@ function SimulatorMetric({
 
 function QualityIndicatorCard({ indicator }: { indicator: AiAgentQualityIndicator }) {
   return (
-    <div className={`rounded-2xl border px-3 py-3 shadow-[0_18px_38px_-30px_rgba(5,11,46,0.16)] ${qualityStatusClass(indicator.status)}`}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-wide">{indicator.label}</p>
-        <Badge variant="outline" className="shrink-0 border-current/25 bg-white/50 text-[10px]">
+    <div className={`flex min-w-0 flex-col rounded-2xl border px-3 py-3 shadow-[0_18px_38px_-30px_rgba(5,11,46,0.16)] ${qualityStatusClass(indicator.status)}`}>
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 break-words text-[11px] font-semibold uppercase leading-tight tracking-wide">
+          {indicator.label}
+        </p>
+        <Badge variant="outline" className="shrink-0 whitespace-nowrap border-current/25 bg-white/50 text-[10px]">
           {qualityStatusLabel(indicator.status)}
         </Badge>
       </div>
