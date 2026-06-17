@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, MessageSquare, Workflow, ListOrdered, Mic, FileText,
-  Users, BarChart3, Settings, UserCircle, Map, ShieldCheck, Images, Bot,
+  Users, BarChart3, Settings, UserCircle, Map, ShieldCheck, Images, Bot, CalendarDays,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -20,6 +20,7 @@ const mainItems = [
 const automationItems = [
   { title: "Fluxos", url: "/fluxos", icon: Workflow, permission: "flows" },
   { title: "Agent IA", url: "/agent-ia", icon: Bot, permission: "ai_agent" },
+  { title: "Agenda", url: "/agenda", icon: CalendarDays, permission: "ai_agent" },
   { title: "Sequências", url: "/sequencias", icon: ListOrdered, permission: "sequences" },
   { title: "Áudios", url: "/audios", icon: Mic, permission: "audios" },
   { title: "Templates", url: "/templates", icon: FileText, permission: "templates" },
