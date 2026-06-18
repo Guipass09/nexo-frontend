@@ -381,6 +381,26 @@ function sortConversationCollection(conversations: Conversation[], prioritizedCo
   ];
 }
 
+// Comparação de id à prova de tipo: o realtime pode entregar id numérico e a lista, string.
+// Sem isto, `===` dá falso-negativo e a conversa é PREPENDADA como duplicata (bug das 2 abas).
+function sameConversationId(a: Conversation["id"] | string | number, b: Conversation["id"] | string | number) {
+  return String(a) === String(b);
+}
+
+// Rede de segurança: garante no máximo 1 entrada por id (mantém a primeira), eliminando
+// qualquer duplicata que já tenha entrado no cache por qualquer caminho.
+function dedupConversationsById(conversations: Conversation[]) {
+  const seen = new Set<string>();
+  return conversations.filter((conversation) => {
+    const id = String(conversation.id);
+    if (seen.has(id)) {
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
+}
+
 function upsertConversationSummary(
   conversations: Conversation[] | undefined,
   summary: Conversation,
@@ -397,26 +417,26 @@ function upsertConversationSummary(
     return conversations;
   }
 
-  const existingIndex = conversations.findIndex((conversation) => conversation.id === summary.id);
+  const existingIndex = conversations.findIndex((conversation) => sameConversationId(conversation.id, summary.id));
 
   if (existingIndex === -1) {
-    return options?.prependIfMissing ? [summary, ...conversations] : conversations;
+    return options?.prependIfMissing ? dedupConversationsById([summary, ...conversations]) : dedupConversationsById(conversations);
   }
 
   if (options?.removeIfMissing) {
-    return conversations.filter((conversation) => conversation.id !== summary.id);
+    return conversations.filter((conversation) => !sameConversationId(conversation.id, summary.id));
   }
 
-  if (areConversationSummariesEqual(conversations[existingIndex], summary)) {
+  if (areConversationSummariesEqual(conversations[existingIndex], summary) && conversations.length === dedupConversationsById(conversations).length) {
     return conversations;
   }
 
-  return sortConversationCollection(
+  return dedupConversationsById(sortConversationCollection(
     conversations.map((conversation) => (
-      conversation.id === summary.id ? { ...conversation, ...summary } : conversation
+      sameConversationId(conversation.id, summary.id) ? { ...conversation, ...summary } : conversation
     )),
     summary.id,
-  );
+  ));
 }
 
 function updateConversationCaches(

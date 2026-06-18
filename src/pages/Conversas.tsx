@@ -36,7 +36,7 @@ import {
   useUploadMediaAsset,
 } from "@/hooks/use-app-data";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save } from "lucide-react";
+import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
@@ -1297,7 +1297,7 @@ export default function Conversas() {
   return (
     <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
       {/* List */}
-      <Card className="nexo-premium-surface flex flex-col overflow-hidden">
+      <Card className={cn("nexo-premium-surface flex-col overflow-hidden", selectedId ? "hidden lg:flex" : "flex")}>
         <div className="space-y-3 border-b border-border/70 p-4 gradient-card">
           {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
@@ -1430,10 +1430,13 @@ export default function Conversas() {
       </Card>
 
       {/* Chat */}
-      <Card className="nexo-premium-surface flex flex-col overflow-hidden">
+      <Card className={cn("nexo-premium-surface flex-col overflow-hidden", selectedId ? "flex" : "hidden lg:flex")}>
         {selected ? (
           <>
             <div className="flex items-center gap-3 border-b border-border/70 p-5 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(236,72,153,0.06),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,247,255,0.76))]">
+              <button type="button" onClick={() => setSelectedId(null)} className="lg:hidden -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100" aria-label="Voltar para conversas">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
               <ContactAvatar name={selected.name} fallback={selected.avatar} avatarUrl={selected.avatarUrl} size="lg" active={selected.status === "ativo" || selected.status === "humano"} />
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
