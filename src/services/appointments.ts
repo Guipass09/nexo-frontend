@@ -50,3 +50,17 @@ export async function updateAppointment(id: number, payload: Partial<Appointment
 export async function deleteAppointment(id: number) {
   await apiClient.delete(`/appointments/${id}`);
 }
+
+export type CollectedInfo = {
+  conversationId: number | null;
+  contactName: string | null;
+  phone: string | null;
+  facts: string[];
+  currentStage: string;
+  updatedAt: string | null;
+};
+
+export async function listCollectedInfo() {
+  const response = normalizeCollectionResponse<CollectedInfo>(await apiClient.get<unknown>("/collected-info"));
+  return response.data;
+}

@@ -23,14 +23,18 @@ import {
   Trash2,
   Clock,
   CalendarClock,
+  FileText,
+  Phone,
 } from "lucide-react";
 import {
   listAppointments,
   createAppointment,
   updateAppointment,
   deleteAppointment,
+  listCollectedInfo,
   type Appointment,
   type AppointmentStatus,
+  type CollectedInfo,
 } from "@/services/appointments";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { toast } from "@/hooks/use-toast";
@@ -85,6 +89,7 @@ function formatWhen(a: Appointment): string {
 
 export default function Agenda() {
   const queryClient = useQueryClient();
+  const [view, setView] = useState<"appointments" | "info">("appointments");
   const [statusFilter, setStatusFilter] = useState<"" | AppointmentStatus>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -92,6 +97,12 @@ export default function Agenda() {
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", statusFilter],
     queryFn: () => listAppointments(statusFilter || undefined),
+  });
+
+  const { data: collected = [], isLoading: collectedLoading } = useQuery({
+    queryKey: ["collected-info"],
+    queryFn: () => listCollectedInfo(),
+    enabled: view === "info",
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -155,41 +166,116 @@ export default function Agenda() {
             Agendamentos e reservas. A IA adiciona aqui automaticamente conforme agenda nas conversas.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Novo agendamento
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Total", value: counts.total, icon: CalendarClock },
-          { label: "Confirmados", value: counts.confirmed, icon: Check },
-          { label: "Pendentes", value: counts.pending, icon: Clock },
-        ].map((s) => (
-          <Card key={s.label} className="flex items-center gap-3 p-4">
-            <s.icon className="h-5 w-5 text-cyan-600" />
-            <div>
-              <p className="text-2xl font-semibold text-slate-950">{s.value}</p>
-              <p className="text-xs text-slate-500">{s.label}</p>
-            </div>
-          </Card>
-        ))}
+        {view === "appointments" ? (
+          <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Novo agendamento
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {STATUS_FILTERS.map((f) => (
-          <Button
-            key={f.key || "all"}
-            size="sm"
-            variant={statusFilter === f.key ? "default" : "outline"}
-            onClick={() => setStatusFilter(f.key)}
-          >
-            {f.label}
-          </Button>
-        ))}
+        <Button
+          size="sm"
+          variant={view === "appointments" ? "default" : "outline"}
+          onClick={() => setView("appointments")}
+          className="gap-2"
+        >
+          <CalendarClock className="h-4 w-4" /> Agendamentos
+        </Button>
+        <Button
+          size="sm"
+          variant={view === "info" ? "default" : "outline"}
+          onClick={() => setView("info")}
+          className="gap-2"
+        >
+          <FileText className="h-4 w-4" /> Informações coletadas
+        </Button>
       </div>
 
-      {isLoading ? (
+      {view === "appointments" && (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Total", value: counts.total, icon: CalendarClock },
+              { label: "Confirmados", value: counts.confirmed, icon: Check },
+              { label: "Pendentes", value: counts.pending, icon: Clock },
+            ].map((s) => (
+              <Card key={s.label} className="flex items-center gap-3 p-4">
+                <s.icon className="h-5 w-5 text-cyan-600" />
+                <div>
+                  <p className="text-2xl font-semibold text-slate-950">{s.value}</p>
+                  <p className="text-xs text-slate-500">{s.label}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {STATUS_FILTERS.map((f) => (
+              <Button
+                key={f.key || "all"}
+                size="sm"
+                variant={statusFilter === f.key ? "default" : "outline"}
+                onClick={() => setStatusFilter(f.key)}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {view === "info" && (
+        collectedLoading ? (
+          <Card className="p-10 text-center text-sm text-slate-500">Carregando informações…</Card>
+        ) : collected.length === 0 ? (
+          <Card className="flex flex-col items-center gap-3 p-12 text-center">
+            <FileText className="h-10 w-10 text-slate-300" />
+            <p className="text-sm font-medium text-slate-700">Nenhuma informação coletada ainda</p>
+            <p className="max-w-md text-sm text-slate-500">
+              Conforme a IA conduz as conversas, tudo que ela coletar de cada contato (ex.: requisitos do
+              protótipo) aparece aqui, separado por número.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {collected.map((c: CollectedInfo) => (
+              <Card key={c.conversationId ?? c.phone ?? Math.random()} className="p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
+                      {(c.contactName || "?").slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950">
+                        {c.contactName || "Contato sem nome"}
+                      </p>
+                      {c.phone ? (
+                        <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Phone className="h-3 w-3" /> {c.phone}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="gap-1 border-cyan-200 bg-cyan-50 text-[11px] text-cyan-700">
+                    <Bot className="h-3 w-3" /> Coletado pela IA
+                  </Badge>
+                </div>
+                <ul className="space-y-1.5">
+                  {c.facts.map((fact, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <span>{fact}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))}
+          </div>
+        )
+      )}
+
+      {view === "appointments" && (isLoading ? (
         <Card className="p-10 text-center text-sm text-slate-500">Carregando agenda…</Card>
       ) : appointments.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 p-12 text-center">
@@ -255,7 +341,7 @@ export default function Agenda() {
             </Card>
           ))}
         </div>
-      )}
+      ))}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
