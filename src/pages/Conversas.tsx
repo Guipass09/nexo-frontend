@@ -36,7 +36,7 @@ import {
   useUploadMediaAsset,
 } from "@/hooks/use-app-data";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save, ChevronLeft } from "lucide-react";
+import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save, ChevronLeft, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
@@ -644,6 +644,7 @@ export default function Conversas() {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [flowFilter, setFlowFilter] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const conversationFilters = useMemo(() => ({
     status: statusFilter,
@@ -1298,7 +1299,7 @@ export default function Conversas() {
     <div className="grid h-[calc(100vh-9rem)] grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
       {/* List */}
       <Card className={cn("nexo-premium-surface flex-col overflow-hidden", selectedId ? "hidden lg:flex" : "flex")}>
-        <div className="space-y-3 border-b border-border/70 p-4 gradient-card">
+        <div className="space-y-3 border-b border-slate-200/80 p-4 bg-white">
           {hasDataError && listRealtime.enabled ? (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               Oscilacao de conexao detectada. Mantendo os dados carregados e tentando reconectar.
@@ -1306,7 +1307,7 @@ export default function Conversas() {
           ) : null}
           <div className="flex items-center justify-between gap-2">
             {listRealtime.enabled ? <RealtimeBadge label="Lista ao vivo" status={listRealtime.status} /> : <span />}
-            <Button variant="outline" size="sm" className="gap-1.5 border-white/60 bg-white/68 shadow-sm" onClick={openCreateConversation}>
+            <Button variant="outline" size="sm" className="gap-1.5 border-slate-200 bg-white shadow-sm hover:bg-slate-50" onClick={openCreateConversation}>
               <Plus className="h-3.5 w-3.5" /> Nova conversa
             </Button>
           </div>
@@ -1314,40 +1315,57 @@ export default function Conversas() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar conversas, contatos ou mensagens..." className="nexo-soft-input rounded-[1.15rem] pl-9" value={search} onChange={(event) => setSearch(event.target.value)} />
           </div>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
-            {["Todos", "Ativos", "Aguardando", "Humano", "Finalizado"].map((f, i) => (
-              <button key={f} onClick={() => setStatusFilter(f)} className={cn(
-                "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-smooth",
-                statusFilter === f || (i === 0 && statusFilter === "Todos")
-                  ? "bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] text-primary-foreground shadow-[0_16px_36px_-24px_rgba(37,99,255,0.7)]"
-                  : "bg-white/75 text-muted-foreground hover:bg-white hover:text-foreground"
-              )}>{f}</button>
-            ))}
+          <div className="flex items-center gap-1.5">
+            <div className="flex flex-1 gap-1.5 overflow-x-auto scrollbar-thin pb-1">
+              {["Todos", "Ativos", "Aguardando", "Humano", "Finalizado"].map((f, i) => (
+                <button key={f} onClick={() => setStatusFilter(f)} className={cn(
+                  "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-smooth",
+                  statusFilter === f || (i === 0 && statusFilter === "Todos")
+                    ? "bg-[linear-gradient(135deg,#4f46e5,#7c3aed)] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                )}>{f}</button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters((value) => !value)}
+              className={cn(
+                "shrink-0 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-smooth",
+                showAdvancedFilters || unreadFilter !== "all" || deliveryStatusFilter || tagFilter || flowFilter
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+              aria-label="Filtros avançados"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
-              <option value="all">Todas</option>
-              <option value="true">Nao lidas</option>
-              <option value="false">Lidas</option>
-            </select>
-            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
-              <option value="">Envio</option>
-              <option value="pending">pending</option>
-              <option value="sent">sent</option>
-              <option value="delivered">delivered</option>
-              <option value="read">read</option>
-              <option value="failed">failed</option>
-              <option value="skipped">skipped</option>
-            </select>
-            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-              <option value="">Tag</option>
-              {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
-            </select>
-            <select className="h-9 rounded-xl border border-white/60 bg-white/78 px-3 text-xs shadow-[0_14px_32px_-28px_rgba(5,11,46,0.3)] backdrop-blur" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
-              <option value="">Fluxo</option>
-              {availableFlows.map((flow) => <option key={flow} value={flow}>{flow}</option>)}
-            </select>
-          </div>
+          {showAdvancedFilters && (
+            <div className="grid grid-cols-2 gap-2">
+              <select className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-violet-400 focus:outline-none" value={unreadFilter} onChange={(event) => setUnreadFilter(event.target.value as "all" | "true" | "false")}>
+                <option value="all">Todas</option>
+                <option value="true">Nao lidas</option>
+                <option value="false">Lidas</option>
+              </select>
+              <select className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-violet-400 focus:outline-none" value={deliveryStatusFilter} onChange={(event) => setDeliveryStatusFilter(event.target.value)}>
+                <option value="">Envio</option>
+                <option value="pending">pending</option>
+                <option value="sent">sent</option>
+                <option value="delivered">delivered</option>
+                <option value="read">read</option>
+                <option value="failed">failed</option>
+                <option value="skipped">skipped</option>
+              </select>
+              <select className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-violet-400 focus:outline-none" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+                <option value="">Tag</option>
+                {availableTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+              </select>
+              <select className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 focus:border-violet-400 focus:outline-none" value={flowFilter} onChange={(event) => setFlowFilter(event.target.value)}>
+                <option value="">Fluxo</option>
+                {availableFlows.map((flow) => <option key={flow} value={flow}>{flow}</option>)}
+              </select>
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin bg-slate-50/60">
           {isInitialConversationsLoading ? (
@@ -1446,13 +1464,12 @@ export default function Conversas() {
                     <span className={cn(
                       "text-[10px] rounded-full px-2 py-0.5 border",
                       requiresTemplate
-                        ? "border-warning/30 bg-warning/10 text-warning"
-                        : "border-success/30 bg-success/10 text-success",
+                        ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : "border-slate-200 bg-slate-50 text-slate-500",
                     )}>
-                      {requiresTemplate ? "Template necessario" : `Janela 24h ativa${serviceWindow.hoursRemaining ? ` · ${serviceWindow.hoursRemaining}h` : ""}`}
+                      {requiresTemplate ? "Template necessario" : `Janela 24h${serviceWindow.hoursRemaining ? ` · ${serviceWindow.hoursRemaining}h` : ""}`}
                     </span>
                   ) : null}
-                  {realtime.enabled ? <RealtimeBadge label="Conversa ao vivo" status={realtime.status} idleLabel="Sem conversa" /> : null}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex min-w-0 items-center gap-1">
@@ -1604,17 +1621,14 @@ export default function Conversas() {
                   <span>Fora da janela de 24h. Use um template oficial aprovado para reabrir o atendimento.</span>
                 </div>
               ) : null}
-              <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/60 bg-white/72 px-3 py-2 shadow-[0_18px_38px_-30px_rgba(5,11,46,0.24)]">
+              <div className="mb-2 flex items-center gap-2 px-1 text-[11px] text-slate-500">
                 <OperatorAvatar
                   name={operatorUser?.name ?? "Voce"}
                   fallback={operatorInitials}
                   avatarUrl={operatorUser?.avatarUrl}
                   size="sm"
                 />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-950">Respondendo como {operatorUser?.name ?? "sua conta"}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">Sua foto de perfil agora acompanha as mensagens humanas nesta conversa.</p>
-                </div>
+                <span className="truncate">Respondendo como <span className="font-medium text-slate-700">{operatorUser?.name ?? "sua conta"}</span></span>
               </div>
               {availableTemplates.length > 0 ? (
                 <div className="mb-2 space-y-2">
@@ -1725,7 +1739,7 @@ export default function Conversas() {
                 </div>
               ) : null}
               {showMediaComposer && !requiresTemplate ? (
-                <div className="mb-2 space-y-2 rounded-md border border-border/60 bg-secondary/20 p-2">
+                <div className="mb-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="grid grid-cols-2 sm:grid-cols-[110px_90px_1fr_140px] gap-2">
                 <select
                   className="h-8 rounded-md border border-input bg-background px-2 text-xs"
@@ -1793,7 +1807,7 @@ export default function Conversas() {
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                 <Input
                   type="file"
-                  className="h-8 max-w-[260px] bg-secondary/40 text-xs"
+                  className="h-9 w-full bg-white text-xs file:mr-2 file:rounded-md file:border-0 file:bg-slate-200 file:px-2 file:py-1 file:text-slate-700 hover:file:bg-slate-300"
                   accept={mediaDraft.type === "image" ? "image/png,image/jpeg,image/webp" : mediaDraft.type === "video" ? "video/mp4,video/3gpp,video/quicktime" : mediaDraft.type === "audio" ? "audio/aac,audio/mp4,audio/mpeg,audio/ogg,audio/opus,audio/webm,audio/wav" : ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"}
                   onChange={(event) => handleUploadMedia(event.target.files?.[0], mediaDraft.type, "manual")}
                 />
