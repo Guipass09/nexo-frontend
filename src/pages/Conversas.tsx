@@ -36,7 +36,7 @@ import {
   useUploadMediaAsset,
 } from "@/hooks/use-app-data";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save, ChevronLeft, SlidersHorizontal } from "lucide-react";
+import { Search, Send, Paperclip, Bot, User, Workflow, AlertTriangle, Plus, MessageSquare as MessageSquareIcon, Sparkles, Trash2, Phone, Image as ImageIcon, Film, FileText, ExternalLink, Download, MoreHorizontal, Save, ChevronLeft, SlidersHorizontal, Play, Pause, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ApiError, getApiErrorMessage } from "@/lib/api/client";
@@ -420,19 +420,19 @@ function ConversationImageContent({
       {mediaUrl ? (
         <button
           type="button"
-          className="group block overflow-hidden rounded-xl border border-white/15 bg-black/5 text-left ring-1 ring-black/5"
+          className="group relative block overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5"
           onClick={() => onOpenMedia?.({ ...message, mediaAsset: message.mediaAsset ? { ...message.mediaAsset, publicUrl: mediaUrl } : message.mediaAsset })}
           title="Abrir imagem"
         >
           <img
             src={mediaUrl}
             alt={mediaName || "Imagem recebida"}
-            className="max-h-72 w-full max-w-[320px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            className="max-h-80 w-full max-w-[340px] object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             loading="lazy"
           />
-          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-slate-100/90 text-slate-600" : "bg-white/10 text-white/80")}>
-            <ImageIcon className="h-3.5 w-3.5" />
-            Abrir imagem
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="pointer-events-none absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+            <Maximize2 className="h-3.5 w-3.5" />
           </span>
         </button>
       ) : (
@@ -471,20 +471,21 @@ function ConversationVideoContent({
       {mediaUrl ? (
         <button
           type="button"
-          className="group block overflow-hidden rounded-xl border border-white/15 bg-black text-left ring-1 ring-black/5"
+          className="group relative block overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-black/5"
           onClick={() => onOpenMedia?.({ ...message, mediaAsset: message.mediaAsset ? { ...message.mediaAsset, publicUrl: mediaUrl } : message.mediaAsset })}
           title="Abrir video"
         >
           <video
             src={mediaUrl}
-            className="max-h-72 w-full max-w-[340px] object-cover"
+            className="max-h-80 w-full max-w-[340px] object-cover opacity-95 transition-opacity group-hover:opacity-100"
             preload="metadata"
             muted
             playsInline
           />
-          <span className={cn("flex items-center gap-1.5 px-3 py-2 text-[11px]", isClient ? "bg-slate-100/90 text-slate-600" : "bg-white/10 text-white/80")}>
-            <Film className="h-3.5 w-3.5" />
-            Abrir video
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-transform duration-200 group-hover:scale-110">
+              <Play className="h-6 w-6 translate-x-[2px]" />
+            </span>
           </span>
         </button>
       ) : (
@@ -503,6 +504,85 @@ function ConversationVideoContent({
   );
 }
 
+function formatMediaTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return "0:00";
+  }
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+}
+
+function PremiumAudioPlayer({ src, isClient }: { src: string; isClient: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const toggle = () => {
+    const el = audioRef.current;
+    if (!el) {
+      return;
+    }
+    if (el.paused) {
+      void el.play();
+    } else {
+      el.pause();
+    }
+  };
+
+  const pct = duration > 0 ? (current / duration) * 100 : 0;
+
+  return (
+    <div className={cn(
+      "flex items-center gap-3 rounded-2xl border px-3 py-2",
+      isClient ? "border-slate-200 bg-white" : "border-white/20 bg-white/10",
+    )}>
+      <button
+        type="button"
+        onClick={toggle}
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105",
+          isClient ? "bg-violet-600 text-white" : "bg-white text-violet-700",
+        )}
+        aria-label={playing ? "Pausar" : "Reproduzir"}
+      >
+        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-[1px]" />}
+      </button>
+      <div className="min-w-[140px] flex-1">
+        <div
+          className={cn("h-1.5 w-full cursor-pointer overflow-hidden rounded-full", isClient ? "bg-slate-200" : "bg-white/25")}
+          onClick={(event) => {
+            const el = audioRef.current;
+            if (!el || !duration) {
+              return;
+            }
+            const rect = event.currentTarget.getBoundingClientRect();
+            const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+            el.currentTime = ratio * duration;
+          }}
+        >
+          <div className={cn("h-full rounded-full", isClient ? "bg-violet-600" : "bg-white")} style={{ width: `${pct}%` }} />
+        </div>
+        <div className={cn("mt-1 text-[10px] tabular-nums", isClient ? "text-slate-500" : "text-white/75")}>
+          {formatMediaTime(current)} / {formatMediaTime(duration)}
+        </div>
+      </div>
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        className="hidden"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
+        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+      />
+    </div>
+  );
+}
+
 function ConversationAudioContent({
   message,
   isClient,
@@ -517,19 +597,15 @@ function ConversationAudioContent({
   const mediaUrl = useConversationMediaUrl(message.mediaAsset?.downloadUrl ?? message.mediaAsset?.publicUrl);
 
   return (
-    <div className="space-y-2 min-w-[220px]" translate="no">
-      <div className={cn("rounded-xl border p-2", isClient ? "border-slate-200 bg-slate-100/80" : "border-white/20 bg-white/10")}>
-        {mediaUrl ? (
-          <audio src={mediaUrl} controls preload="metadata" className="h-9 w-full max-w-[320px]" />
-        ) : (
-          <div className="flex items-center gap-2 text-xs opacity-80">
-            <div className={cn("h-8 px-2 rounded-full flex items-center justify-center text-[10px] font-medium", isClient ? "bg-white text-primary shadow-sm" : "bg-primary-foreground/20")}>
-              Audio
-            </div>
-            <span>Audio recebido, mas o arquivo ainda nao esta disponivel.</span>
-          </div>
-        )}
-      </div>
+    <div className="space-y-2 min-w-[240px]" translate="no">
+      {mediaUrl ? (
+        <PremiumAudioPlayer src={mediaUrl} isClient={isClient} />
+      ) : (
+        <div className={cn("flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs", isClient ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/20 bg-white/10 text-white/80")}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500"><Play className="h-3.5 w-3.5" /></span>
+          <span>Audio recebido, mas o arquivo ainda nao esta disponivel.</span>
+        </div>
+      )}
       {!isMediaPlaceholder(message.rawText ?? message.text, "audio") ? (
         <pre className="notranslate whitespace-pre-wrap break-words text-sm leading-relaxed font-sans bg-transparent p-0 m-0" translate="no" lang="pt-BR">
           {message.rawText ?? message.text}
@@ -561,11 +637,16 @@ function ConversationDocumentContent({
           href={mediaUrl}
           target="_blank"
           rel="noreferrer"
-          className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors", isClient ? "border-slate-200 bg-slate-100/85 text-slate-700 hover:bg-slate-100" : "border-white/20 bg-white/10 text-white hover:bg-white/15")}
+          className={cn("flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-xs transition-colors", isClient ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/20 bg-white/10 text-white hover:bg-white/15")}
         >
-          <FileText className="h-4 w-4 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{mediaName || "Documento recebido"}</span>
-          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", isClient ? "bg-violet-50 text-violet-600" : "bg-white/15 text-white")}>
+            <FileText className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{mediaName || "Documento recebido"}</span>
+            <span className={cn("block text-[11px]", isClient ? "text-slate-400" : "text-white/65")}>Toque para abrir</span>
+          </span>
+          <Download className="h-4 w-4 shrink-0 opacity-70" />
         </a>
       ) : (
         <div className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-xs", isClient ? "border-slate-200 bg-slate-100/80 text-slate-600" : "border-white/20 bg-white/10 text-white/80")}>
