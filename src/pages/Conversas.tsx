@@ -188,7 +188,7 @@ function realtimeStatusView(status: RealtimeStatus, idleLabel = "Aguardando") {
 function AiProcessingBubble() {
   return (
     <div className="flex gap-2.5 justify-start">
-      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_65%,#EC4899_100%)] shadow-[0_18px_40px_-24px_rgba(37,99,255,0.72)]">
+      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#4f46e5,#7c3aed)] shadow-[0_8px_18px_-12px_rgba(79,70,229,0.5)]">
         <Bot className="h-4 w-4 text-white" />
       </div>
       <div className="max-w-[78%] rounded-[1.35rem] rounded-bl-md border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(243,246,255,0.88))] px-4 py-3 text-foreground shadow-[0_20px_44px_-34px_rgba(5,11,46,0.28)] backdrop-blur">
@@ -1349,7 +1349,7 @@ export default function Conversas() {
             </select>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-thin bg-[linear-gradient(180deg,rgba(248,250,255,0.62),rgba(240,244,252,0.82))]">
+        <div className="flex-1 overflow-y-auto scrollbar-thin bg-slate-50/60">
           {isInitialConversationsLoading ? (
             <div className="space-y-3 p-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -1433,7 +1433,7 @@ export default function Conversas() {
       <Card className={cn("nexo-premium-surface flex-col overflow-hidden", selectedId ? "flex" : "hidden lg:flex")}>
         {selected ? (
           <>
-            <div className="flex items-center gap-3 border-b border-border/70 p-5 bg-[radial-gradient(circle_at_top_left,rgba(37,99,255,0.08),transparent_28%),radial-gradient(circle_at_top_right,rgba(236,72,153,0.06),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,247,255,0.76))]">
+            <div className="flex items-center gap-3 border-b border-slate-200/80 p-4 bg-white">
               <button type="button" onClick={() => setSelectedId(null)} className="lg:hidden -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100" aria-label="Voltar para conversas">
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -1485,7 +1485,7 @@ export default function Conversas() {
               onScroll={(event) => {
                 shouldStickToBottomRef.current = shouldAutoScrollToBottom(event.currentTarget);
               }}
-              className="flex-1 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,79,216,0.06),transparent_22%),linear-gradient(180deg,rgba(248,250,255,0.62),rgba(240,244,252,0.86))]"
+              className="flex-1 overflow-y-auto p-4 scrollbar-thin md:p-6 bg-slate-50"
             >
               <div className="mx-auto max-w-4xl space-y-5">
               {activeConversationError ? (
@@ -1545,7 +1545,7 @@ export default function Conversas() {
                           />
                         </div>
                       ) : (
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] shadow-[0_16px_34px_-22px_rgba(37,99,255,0.72)]">
+                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#4f46e5,#7c3aed)] shadow-[0_8px_18px_-12px_rgba(79,70,229,0.5)]">
                           <Bot className="h-4 w-4 text-white" />
                         </div>
                       )
@@ -1556,7 +1556,7 @@ export default function Conversas() {
                         ? "border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(243,246,255,0.9))] text-foreground rounded-br-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(148,163,184,0.34)]"
                         : isHumanAgent
                           ? "border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(241,245,255,0.9))] text-foreground rounded-bl-md ring-primary/10 shadow-[0_22px_48px_-36px_rgba(13,91,255,0.4)]"
-                          : "bg-[linear-gradient(135deg,#2563FF_0%,#7C3AED_68%,#EC4899_100%)] text-white rounded-bl-md ring-blue-500/15 shadow-[0_24px_52px_-34px_rgba(37,99,255,0.72)]",
+                          : "bg-[linear-gradient(135deg,#4f46e5_0%,#7c3aed_100%)] text-white rounded-bl-md ring-violet-500/15 shadow-[0_8px_20px_-12px_rgba(79,70,229,0.45)]",
                       isFailed && "ring-destructive/30"
                     )}>
                       {!isClient ? (
@@ -1597,7 +1597,7 @@ export default function Conversas() {
               </div>
             </div>
 
-            <div className="border-t border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(244,247,255,0.82))] p-3 shadow-[0_-12px_30px_hsl(var(--background)/0.55)] backdrop-blur">
+            <div className="border-t border-slate-200 bg-white p-3">
               {requiresTemplate ? (
                 <div className="mb-2 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
