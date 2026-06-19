@@ -1604,62 +1604,30 @@ export function buildReactFlowGraph(blocks: FlowBuilderBlockDraft[]): {
   const siblingChildrenByParent = new Map<string, string[]>();
   const siblingParentByChild = new Map<string, string>();
 
+  // Filhos de ramificação por branch_parent_position (SEM limite de 2) — espelha
+  // branchChildConditions do backend: qualquer bloco de decisão cujo ui.branch_parent_position
+  // aponta para o pai vira um caminho daquele pai (mensagem ou outro bloco). Ordenados por posição.
   sortedBlocks.forEach((block) => {
     if (!isDecisionBlockType(block.type)) {
       return;
     }
     const manualLayout = parseManualLayout(block.config);
-    if (manualLayout.branchParentPosition === undefined || manualLayout.branchSide === undefined) {
+    if (manualLayout.branchParentPosition === undefined) {
       return;
     }
     const parentId = idByPosition.get(manualLayout.branchParentPosition);
-    if (!parentId) {
+    if (!parentId || parentId === block.clientId) {
       return;
     }
     const siblings = siblingChildrenByParent.get(parentId) ?? [];
-    siblings[manualLayout.branchSide === "left" ? 0 : 1] = block.clientId;
+    siblings.push(block.clientId);
     siblingChildrenByParent.set(parentId, siblings);
     siblingParentByChild.set(block.clientId, parentId);
   });
 
-  sortedBlocks.forEach((block, index) => {
-    if (!["message", "send_message", "send_template", "send_media"].includes(block.type)) {
-      return;
-    }
-    const parentLayout = parseManualLayout(block.config);
-    if ((siblingChildrenByParent.get(block.clientId) ?? []).filter(Boolean).length >= 2) {
-      return;
-    }
-    const conditionSiblings: FlowBuilderBlockDraft[] = [];
-    for (const candidate of sortedBlocks.slice(index + 1)) {
-      const candidateLayout = parseManualLayout(candidate.config);
-      if (isDecisionBlockType(candidate.type)) {
-        if (isSideBranchLayout(candidateLayout) && !isSameBranchContext(block.position, parentLayout, candidateLayout)) {
-          break;
-        }
-        conditionSiblings.push(candidate);
-        if (conditionSiblings.length === 2) {
-          break;
-        }
-        continue;
-      }
-      break;
-    }
-    if (conditionSiblings.length < 2) {
-      return;
-    }
-    const siblings = siblingChildrenByParent.get(block.clientId) ?? [];
-    conditionSiblings.forEach((candidate, conditionIndex) => {
-      if (!siblings[conditionIndex]) {
-        siblings[conditionIndex] = candidate.clientId;
-      }
-      siblingParentByChild.set(candidate.clientId, block.clientId);
-    });
-    siblingChildrenByParent.set(block.clientId, siblings);
-  });
-
   const nodes: FlowGraphNodeData[] = [];
   const edges: FlowGraphEdgeData[] = [];
+  const blockByClientId = new Map(sortedBlocks.map((block) => [block.clientId, block]));
 
   sortedBlocks.forEach((block, index) => {
     const links = collectOutgoingLinks(block, index, sortedBlocks, idByPosition, siblingChildrenByParent, siblingParentByChild);
@@ -1678,9 +1646,24 @@ export function buildReactFlowGraph(blocks: FlowBuilderBlockDraft[]): {
       if (link.relationship === "fallback") {
         label = "padrao";
       } else if (isBranch && link.branchIndex !== undefined) {
-        const branchCfg = branchConfigs[link.branchIndex];
-        const branchName = branchCfg && typeof branchCfg.name === "string" ? branchCfg.name : "";
-        label = getConditionBranchDisplayName(branchName, link.branchIndex);
+        if (link.relationship === "decision") {
+          // ramos do próprio bloco de decisão (config.branches)
+          const branchCfg = branchConfigs[link.branchIndex];
+          const branchName = branchCfg && typeof branchCfg.name === "string" ? branchCfg.name : "";
+          label = getConditionBranchDisplayName(branchName, link.branchIndex);
+        } else {
+          // condição-filha de uma mensagem (branch_parent_position): rótulo = keyword/nome dela
+          const child = blockByClientId.get(link.targetId);
+          const childCfg = child ? parseObject(child.config) : {};
+          let childLabel = typeof childCfg.keyword === "string" ? childCfg.keyword.trim() : "";
+          if (!childLabel && Array.isArray(childCfg.branches)) {
+            const first = childCfg.branches[0];
+            if (first && typeof first === "object" && !Array.isArray(first) && typeof (first as Record<string, unknown>).name === "string") {
+              childLabel = ((first as Record<string, unknown>).name as string).trim();
+            }
+          }
+          label = childLabel || `Caminho ${link.branchIndex + 1}`;
+        }
         const handleId = `branch-${link.branchIndex}`;
         if (!branchHandles.some((handle) => handle.id === handleId)) {
           branchHandles.push({ id: handleId, label });

@@ -714,9 +714,12 @@ export default function Fluxos() {
     }
 
     const targetPosition = target.position;
-    const isDecision = ["condition_keyword", "condition", "ai_decision"].includes(source.type);
+    const decisionTypes = ["condition_keyword", "condition", "ai_decision"];
+    const sourceIsDecision = decisionTypes.includes(source.type);
+    const targetIsCondition = decisionTypes.includes(target.type);
 
-    if (isDecision) {
+    if (sourceIsDecision) {
+      // Bloco de DECISÃO: cada conexão vira um ramo em config.branches (até 8).
       const draft = parseConditionKeywordDraft(source.config);
       if (draft.branches.some((branch) => Number(branch.nextPosition) === targetPosition)) {
         return;
@@ -748,7 +751,34 @@ export default function Fluxos() {
         title: "Caminho criado",
         description: `Novo caminho "${label}" ligado ao bloco #${targetPosition}. Ajuste a palavra-chave no painel.`,
       });
+    } else if (targetIsCondition) {
+      // MENSAGEM/AÇÃO → CONDIÇÃO: a mensagem ramifica em quantas condições quiser (até 8).
+      // Marca a condição-alvo como filha da mensagem (branch_parent_position); o backend
+      // (branchChildConditions) avalia a resposta contra cada condição-filha.
+      if (getFlowBuilderManualLayout(target).branchParentPosition === source.position) {
+        return;
+      }
+      const childCount = blockDrafts.filter(
+        (block) => decisionTypes.includes(block.type)
+          && getFlowBuilderManualLayout(block).branchParentPosition === source.position,
+      ).length;
+      if (childCount >= MAX_CONDITION_BRANCHES) {
+        toast({
+          title: "Limite de caminhos atingido",
+          description: `Uma mensagem suporta ate ${MAX_CONDITION_BRANCHES} condicoes.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      updateBlock(target.clientId, (block) => applyFlowBuilderManualLayout(block, { branchParentPosition: source.position }));
+      toast({
+        title: "Condicao ligada a mensagem",
+        description: `A condicao #${targetPosition} virou um caminho da mensagem. Defina a palavra-chave dela no painel.`,
+      });
+      setSelectedBlockId(target.clientId);
+      return;
     } else {
+      // Sequencial: define o próximo bloco.
       updateBlock(source.clientId, (block) => ({
         ...block,
         config: { ...block.config, next_position: targetPosition },
