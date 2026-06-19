@@ -1,22 +1,35 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import dagre from "dagre";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   Handle,
   MiniMap,
+  Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
+  useReactFlow,
   type Edge,
   type Node,
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Clock, Flag, GitBranch, Headphones, MessageSquare, Play } from "lucide-react";
+import {
+  Clock,
+  Flag,
+  GitBranch,
+  Headphones,
+  Maximize2,
+  MessageSquare,
+  MoveHorizontal,
+  MoveVertical,
+  Play,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   buildReactFlowGraph,
@@ -25,55 +38,59 @@ import {
   type FlowGraphNodeData,
 } from "@/services/flow-editor";
 
-type FlowBlockNodeData = FlowGraphNodeData & { isSelected: boolean };
+type LayoutDirection = "TB" | "LR";
+
+type FlowBlockNodeData = FlowGraphNodeData & { isSelected: boolean; direction: LayoutDirection };
 type FlowBlockNode = Node<FlowBlockNodeData, "flowBlock">;
 
 const TONE: Record<
   FlowBuilderBlockTone,
-  { accent: string; soft: string; ring: string; icon: typeof Play; label: string }
+  { accent: string; soft: string; icon: typeof Play }
 > = {
-  start: { accent: "#10b981", soft: "#ecfdf5", ring: "#a7f3d0", icon: Play, label: "Início" },
-  action: { accent: "#6366f1", soft: "#eef2ff", ring: "#c7d2fe", icon: MessageSquare, label: "Ação" },
-  wait: { accent: "#f59e0b", soft: "#fffbeb", ring: "#fde68a", icon: Clock, label: "Espera" },
-  decision: { accent: "#8b5cf6", soft: "#f5f3ff", ring: "#ddd6fe", icon: GitBranch, label: "Decisão" },
-  handoff: { accent: "#f43f5e", soft: "#fff1f2", ring: "#fecdd3", icon: Headphones, label: "Humano" },
-  end: { accent: "#64748b", soft: "#f8fafc", ring: "#cbd5e1", icon: Flag, label: "Fim" },
+  start: { accent: "#10b981", soft: "#ecfdf5", icon: Play },
+  action: { accent: "#6366f1", soft: "#eef2ff", icon: MessageSquare },
+  wait: { accent: "#f59e0b", soft: "#fffbeb", icon: Clock },
+  decision: { accent: "#8b5cf6", soft: "#f5f3ff", icon: GitBranch },
+  handoff: { accent: "#f43f5e", soft: "#fff1f2", icon: Headphones },
+  end: { accent: "#64748b", soft: "#f8fafc", icon: Flag },
 };
 
-const NODE_WIDTH = 248;
-const BASE_HEIGHT = 104;
-const PORTS_HEIGHT = 56;
+const NODE_WIDTH = 256;
 
-function nodeDimensions(data: FlowGraphNodeData) {
+function nodeDimensions(data: Pick<FlowGraphNodeData, "branchHandles">, direction: LayoutDirection) {
   const count = data.branchHandles.length;
-  const width = count > 2 ? Math.min(620, 216 + count * 78) : NODE_WIDTH;
-  const height = count > 0 ? BASE_HEIGHT + PORTS_HEIGHT : BASE_HEIGHT;
-  return { width, height };
+  if (direction === "LR") {
+    return { width: NODE_WIDTH, height: count > 0 ? Math.max(120, 84 + count * 30) : 104 };
+  }
+  const width = count > 2 ? Math.min(640, 224 + count * 76) : NODE_WIDTH;
+  return { width, height: count > 0 ? 162 : 104 };
 }
 
 function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
   const tone = TONE[data.tone] ?? TONE.action;
   const Icon = tone.icon;
   const ports = data.branchHandles;
+  const horizontal = data.direction === "LR";
 
   return (
     <div
       className={cn(
-        "relative rounded-2xl border bg-white text-left shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] transition-shadow",
-        data.isSelected ? "border-transparent shadow-[0_18px_44px_-20px_rgba(99,102,241,0.55)]" : "border-slate-200",
+        "relative rounded-2xl border bg-white text-left transition-shadow",
+        data.isSelected
+          ? "border-transparent shadow-[0_20px_48px_-20px_rgba(99,102,241,0.6)]"
+          : "border-slate-200 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.35)] hover:shadow-[0_16px_38px_-20px_rgba(15,23,42,0.4)]",
       )}
       style={{
-        width: nodeDimensions(data).width,
+        width: nodeDimensions(data, data.direction).width,
         outline: data.isSelected ? `2px solid ${tone.accent}` : "none",
         outlineOffset: 2,
       }}
     >
-      {/* faixa de tom no topo */}
       <div className="h-1.5 w-full rounded-t-2xl" style={{ backgroundColor: tone.accent }} />
 
       <Handle
         type="target"
-        position={Position.Top}
+        position={horizontal ? Position.Left : Position.Top}
         id="in"
         className="!h-2.5 !w-2.5 !border-2 !border-white"
         style={{ background: tone.accent }}
@@ -97,11 +114,24 @@ function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
       </div>
 
       {ports.length > 0 ? (
-        <div className="flex items-end justify-around gap-1 border-t border-slate-100 px-2 pb-3 pt-2">
+        <div
+          className={cn(
+            "gap-1.5 border-slate-100",
+            horizontal
+              ? "flex flex-col border-t px-3 py-2"
+              : "flex items-end justify-around border-t px-2 pb-3 pt-2",
+          )}
+        >
           {ports.map((port) => (
-            <div key={port.id} className="relative flex min-w-0 flex-1 flex-col items-center">
+            <div
+              key={port.id}
+              className={cn("relative flex min-w-0", horizontal ? "items-center" : "flex-1 flex-col items-center")}
+            >
               <span
-                className="max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium"
+                className={cn(
+                  "max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium",
+                  horizontal && "w-full pr-4",
+                )}
                 style={{ backgroundColor: tone.soft, color: tone.accent }}
                 title={port.label}
               >
@@ -109,10 +139,14 @@ function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
               </span>
               <Handle
                 type="source"
-                position={Position.Bottom}
+                position={horizontal ? Position.Right : Position.Bottom}
                 id={port.id}
                 className="!h-2.5 !w-2.5 !border-2 !border-white"
-                style={{ background: tone.accent, bottom: -14, left: "50%", transform: "translateX(-50%)" }}
+                style={
+                  horizontal
+                    ? { background: tone.accent, right: -16, top: "50%", transform: "translateY(-50%)" }
+                    : { background: tone.accent, bottom: -14, left: "50%", transform: "translateX(-50%)" }
+                }
               />
             </div>
           ))}
@@ -120,21 +154,20 @@ function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
       ) : (
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={horizontal ? Position.Right : Position.Bottom}
           id="out"
           className="!h-2.5 !w-2.5 !border-2 !border-white"
           style={{ background: tone.accent }}
         />
       )}
 
-      {/* handle "out" sempre presente (fallback/padrão) mesmo em nós de decisão */}
       {ports.length > 0 ? (
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={horizontal ? Position.Right : Position.Bottom}
           id="out"
-          className="!h-2 !w-2 !border-2 !border-white !opacity-60"
-          style={{ background: "#94a3b8", left: "calc(100% - 14px)" }}
+          className="!h-2 !w-2 !border-2 !border-white !opacity-50"
+          style={horizontal ? { background: "#94a3b8", top: "calc(100% - 14px)" } : { background: "#94a3b8", left: "calc(100% - 14px)" }}
         />
       ) : null}
     </div>
@@ -153,15 +186,21 @@ function edgeColor(relationship: string) {
   return "#cbd5e1";
 }
 
-function layoutGraph(blocks: FlowBuilderBlockDraft[], selectedBlockId: string | null) {
+function layoutGraph(blocks: FlowBuilderBlockDraft[], selectedBlockId: string | null, direction: LayoutDirection) {
   const { nodes, edges } = buildReactFlowGraph(blocks);
 
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: "TB", nodesep: 56, ranksep: 84, marginx: 32, marginy: 32 });
+  graph.setGraph({
+    rankdir: direction,
+    nodesep: direction === "LR" ? 36 : 70,
+    ranksep: direction === "LR" ? 120 : 110,
+    marginx: 36,
+    marginy: 36,
+  });
   graph.setDefaultEdgeLabel(() => ({}));
 
   nodes.forEach((node) => {
-    const { width, height } = nodeDimensions(node);
+    const { width, height } = nodeDimensions(node, direction);
     graph.setNode(node.id, { width, height });
   });
   edges.forEach((edge) => {
@@ -172,17 +211,18 @@ function layoutGraph(blocks: FlowBuilderBlockDraft[], selectedBlockId: string | 
 
   const rfNodes: FlowBlockNode[] = nodes.map((node) => {
     const layout = graph.node(node.id);
-    const { width, height } = nodeDimensions(node);
+    const { width, height } = nodeDimensions(node, direction);
     return {
       id: node.id,
       type: "flowBlock",
       position: { x: (layout?.x ?? 0) - width / 2, y: (layout?.y ?? 0) - height / 2 },
-      data: { ...node, isSelected: node.id === selectedBlockId },
+      data: { ...node, isSelected: node.id === selectedBlockId, direction },
     };
   });
 
   const rfEdges: Edge[] = edges.map((edge) => {
     const color = edgeColor(edge.relationship);
+    const isBranch = edge.relationship === "decision" || edge.relationship === "branch";
     return {
       id: edge.id,
       source: edge.source,
@@ -191,16 +231,15 @@ function layoutGraph(blocks: FlowBuilderBlockDraft[], selectedBlockId: string | 
       targetHandle: "in",
       label: edge.label || undefined,
       type: "smoothstep",
-      animated: edge.relationship === "decision" || edge.relationship === "branch",
       style: {
         stroke: color,
-        strokeWidth: 2,
+        strokeWidth: isBranch ? 2 : 1.75,
         strokeDasharray: edge.relationship === "fallback" ? "5 4" : undefined,
       },
       labelStyle: { fontSize: 10, fontWeight: 600, fill: color },
-      labelBgStyle: { fill: "#ffffff", fillOpacity: 0.92 },
-      labelBgPadding: [4, 2] as [number, number],
-      labelBgBorderRadius: 6,
+      labelBgStyle: { fill: "#ffffff", fillOpacity: 0.95 },
+      labelBgPadding: [5, 2] as [number, number],
+      labelBgBorderRadius: 8,
     };
   });
 
@@ -214,34 +253,67 @@ export type FlowGraphCanvasProps = {
   className?: string;
 };
 
+function ToolbarButton({
+  onClick,
+  label,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+    >
+      {children}
+    </button>
+  );
+}
+
 function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, className }: FlowGraphCanvasProps) {
-  // chave estável: recomputa o layout só quando a ESTRUTURA muda (id/tipo/posição/config), não a seleção.
+  const [direction, setDirection] = useState<LayoutDirection>("TB");
+  const reactFlow = useReactFlow();
+
   const structureKey = useMemo(
     () => JSON.stringify(blocks.map((block) => [block.clientId, block.type, block.position, block.config])),
     [blocks],
   );
 
   const { rfNodes, rfEdges } = useMemo(
-    () => layoutGraph(blocks, selectedBlockId),
+    () => layoutGraph(blocks, selectedBlockId, direction),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [structureKey],
+    [structureKey, direction],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowBlockNode>(rfNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(rfEdges);
 
-  // re-seed quando a estrutura muda
   useEffect(() => {
     setNodes(rfNodes);
     setEdges(rfEdges);
-  }, [rfNodes, rfEdges, setNodes, setEdges]);
+    // re-enquadra após relayout
+    const timer = window.setTimeout(() => reactFlow.fitView({ padding: 0.22, duration: 400, maxZoom: 1.1 }), 60);
+    return () => window.clearTimeout(timer);
+  }, [rfNodes, rfEdges, setNodes, setEdges, reactFlow]);
 
-  // reflete seleção sem refazer layout
   useEffect(() => {
     setNodes((current) =>
       current.map((node) => ({ ...node, data: { ...node.data, isSelected: node.id === selectedBlockId } })),
     );
   }, [selectedBlockId, setNodes]);
+
+  const focusNode = useCallback(
+    (id: string) => {
+      onSelectBlock(id);
+      window.setTimeout(() => reactFlow.fitView({ nodes: [{ id }], duration: 450, maxZoom: 1.15, padding: 0.6 }), 0);
+    },
+    [onSelectBlock, reactFlow],
+  );
 
   return (
     <div className={cn("relative h-full w-full", className)}>
@@ -256,24 +328,45 @@ function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, classNam
           </p>
         </div>
       ) : null}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onNodeClick={(_, node) => onSelectBlock(node.id)}
+        onNodeClick={(_, node) => focusNode(node.id)}
         onPaneClick={() => onSelectBlock(null)}
         fitView
-        fitViewOptions={{ padding: 0.25, maxZoom: 1.1 }}
-        minZoom={0.25}
+        fitViewOptions={{ padding: 0.22, maxZoom: 1.1 }}
+        minZoom={0.2}
         maxZoom={1.75}
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
         defaultEdgeOptions={{ type: "smoothstep" }}
+        className="[&_.react-flow__attribution]:hidden"
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e2e8f0" />
-        <Controls showInteractive={false} className="!rounded-xl !border !border-slate-200 !shadow-sm" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} color="#dbe2ec" />
+
+        <Panel position="top-right" className="!m-3 flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
+          <ToolbarButton
+            label={direction === "TB" ? "Mudar para horizontal" : "Mudar para vertical"}
+            onClick={() => setDirection((value) => (value === "TB" ? "LR" : "TB"))}
+          >
+            {direction === "TB" ? <MoveHorizontal className="h-4 w-4" /> : <MoveVertical className="h-4 w-4" />}
+          </ToolbarButton>
+          <span className="mx-0.5 h-5 w-px bg-slate-200" />
+          <ToolbarButton label="Diminuir zoom" onClick={() => reactFlow.zoomOut({ duration: 200 })}>
+            <ZoomOut className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton label="Aumentar zoom" onClick={() => reactFlow.zoomIn({ duration: 200 })}>
+            <ZoomIn className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton label="Ajustar à tela" onClick={() => reactFlow.fitView({ padding: 0.22, duration: 400 })}>
+            <Maximize2 className="h-4 w-4" />
+          </ToolbarButton>
+        </Panel>
+
         <MiniMap
           pannable
           zoomable
@@ -283,7 +376,7 @@ function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, classNam
             return tone ? TONE[tone].accent : "#cbd5e1";
           }}
           nodeStrokeWidth={0}
-          maskColor="rgba(241,245,249,0.6)"
+          maskColor="rgba(241,245,249,0.65)"
         />
       </ReactFlow>
     </div>
