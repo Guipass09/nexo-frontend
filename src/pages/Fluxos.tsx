@@ -75,6 +75,7 @@ import {
   flowBuilderBlockTypeOptions,
   formatFlowTrigger,
   getFlowBuilderManualLayout,
+  MAX_CONDITION_BRANCHES,
   organizeFlowBuilderBlocks,
   parseConditionKeywordDraft,
   parseFlowTrigger,
@@ -705,6 +706,58 @@ export default function Fluxos() {
     setSelectedBlockId(blockId);
   }
 
+  function connectBlocks(sourceClientId: string, targetClientId: string) {
+    const source = blockDrafts.find((block) => block.clientId === sourceClientId);
+    const target = blockDrafts.find((block) => block.clientId === targetClientId);
+    if (!source || !target || source.clientId === target.clientId) {
+      return;
+    }
+
+    const targetPosition = target.position;
+    const isDecision = ["condition_keyword", "condition", "ai_decision"].includes(source.type);
+
+    if (isDecision) {
+      const draft = parseConditionKeywordDraft(source.config);
+      if (draft.branches.some((branch) => Number(branch.nextPosition) === targetPosition)) {
+        return;
+      }
+      if (draft.branches.length >= MAX_CONDITION_BRANCHES) {
+        toast({
+          title: "Limite de caminhos atingido",
+          description: `Um bloco de decisao suporta ate ${MAX_CONDITION_BRANCHES} caminhos.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      const index = draft.branches.length;
+      const label = index === 0 ? "Sim" : index === 1 ? "Nao" : `Caminho ${index + 1}`;
+      const nextBranches = [
+        ...draft.branches,
+        {
+          id: `branch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          name: label,
+          keywords: label,
+          nextPosition: String(targetPosition),
+        },
+      ];
+      updateBlock(source.clientId, (block) => ({
+        ...block,
+        config: replaceConditionKeywordConfig(block.config, { ...draft, branches: nextBranches }),
+      }));
+      toast({
+        title: "Caminho criado",
+        description: `Novo caminho "${label}" ligado ao bloco #${targetPosition}. Ajuste a palavra-chave no painel.`,
+      });
+    } else {
+      updateBlock(source.clientId, (block) => ({
+        ...block,
+        config: { ...block.config, next_position: targetPosition },
+      }));
+    }
+
+    setSelectedBlockId(source.clientId);
+  }
+
   function saveFlow(statusOverride?: FlowStatus) {
     const nextDraft = {
       ...flowDraft,
@@ -1260,6 +1313,7 @@ export default function Fluxos() {
               blocks={orderedDraftBlocks}
               selectedBlockId={selectedBlockId}
               onSelectBlock={setSelectedBlockId}
+              onConnectBlocks={connectBlocks}
             />
           </div>
         </div>
@@ -1428,6 +1482,7 @@ export default function Fluxos() {
                 blocks={orderedDraftBlocks}
                 selectedBlockId={selectedBlockId}
                 onSelectBlock={setSelectedBlockId}
+                onConnectBlocks={connectBlocks}
               />
             </div>
           </div>

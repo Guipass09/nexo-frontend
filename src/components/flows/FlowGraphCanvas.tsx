@@ -71,6 +71,7 @@ function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
   const Icon = tone.icon;
   const ports = data.branchHandles;
   const horizontal = data.direction === "LR";
+  const hasOutput = !["end", "handoff_human", "human"].includes(data.blockType);
 
   return (
     <div
@@ -116,58 +117,30 @@ function FlowBlockNode({ data }: NodeProps<FlowBlockNode>) {
       {ports.length > 0 ? (
         <div
           className={cn(
-            "gap-1.5 border-slate-100",
-            horizontal
-              ? "flex flex-col border-t px-3 py-2"
-              : "flex items-end justify-around border-t px-2 pb-3 pt-2",
+            "gap-1 border-t border-slate-100",
+            horizontal ? "flex flex-col px-3 py-2" : "flex flex-wrap items-center justify-center px-2 pb-2.5 pt-2",
           )}
         >
           {ports.map((port) => (
-            <div
+            <span
               key={port.id}
-              className={cn("relative flex min-w-0", horizontal ? "items-center" : "flex-1 flex-col items-center")}
+              className="max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{ backgroundColor: tone.soft, color: tone.accent }}
+              title={port.label}
             >
-              <span
-                className={cn(
-                  "max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium",
-                  horizontal && "w-full pr-4",
-                )}
-                style={{ backgroundColor: tone.soft, color: tone.accent }}
-                title={port.label}
-              >
-                {port.label}
-              </span>
-              <Handle
-                type="source"
-                position={horizontal ? Position.Right : Position.Bottom}
-                id={port.id}
-                className="!h-2.5 !w-2.5 !border-2 !border-white"
-                style={
-                  horizontal
-                    ? { background: tone.accent, right: -16, top: "50%", transform: "translateY(-50%)" }
-                    : { background: tone.accent, bottom: -14, left: "50%", transform: "translateX(-50%)" }
-                }
-              />
-            </div>
+              {port.label}
+            </span>
           ))}
         </div>
-      ) : (
-        <Handle
-          type="source"
-          position={horizontal ? Position.Right : Position.Bottom}
-          id="out"
-          className="!h-2.5 !w-2.5 !border-2 !border-white"
-          style={{ background: tone.accent }}
-        />
-      )}
+      ) : null}
 
-      {ports.length > 0 ? (
+      {hasOutput ? (
         <Handle
           type="source"
           position={horizontal ? Position.Right : Position.Bottom}
           id="out"
-          className="!h-2 !w-2 !border-2 !border-white !opacity-50"
-          style={horizontal ? { background: "#94a3b8", top: "calc(100% - 14px)" } : { background: "#94a3b8", left: "calc(100% - 14px)" }}
+          className="!h-3 !w-3 !border-2 !border-white !shadow-sm"
+          style={{ background: tone.accent }}
         />
       ) : null}
     </div>
@@ -250,6 +223,7 @@ export type FlowGraphCanvasProps = {
   blocks: FlowBuilderBlockDraft[];
   selectedBlockId: string | null;
   onSelectBlock: (clientId: string | null) => void;
+  onConnectBlocks?: (sourceClientId: string, targetClientId: string) => void;
   className?: string;
 };
 
@@ -275,7 +249,7 @@ function ToolbarButton({
   );
 }
 
-function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, className }: FlowGraphCanvasProps) {
+function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, onConnectBlocks, className }: FlowGraphCanvasProps) {
   const [direction, setDirection] = useState<LayoutDirection>("TB");
   const reactFlow = useReactFlow();
 
@@ -337,12 +311,17 @@ function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, classNam
         onEdgesChange={onEdgesChange}
         onNodeClick={(_, node) => focusNode(node.id)}
         onPaneClick={() => onSelectBlock(null)}
+        onConnect={(connection) => {
+          if (connection.source && connection.target && connection.source !== connection.target) {
+            onConnectBlocks?.(connection.source, connection.target);
+          }
+        }}
         fitView
         fitViewOptions={{ padding: 0.22, maxZoom: 1.1 }}
         minZoom={0.2}
         maxZoom={1.75}
         proOptions={{ hideAttribution: true }}
-        nodesConnectable={false}
+        nodesConnectable={Boolean(onConnectBlocks)}
         defaultEdgeOptions={{ type: "smoothstep" }}
         className="[&_.react-flow__attribution]:hidden"
       >
@@ -366,6 +345,12 @@ function FlowGraphCanvasInner({ blocks, selectedBlockId, onSelectBlock, classNam
             <Maximize2 className="h-4 w-4" />
           </ToolbarButton>
         </Panel>
+
+        {onConnectBlocks ? (
+          <Panel position="bottom-center" className="!mb-3 rounded-full border border-slate-200 bg-white/95 px-3 py-1 text-[11px] text-slate-500 shadow-sm backdrop-blur">
+            Arraste do ponto na base de um bloco até outro para criar um caminho
+          </Panel>
+        ) : null}
 
         <MiniMap
           pannable

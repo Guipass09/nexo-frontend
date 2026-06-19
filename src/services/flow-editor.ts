@@ -1671,28 +1671,29 @@ export function buildReactFlowGraph(blocks: FlowBuilderBlockDraft[]): {
 
     const branchHandles: { id: string; label: string }[] = [];
 
-    links.forEach((link) => {
+    links.forEach((link, linkIndex) => {
       const isBranch = link.relationship === "decision" || link.relationship === "branch";
-      let sourceHandle = "out";
       let label = "";
 
       if (link.relationship === "fallback") {
         label = "padrao";
       } else if (isBranch && link.branchIndex !== undefined) {
-        sourceHandle = `branch-${link.branchIndex}`;
         const branchCfg = branchConfigs[link.branchIndex];
         const branchName = branchCfg && typeof branchCfg.name === "string" ? branchCfg.name : "";
         label = getConditionBranchDisplayName(branchName, link.branchIndex);
-        if (!branchHandles.some((handle) => handle.id === sourceHandle)) {
-          branchHandles.push({ id: sourceHandle, label });
+        const handleId = `branch-${link.branchIndex}`;
+        if (!branchHandles.some((handle) => handle.id === handleId)) {
+          branchHandles.push({ id: handleId, label });
         }
       }
 
+      // Todas as ligações saem de um único handle conectável "out" (drag-to-connect);
+      // o rótulo do caminho fica na própria edge e nos chips do nó.
       edges.push({
-        id: `edge-${block.clientId}-${sourceHandle}-${link.targetId}`,
+        id: `edge-${block.clientId}-out-${link.targetId}-${linkIndex}`,
         source: block.clientId,
         target: link.targetId,
-        sourceHandle,
+        sourceHandle: "out",
         label,
         relationship: link.relationship as FlowGraphRelationship,
       });
