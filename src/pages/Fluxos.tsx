@@ -1461,7 +1461,7 @@ export default function Fluxos() {
                     Navegue o fluxograma inteiro sem cortes e continue editando com as mesmas integrações do backend.
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Arraste o fundo para navegar livremente ou use os atalhos abaixo para pular entre as extremidades.
+                    Edite os blocos no painel à direita; arraste o fundo para navegar e use a toolbar para zoom/direção.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1494,26 +1494,40 @@ export default function Fluxos() {
               </div>
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-hidden bg-muted/10 p-4 sm:p-5">
-              <div className="absolute left-4 top-4 z-20 max-w-[min(760px,calc(100%-2rem))] overflow-x-auto rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur sm:left-5 sm:top-5 sm:max-w-[min(760px,calc(100%-2.5rem))]">
-                <div className="mb-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="rounded-md">
-                    Inserir bloco
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {selectedBlockId ? "Apos o bloco selecionado" : "Apos o ultimo bloco"}
-                  </span>
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <div className="relative min-h-0 flex-1 overflow-hidden bg-muted/10 p-4 sm:p-5">
+                <div className="absolute left-4 top-4 z-20 max-w-[min(760px,calc(100%-2rem))] overflow-x-auto rounded-lg border border-border/70 bg-background/92 p-3 shadow-lg backdrop-blur sm:left-5 sm:top-5 sm:max-w-[min(760px,calc(100%-2.5rem))]">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded-md">
+                      Inserir bloco
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {selectedBlockId ? "Apos o bloco selecionado" : "Apos o ultimo bloco"}
+                    </span>
+                  </div>
+                  {renderBlockQuickAddBar(true)}
                 </div>
-                {renderBlockQuickAddBar(true)}
+
+                <FlowGraphCanvas
+                  className="h-full min-h-0 min-w-0 pt-24"
+                  blocks={orderedDraftBlocks}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={setSelectedBlockId}
+                  onConnectBlocks={connectBlocks}
+                />
               </div>
 
-              <FlowGraphCanvas
-                className="h-full min-h-0 min-w-0 pt-24"
-                blocks={orderedDraftBlocks}
-                selectedBlockId={selectedBlockId}
-                onSelectBlock={setSelectedBlockId}
-                onConnectBlocks={connectBlocks}
-              />
+              <div className="hidden w-[400px] shrink-0 overflow-y-auto border-l border-border/70 bg-background lg:block">
+                <FlowInspector
+                  block={selectedBlock}
+                  blocks={orderedDraftBlocks}
+                  onUpdateBlock={updateBlock}
+                  onDeleteBlock={requestDeleteBlock}
+                  onDuplicateBlock={duplicateDraftBlock}
+                  onAddAfter={addBlock}
+                  onApplyConditionBinaryModel={applyConditionBinaryModel}
+                />
+              </div>
             </div>
           </div>
           </div>
