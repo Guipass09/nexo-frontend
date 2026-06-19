@@ -336,7 +336,7 @@ export function FlowInspector({
                   <p className="text-xs text-muted-foreground">
                     {block.type === "ai_decision"
                       ? "Descreva ate 8 caminhos que a IA pode escolher. Ela decide pelo sentido da resposta, nao apenas por palavra exata."
-                      : "Voce pode montar ate 8 respostas possiveis. Os dois primeiros ramos abrem lateralmente e os demais seguem como caminhos extras."}
+                      : "Voce pode montar ate 8 respostas possiveis. Cada caminho vira uma saida propria do bloco no canvas."}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -394,7 +394,7 @@ export function FlowInspector({
                           index === 1 && "border-primary/25 bg-primary/10 text-primary",
                         )}
                       >
-                        {index === 0 ? "Lado esquerdo" : index === 1 ? "Lado direito" : `Ramo ${index + 1}`}
+                        {`Caminho ${index + 1}`}
                       </Badge>
                       <Button
                         type="button"

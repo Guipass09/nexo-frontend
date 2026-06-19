@@ -1559,6 +1559,160 @@ export function buildFlowBuilderChart(blocks: FlowBuilderBlockDraft[]): FlowBuil
   };
 }
 
+export type FlowGraphRelationship = "sequential" | "decision" | "fallback" | "branch";
+
+export type FlowGraphNodeData = {
+  id: string;
+  blockType: FlowBuilderBlockDraft["type"];
+  tone: FlowBuilderBlockTone;
+  typeLabel: string;
+  title: string;
+  summary: string;
+  position: number;
+  branchHandles: { id: string; label: string }[];
+};
+
+export type FlowGraphEdgeData = {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle: string;
+  label: string;
+  relationship: FlowGraphRelationship;
+};
+
+/**
+ * Grafo lógico (nós + edges, SEM x/y) para o canvas React Flow. Reusa exatamente a mesma
+ * semântica de conexões de `buildFlowBuilderChart` (`collectOutgoingLinks` + mapas de irmãos),
+ * então fluxos existentes mantêm suas ligações; mas suporta N caminhos (até MAX_CONDITION_BRANCHES)
+ * via handles `branch-{índice}`. O posicionamento fica por conta do dagre no componente.
+ */
+export function buildReactFlowGraph(blocks: FlowBuilderBlockDraft[]): {
+  nodes: FlowGraphNodeData[];
+  edges: FlowGraphEdgeData[];
+} {
+  const normalizedBlocks = normalizeFlowBuilderBlocks(blocks);
+  const sortedBlocks = [...normalizedBlocks].sort(
+    (left, right) => left.position - right.position || left.clientId.localeCompare(right.clientId),
+  );
+
+  if (sortedBlocks.length === 0) {
+    return { nodes: [], edges: [] };
+  }
+
+  const idByPosition = new Map(sortedBlocks.map((block) => [block.position, block.clientId]));
+  const siblingChildrenByParent = new Map<string, string[]>();
+  const siblingParentByChild = new Map<string, string>();
+
+  sortedBlocks.forEach((block) => {
+    if (!isDecisionBlockType(block.type)) {
+      return;
+    }
+    const manualLayout = parseManualLayout(block.config);
+    if (manualLayout.branchParentPosition === undefined || manualLayout.branchSide === undefined) {
+      return;
+    }
+    const parentId = idByPosition.get(manualLayout.branchParentPosition);
+    if (!parentId) {
+      return;
+    }
+    const siblings = siblingChildrenByParent.get(parentId) ?? [];
+    siblings[manualLayout.branchSide === "left" ? 0 : 1] = block.clientId;
+    siblingChildrenByParent.set(parentId, siblings);
+    siblingParentByChild.set(block.clientId, parentId);
+  });
+
+  sortedBlocks.forEach((block, index) => {
+    if (!["message", "send_message", "send_template", "send_media"].includes(block.type)) {
+      return;
+    }
+    const parentLayout = parseManualLayout(block.config);
+    if ((siblingChildrenByParent.get(block.clientId) ?? []).filter(Boolean).length >= 2) {
+      return;
+    }
+    const conditionSiblings: FlowBuilderBlockDraft[] = [];
+    for (const candidate of sortedBlocks.slice(index + 1)) {
+      const candidateLayout = parseManualLayout(candidate.config);
+      if (isDecisionBlockType(candidate.type)) {
+        if (isSideBranchLayout(candidateLayout) && !isSameBranchContext(block.position, parentLayout, candidateLayout)) {
+          break;
+        }
+        conditionSiblings.push(candidate);
+        if (conditionSiblings.length === 2) {
+          break;
+        }
+        continue;
+      }
+      break;
+    }
+    if (conditionSiblings.length < 2) {
+      return;
+    }
+    const siblings = siblingChildrenByParent.get(block.clientId) ?? [];
+    conditionSiblings.forEach((candidate, conditionIndex) => {
+      if (!siblings[conditionIndex]) {
+        siblings[conditionIndex] = candidate.clientId;
+      }
+      siblingParentByChild.set(candidate.clientId, block.clientId);
+    });
+    siblingChildrenByParent.set(block.clientId, siblings);
+  });
+
+  const nodes: FlowGraphNodeData[] = [];
+  const edges: FlowGraphEdgeData[] = [];
+
+  sortedBlocks.forEach((block, index) => {
+    const links = collectOutgoingLinks(block, index, sortedBlocks, idByPosition, siblingChildrenByParent, siblingParentByChild);
+    const meta = flowBuilderBlockTypeMeta[block.type] ?? flowBuilderBlockTypeMeta.message;
+    const config = parseObject(block.config);
+    const branchConfigs = Array.isArray(config.branches)
+      ? config.branches.filter((branch): branch is Record<string, unknown> => typeof branch === "object" && branch !== null && !Array.isArray(branch))
+      : [];
+
+    const branchHandles: { id: string; label: string }[] = [];
+
+    links.forEach((link) => {
+      const isBranch = link.relationship === "decision" || link.relationship === "branch";
+      let sourceHandle = "out";
+      let label = "";
+
+      if (link.relationship === "fallback") {
+        label = "padrao";
+      } else if (isBranch && link.branchIndex !== undefined) {
+        sourceHandle = `branch-${link.branchIndex}`;
+        const branchCfg = branchConfigs[link.branchIndex];
+        const branchName = branchCfg && typeof branchCfg.name === "string" ? branchCfg.name : "";
+        label = getConditionBranchDisplayName(branchName, link.branchIndex);
+        if (!branchHandles.some((handle) => handle.id === sourceHandle)) {
+          branchHandles.push({ id: sourceHandle, label });
+        }
+      }
+
+      edges.push({
+        id: `edge-${block.clientId}-${sourceHandle}-${link.targetId}`,
+        source: block.clientId,
+        target: link.targetId,
+        sourceHandle,
+        label,
+        relationship: link.relationship as FlowGraphRelationship,
+      });
+    });
+
+    nodes.push({
+      id: block.clientId,
+      blockType: block.type,
+      tone: meta.tone,
+      typeLabel: meta.shortLabel,
+      title: block.title?.trim() || meta.label,
+      summary: getFlowBlockSummary(block),
+      position: block.position,
+      branchHandles,
+    });
+  });
+
+  return { nodes, edges };
+}
+
 export function getConditionBranchOptions(block: FlowBuilderBlockDraft) {
   const config = parseObject(block.config);
   const branches = Array.isArray(config.branches)

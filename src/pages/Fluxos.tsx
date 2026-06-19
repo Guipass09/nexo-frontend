@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/nexo/StatusBadge";
-import { FlowCanvas, type FlowCanvasHandle } from "@/components/flows/FlowCanvas";
+import { FlowGraphCanvas } from "@/components/flows/FlowGraphCanvas";
 import { FlowInspector } from "@/components/flows/FlowInspector";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -224,7 +224,6 @@ export default function Fluxos() {
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [useCurrentFlowAsAiBase, setUseCurrentFlowAsAiBase] = useState(true);
-  const fullscreenCanvasRef = useRef<FlowCanvasHandle | null>(null);
 
   const flowsQuery = useFlows();
   const flows = useMemo(() => flowsQuery.data ?? [], [flowsQuery.data]);
@@ -290,18 +289,6 @@ export default function Fluxos() {
       setSelectedBlockId(orderedDraftBlocks[0]?.clientId ?? null);
     }
   }, [orderedDraftBlocks, selectedBlockId]);
-
-  useEffect(() => {
-    if (!isCanvasFullscreen) {
-      return;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      fullscreenCanvasRef.current?.focusStart();
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, [isCanvasFullscreen]);
 
   useEffect(() => {
     if (!isCanvasFullscreen) {
@@ -1268,17 +1255,11 @@ export default function Fluxos() {
               </div>
             ) : null}
 
-            <FlowCanvas
+            <FlowGraphCanvas
               className="min-h-[620px]"
               blocks={orderedDraftBlocks}
               selectedBlockId={selectedBlockId}
               onSelectBlock={setSelectedBlockId}
-              onDuplicateBlock={duplicateDraftBlock}
-              onDeleteBlock={requestDeleteBlock}
-              onMoveBlockUp={(blockId) => moveBlock(blockId, -1)}
-              onMoveBlockDown={(blockId) => moveBlock(blockId, 1)}
-              onAddAfter={addBlock}
-              onRepositionBlock={repositionBlock}
             />
           </div>
         </div>
@@ -1409,46 +1390,9 @@ export default function Fluxos() {
                   >
                     <Workflow className="h-4 w-4" /> Organizar fluxo
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => fullscreenCanvasRef.current?.focusStart()}
-                  >
-                    <Home className="h-4 w-4" /> Inicio
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => fullscreenCanvasRef.current?.scrollToLeft()}
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Ver esquerda
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => fullscreenCanvasRef.current?.centerHorizontally()}
-                  >
-                    <Focus className="h-4 w-4" /> Centralizar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => fullscreenCanvasRef.current?.scrollToRight()}
-                  >
-                    Ver direita <ArrowRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => fullscreenCanvasRef.current?.scrollToBottom()}
-                  >
-                    Ver base <ArrowDown className="h-4 w-4" />
-                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Arraste para mover · scroll para zoom
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -1479,18 +1423,11 @@ export default function Fluxos() {
                 {renderBlockQuickAddBar(true)}
               </div>
 
-              <FlowCanvas
-                ref={fullscreenCanvasRef}
+              <FlowGraphCanvas
                 className="h-full min-h-0 min-w-0 pt-24"
                 blocks={orderedDraftBlocks}
                 selectedBlockId={selectedBlockId}
                 onSelectBlock={setSelectedBlockId}
-                onDuplicateBlock={duplicateDraftBlock}
-                onDeleteBlock={requestDeleteBlock}
-                onMoveBlockUp={(blockId) => moveBlock(blockId, -1)}
-                onMoveBlockDown={(blockId) => moveBlock(blockId, 1)}
-                onAddAfter={addBlock}
-                onRepositionBlock={repositionBlock}
               />
             </div>
           </div>
